@@ -1,0 +1,51 @@
+{
+  "name": "@wklm/cli",
+  "version": "0.1.0",
+  "description": "CLI for iOSWebBLE — init, check, scaffold BLE profiles for web apps",
+  "bin": {
+    "ioswebble": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs --dts",
+    "dev": "tsup src/index.ts --format cjs --watch"
+  },
+  "keywords": [
+    "ios",
+    "safari",
+    "bluetooth",
+    "ble",
+    "web-bluetooth",
+    "cli",
+    "webble",
+    "gatt",
+    "scaffold",
+    "ai",
+    "agent"
+  ],
+  "author": "wklm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wklm/ioswebble-sdk.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://ioswebble.com",
+  "bugs": {
+    "url": "https://github.com/wklm/ioswebble-sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@wklm/detect": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.0"
+  }
+}

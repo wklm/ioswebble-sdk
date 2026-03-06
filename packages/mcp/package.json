@@ -1,0 +1,57 @@
+{
+  "name": "@wklm/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for AI coding agents — scaffold BLE web apps, look up UUIDs, get code examples",
+  "main": "dist/index.js",
+  "bin": {
+    "ioswebble-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs && NODE_OPTIONS=--max-old-space-size=8192 tsc --emitDeclarationOnly",
+    "dev": "tsup src/index.ts --format cjs --watch"
+  },
+  "keywords": [
+    "mcp",
+    "ios",
+    "safari",
+    "bluetooth",
+    "ble",
+    "ai",
+    "agent",
+    "web-bluetooth",
+    "webble",
+    "gatt",
+    "model-context-protocol",
+    "claude",
+    "cursor",
+    "copilot"
+  ],
+  "author": "wklm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wklm/ioswebble-sdk.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://ioswebble.com",
+  "bugs": {
+    "url": "https://github.com/wklm/ioswebble-sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@wklm/detect": "^0.1.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.0"
+  }
+}

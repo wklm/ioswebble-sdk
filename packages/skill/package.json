@@ -1,0 +1,22 @@
+{
+  "name": "@wklm/skill",
+  "version": "0.1.0",
+  "description": "Agent skill for WebBLE SDK integration — works with Claude Code, Cursor, Copilot",
+  "main": "SKILL.md",
+  "files": ["SKILL.md", "README.md"],
+  "keywords": ["skill", "agent", "bluetooth", "ios", "safari", "ble", "web-bluetooth", "webble", "claude", "cursor", "copilot", "mcp", "ai"],
+  "author": "wklm",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wklm/ioswebble-sdk.git",
+    "directory": "packages/skill"
+  },
+  "homepage": "https://ioswebble.com",
+  "bugs": {
+    "url": "https://github.com/wklm/ioswebble-sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

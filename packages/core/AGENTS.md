@@ -1,0 +1,124 @@
+# @wklm/core — Agent Instructions
+
+## What this package does
+Platform-agnostic Web Bluetooth SDK. Provides `WebBLE` (entry point),
+`WebBLEDevice` (connected device wrapper), and `WebBLEError` (typed errors).
+Works on any browser with Web Bluetooth support.
+
+## Core pattern
+```typescript
+import { WebBLE } from '@wklm/core';
+
+const ble = new WebBLE();
+const device = await ble.requestDevice({
+  filters: [{ services: ['heart_rate'] }]
+});
+await device.connect();
+const value = await device.read('heart_rate', 'heart_rate_measurement');
+```
+
+## Key API surface
+- `new WebBLE(options?)` — creates SDK instance, detects platform
+- `ble.requestDevice(options?)` — opens device picker, returns `WebBLEDevice`
+- `ble.getAvailability()` — checks if Bluetooth is available
+- `device.connect()` / `device.disconnect()` — GATT connection lifecycle
+- `device.read(service, characteristic)` — read a characteristic value
+- `device.write(service, characteristic, value)` — write with response
+- `device.writeWithoutResponse(service, characteristic, value)` — write without response
+- `device.subscribe(service, characteristic, callback)` — returns unsubscribe function
+- `device.notifications(service, characteristic)` — async iterable of DataView values
+- `device.on('disconnected', fn)` / `device.off('disconnected', fn)` — disconnect events
+- `resolveUUID(name)` — converts human-readable names to full UUIDs
+- `WebBLEError` — typed error with `.code` (`UNSUPPORTED`, `NOT_CONNECTED`, `DEVICE_NOT_FOUND`, `USER_CANCELLED`, `GATT_ERROR`, `TIMEOUT`)
+
+## DO
+- Use human-readable service/characteristic names (`'heart_rate'`, `'battery_level'`) — `resolveUUID` handles conversion
+- Call `device.connect()` before any read/write/subscribe
+- Check `WebBLEError.code` for programmatic error handling
+- Store the unsubscribe function returned by `device.subscribe()` and call it on cleanup
+- Use `@wklm/profiles` when a built-in profile exists for your device type
+
+## DO NOT
+- Do not write raw GATT parsing code when a profile exists in `@wklm/profiles`
+- Do not catch errors silently — surface `WebBLEError.code` and `.hint` to the user
+- Do not call `device.read()` / `device.write()` before `device.connect()` — throws `NOT_CONNECTED`
+- Do not access `device.raw` unless you need the underlying `BluetoothDevice` for an unsupported operation
+
+## Common Mistakes
+
+### UUID Format
+```typescript
+// CORRECT — human-readable name, SDK resolves automatically
+await device.read('heart_rate', 'heart_rate_measurement')
+
+// WRONG — raw hex UUID
+await device.read('0000180d-0000-1000-8000-00805f9b34fb', '00002a37-0000-1000-8000-00805f9b34fb')
+```
+
+### Connection Before Operations
+```typescript
+// CORRECT — connect first
+await device.connect()
+const data = await device.read('battery_service', 'battery_level')
+
+// WRONG — read without connecting
+const data = await device.read('battery_service', 'battery_level') // throws DEVICE_DISCONNECTED
+```
+
+### Error Handling
+```typescript
+// CORRECT — check error code, use suggestion
+try {
+  await device.read('heart_rate', 'heart_rate_measurement')
+} catch (e) {
+  if (e instanceof WebBLEError) {
+    console.error(e.code, e.suggestion) // machine-readable + actionable
+  }
+}
+
+// WRONG — swallow errors
+try {
+  await device.read('heart_rate', 'heart_rate_measurement')
+} catch (e) {
+  console.log(e)
+}
+```
+
+## Common tasks
+
+### Subscribe to notifications
+```typescript
+const unsub = device.subscribe('heart_rate', 'heart_rate_measurement', (value) => {
+  const bpm = value.getUint8(1);
+  console.log('Heart rate:', bpm);
+});
+// Later: unsub();
+```
+
+### Async iteration over notifications
+```typescript
+for await (const value of device.notifications('heart_rate', 'heart_rate_measurement')) {
+  console.log('BPM:', value.getUint8(1));
+}
+```
+
+### Handle disconnection
+```typescript
+device.on('disconnected', () => {
+  console.log('Device disconnected');
+});
+```
+
+### Error handling
+```typescript
+try {
+  await device.read('heart_rate', 'heart_rate_measurement');
+} catch (e) {
+  if (e instanceof WebBLEError) {
+    switch (e.code) {
+      case 'NOT_CONNECTED': /* reconnect */ break;
+      case 'GATT_ERROR': /* retry or surface */ break;
+    }
+  }
+}
+```

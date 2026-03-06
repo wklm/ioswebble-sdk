@@ -1,0 +1,37 @@
+{
+  "description": "Web Bluetooth SDK for iOS Safari",
+  "name": "ioswebble-sdk",
+  "private": true,
+  "workspaces": [
+    "packages/cli",
+    "packages/core",
+    "packages/detect",
+    "packages/mcp",
+    "packages/profiles",
+    "packages/react-sdk",
+    "packages/skill",
+    "packages/testing"
+  ],
+  "scripts": {
+    "build:packages": "npm run build -w packages/core && npm run build -w packages/profiles && npm run build -w packages/detect && npm run build -w packages/react-sdk && npm run build -w packages/testing && npm run build -w packages/cli && npm run build -w packages/mcp",
+    "test:packages": "npm test -w packages/core -w packages/profiles -w packages/react-sdk -w packages/testing -w packages/detect -w packages/cli -w packages/mcp -w packages/skill --if-present",
+    "typecheck:packages": "npm run typecheck --workspaces --if-present",
+    "publish:packages": "npm run build:packages && npm publish --tag beta -w packages/core && npm publish --tag beta -w packages/profiles && npm publish --tag beta -w packages/react-sdk && npm publish --tag beta -w packages/testing && npm publish -w packages/detect && npm publish -w packages/mcp && npm publish -w packages/cli && npm publish -w packages/skill",
+    "publish:dry": "npm run build:packages && npm publish --dry-run --tag beta -w packages/core && npm publish --dry-run --tag beta -w packages/profiles && npm publish --dry-run --tag beta -w packages/react-sdk && npm publish --dry-run --tag beta -w packages/testing && npm publish --dry-run -w packages/detect && npm publish --dry-run -w packages/mcp && npm publish --dry-run -w packages/cli && npm publish --dry-run -w packages/skill"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.4",
+    "@types/jest": "^29",
+    "@types/web-bluetooth": "^0.0.21",
+    "jest": "^29",
+    "jest-environment-jsdom": "^29",
+    "ts-jest": "^29",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.2",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "uuid": "^11.1.0"
+  }
+}

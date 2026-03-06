@@ -1,0 +1,77 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+
+/**
+ * Hook that wraps a {@link BaseProfile} subclass from `@wklm/profiles`.
+ *
+ * Manages profile instantiation, connection, and teardown tied to the
+ * React component lifecycle. A new profile instance is created whenever
+ * the `device` reference changes, and {@link BaseProfile.stop} is called
+ * automatically on unmount or device change.
+ *
+ * @typeParam T - The profile class type (must have `connect()` and `stop()`).
+ * @param ProfileClass - The profile constructor (e.g. `HeartRateProfile`).
+ * @param device - The BLE device to bind to, or `null` if not yet available.
+ * @returns An object with the profile instance, a `connect` function, and error state.
+ *
+ * @example
+ * ```tsx
+ * import { useProfile } from '@wklm/react';
+ * import { HeartRateProfile } from '@wklm/profiles';
+ *
+ * function HeartRateMonitor({ device }: { device: BluetoothDevice }) {
+ *   const { profile, connect, error } = useProfile(HeartRateProfile, device);
+ *   const [bpm, setBpm] = useState<number | null>(null);
+ *
+ *   useEffect(() => {
+ *     connect().then(() => {
+ *       profile?.onHeartRate((data) => setBpm(data.bpm));
+ *     });
+ *   }, [profile]);
+ *
+ *   return (
+ *     <div>
+ *       {bpm !== null ? <p>{bpm} BPM</p> : <p>Connecting...</p>}
+ *       {error && <p>Error: {error.message}</p>}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export function useProfile<T extends { connect(): Promise<void>; stop(): void }>(
+  ProfileClass: new (device: any) => T,
+  device: any | null,
+): { profile: T | null; connect: () => Promise<void>; error: Error | null } {
+  const [profile, setProfile] = useState<T | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const profileRef = useRef<T | null>(null);
+
+  // Create profile instance when device changes
+  useEffect(() => {
+    if (!device) {
+      setProfile(null);
+      profileRef.current = null;
+      return;
+    }
+
+    const instance = new ProfileClass(device);
+    profileRef.current = instance;
+    setProfile(instance);
+
+    return () => {
+      instance.stop();
+      profileRef.current = null;
+    };
+  }, [ProfileClass, device]);
+
+  const connect = useCallback(async () => {
+    if (!profileRef.current) return;
+    try {
+      setError(null);
+      await profileRef.current.connect();
+    } catch (e) {
+      setError(e as Error);
+    }
+  }, []);
+
+  return { profile, connect, error };
+}
