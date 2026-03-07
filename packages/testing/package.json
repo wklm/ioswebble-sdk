@@ -1,6 +1,6 @@
 {
   "name": "@wklm/testing",
-  "version": "1.0.0-beta.1",
+  "version": "2.0.0-beta.1",
   "description": "Mock Bluetooth API for testing @wklm apps — stateful devices, fake advertising, notification pump",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

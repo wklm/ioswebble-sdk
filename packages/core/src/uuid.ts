@@ -103,17 +103,27 @@ const HEX4_RE = /^[0-9a-f]{4}$/;
 const HEX8_RE = /^[0-9a-f]{8}$/;
 
 /**
- * Resolve a service/characteristic name or short UUID to a full 128-bit UUID string.
- * Accepts: named alias ("heart_rate"), 4-hex ("180d"), 8-hex ("0000180d"), or full UUID.
+ * Resolve a service/characteristic name, number, or short UUID to a full 128-bit UUID string.
+ * Accepts: named alias ("heart_rate"), 16/32-bit integer (0x180D), 4-hex ("180d"),
+ * 8-hex ("0000180d"), or full UUID.
  *
  * @example
  * ```typescript
  * resolveUUID('heart_rate')      // '0000180d-0000-1000-8000-00805f9b34fb'
  * resolveUUID('180d')            // '0000180d-0000-1000-8000-00805f9b34fb'
+ * resolveUUID(0x180D)            // '0000180d-0000-1000-8000-00805f9b34fb'
  * resolveUUID('battery_level')   // '00002a19-0000-1000-8000-00805f9b34fb'
  * ```
  */
-export function resolveUUID(nameOrUUID: string): string {
+export function resolveUUID(nameOrUUID: string | number): string {
+  // Numeric input: 16-bit or 32-bit Bluetooth UUID integer
+  if (typeof nameOrUUID === 'number') {
+    if (!Number.isInteger(nameOrUUID) || nameOrUUID < 0 || nameOrUUID > 0xFFFFFFFF) {
+      throw new TypeError(`Invalid UUID integer: ${nameOrUUID}. Must be a 16-bit or 32-bit unsigned integer.`);
+    }
+    return hexToUUID(nameOrUUID);
+  }
+
   const lower = nameOrUUID.toLowerCase();
 
   // Full 128-bit UUID

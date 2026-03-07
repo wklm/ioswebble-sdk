@@ -10,9 +10,40 @@
  */
 
 import { detectPlatform, getBluetoothAPI } from './platform';
+import { BluetoothUUID } from './bluetooth-uuid';
+
+/**
+ * Patch navigator.permissions.query to support { name: 'bluetooth' }.
+ * Returns 'granted' when the extension is active, 'prompt' otherwise.
+ */
+function patchPermissionsAPI(state: PermissionState): void {
+  if (typeof navigator === 'undefined' || !navigator.permissions) return;
+
+  const originalQuery = navigator.permissions.query.bind(navigator.permissions);
+  navigator.permissions.query = function (
+    descriptor: PermissionDescriptor
+  ): Promise<PermissionStatus> {
+    if ((descriptor as any).name === 'bluetooth') {
+      // Synthesize a PermissionStatus-like object
+      const target = new EventTarget();
+      const status = Object.create(target, {
+        state: { get: () => state, enumerable: true },
+        name: { get: () => 'bluetooth', enumerable: true },
+        onchange: { value: null, writable: true, enumerable: true },
+      }) as PermissionStatus;
+      return Promise.resolve(status);
+    }
+    return originalQuery(descriptor);
+  };
+}
 
 function applyPolyfill(): void {
   if (typeof navigator === 'undefined') return;
+
+  // Expose BluetoothUUID global (spec §4) on all platforms
+  if (typeof window !== 'undefined' && !(window as any).BluetoothUUID) {
+    (window as any).BluetoothUUID = BluetoothUUID;
+  }
 
   const platform = detectPlatform();
 
@@ -30,10 +61,14 @@ function applyPolyfill(): void {
         configurable: true,
       });
     }
+    // Permissions API: extension active → 'granted'
+    patchPermissionsAPI('granted');
     return;
   }
 
   // Unsupported or Safari without extension — install lazy proxy
+  // Permissions API: no extension → 'prompt'
+  patchPermissionsAPI('prompt');
   if (!navigator.bluetooth) {
     const handler: ProxyHandler<Record<string, unknown>> = {
       get(_target, prop) {

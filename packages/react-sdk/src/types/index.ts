@@ -60,8 +60,8 @@ export interface CharacteristicProperties {
   notify: boolean;
   indicate: boolean;
   authenticatedSignedWrites: boolean;
-  reliableWrite?: boolean;
-  writableAuxiliaries?: boolean;
+  reliableWrite: boolean;
+  writableAuxiliaries: boolean;
 }
 
 // Connection types
@@ -117,17 +117,9 @@ export interface BluetoothAdvertisingEvent {
   txPower: number;
 }
 
-// Error types
-export class WebBLEError extends Error {
-  constructor(
-    message: string,
-    public code?: string,
-    public device?: BluetoothDevice
-  ) {
-    super(message);
-    this.name = 'WebBLEError';
-  }
-}
+// Error types — re-exported from @wklm/core for compatibility
+// Users who don't install @wklm/core get this lightweight version
+export { WebBLEError } from './compat-error';
 
 // Hook return types
 export interface UseBluetoothReturn {
@@ -210,7 +202,9 @@ export type ConnectionPriority = 'balanced' | 'high' | 'low-power';
 // Request types
 export interface RequestDeviceOptions {
   filters?: BluetoothLEScanFilter[];
+  exclusionFilters?: BluetoothLEScanFilter[];
   optionalServices?: BluetoothServiceUUID[];
+  optionalManufacturerData?: number[];
   acceptAllDevices?: boolean;
 }
 

@@ -2,6 +2,7 @@ import {
   createMockBluetooth,
   installMockBluetooth,
   MockBleDevice,
+  MockDescriptor,
   BLE_UUIDS,
   devices,
 } from '../src';
@@ -233,6 +234,483 @@ describe('installMockBluetooth', () => {
     const mock = installMockBluetooth({ available: true });
     expect((navigator as any).bluetooth).toBe(mock);
     mock.reset();
+  });
+});
+
+describe('MockDescriptor', () => {
+  let mock: ReturnType<typeof createMockBluetooth>;
+
+  beforeEach(() => {
+    mock = createMockBluetooth();
+  });
+
+  afterEach(() => {
+    mock.reset();
+  });
+
+  test('getDescriptor returns matching descriptor', async () => {
+    const device = mock.addDevice({
+      name: 'Desc Test',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            {
+              uuid: 'chr',
+              properties: { read: true },
+              descriptors: [
+                {
+                  uuid: BLE_UUIDS.descriptors.CCCD,
+                  value: new Uint8Array([0x01, 0x00]),
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+    const desc = await char.getDescriptor(BLE_UUIDS.descriptors.CCCD);
+    expect(desc.uuid).toBe(BLE_UUIDS.descriptors.CCCD);
+    const value = await desc.readValue();
+    expect(value.getUint8(0)).toBe(0x01);
+  });
+
+  test('getDescriptor throws NotFoundError for missing descriptor', async () => {
+    const device = mock.addDevice({
+      name: 'No Desc',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            {
+              uuid: 'chr',
+              properties: { read: true },
+            },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+
+    await expect(char.getDescriptor('nonexistent')).rejects.toThrow(
+      'No Descriptors matching'
+    );
+    try {
+      await char.getDescriptor('nonexistent');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(DOMException);
+      expect(e.name).toBe('NotFoundError');
+    }
+  });
+
+  test('getDescriptors returns all descriptors', async () => {
+    const device = mock.addDevice({
+      name: 'Multi Desc',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            {
+              uuid: 'chr',
+              properties: { read: true },
+              descriptors: [
+                { uuid: BLE_UUIDS.descriptors.CCCD, value: new Uint8Array([0]) },
+                { uuid: BLE_UUIDS.descriptors.USER_DESCRIPTION, value: new Uint8Array([72, 82]) },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+    const descs = await char.getDescriptors();
+    expect(descs).toHaveLength(2);
+  });
+
+  test('getDescriptors with filter returns matching only', async () => {
+    const device = mock.addDevice({
+      name: 'Filter Desc',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            {
+              uuid: 'chr',
+              properties: { read: true },
+              descriptors: [
+                { uuid: BLE_UUIDS.descriptors.CCCD },
+                { uuid: BLE_UUIDS.descriptors.USER_DESCRIPTION },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+    const descs = await char.getDescriptors(BLE_UUIDS.descriptors.CCCD);
+    expect(descs).toHaveLength(1);
+    expect(descs[0].uuid).toBe(BLE_UUIDS.descriptors.CCCD);
+  });
+
+  test('descriptor writeValue stores data', async () => {
+    const device = mock.addDevice({
+      name: 'Write Desc',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            {
+              uuid: 'chr',
+              properties: { read: true },
+              descriptors: [
+                { uuid: BLE_UUIDS.descriptors.CCCD, value: new Uint8Array([0x00, 0x00]) },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+    const desc = await char.getDescriptor(BLE_UUIDS.descriptors.CCCD);
+
+    await desc.writeValue(new Uint8Array([0x01, 0x00]).buffer);
+    const value = await desc.readValue();
+    expect(value.getUint8(0)).toBe(0x01);
+  });
+
+  test('MockDescriptor.setValue updates value via test control', () => {
+    const desc = new MockDescriptor({
+      uuid: BLE_UUIDS.descriptors.CCCD,
+      value: new Uint8Array([0]),
+    });
+    expect(desc.value.getUint8(0)).toBe(0);
+    desc.setValue(new Uint8Array([0xff]));
+    expect(desc.value.getUint8(0)).toBe(0xff);
+  });
+});
+
+describe('Characteristic properties and write variants', () => {
+  let mock: ReturnType<typeof createMockBluetooth>;
+
+  beforeEach(() => {
+    mock = createMockBluetooth();
+  });
+
+  afterEach(() => {
+    mock.reset();
+  });
+
+  test('full characteristic properties are exposed', async () => {
+    const device = mock.addDevice({
+      name: 'Props Test',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            {
+              uuid: 'chr',
+              properties: {
+                broadcast: true,
+                read: true,
+                write: true,
+                writeWithoutResponse: true,
+                notify: true,
+                indicate: true,
+                authenticatedSignedWrites: true,
+                reliableWrite: true,
+                writableAuxiliaries: true,
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+
+    expect(char.properties.broadcast).toBe(true);
+    expect(char.properties.read).toBe(true);
+    expect(char.properties.write).toBe(true);
+    expect(char.properties.writeWithoutResponse).toBe(true);
+    expect(char.properties.notify).toBe(true);
+    expect(char.properties.indicate).toBe(true);
+    expect(char.properties.authenticatedSignedWrites).toBe(true);
+    expect(char.properties.reliableWrite).toBe(true);
+    expect(char.properties.writableAuxiliaries).toBe(true);
+  });
+
+  test('properties default to false except read', async () => {
+    const device = mock.addDevice({
+      name: 'Defaults',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [{ uuid: 'chr' }],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+
+    expect(char.properties.read).toBe(true);
+    expect(char.properties.write).toBe(false);
+    expect(char.properties.writeWithoutResponse).toBe(false);
+    expect(char.properties.notify).toBe(false);
+    expect(char.properties.indicate).toBe(false);
+    expect(char.properties.broadcast).toBe(false);
+    expect(char.properties.authenticatedSignedWrites).toBe(false);
+    expect(char.properties.reliableWrite).toBe(false);
+    expect(char.properties.writableAuxiliaries).toBe(false);
+  });
+
+  test('writeValueWithResponse throws NotSupportedError without write property', async () => {
+    const device = mock.addDevice({
+      name: 'No Write',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            { uuid: 'chr', properties: { read: true, write: false } },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+
+    try {
+      await char.writeValueWithResponse(new Uint8Array([1]).buffer);
+      fail('Expected DOMException');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(DOMException);
+      expect(e.name).toBe('NotSupportedError');
+    }
+  });
+
+  test('writeValueWithoutResponse throws NotSupportedError without writeWithoutResponse property', async () => {
+    const device = mock.addDevice({
+      name: 'No WWR',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            { uuid: 'chr', properties: { read: true, write: true, writeWithoutResponse: false } },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+
+    try {
+      await char.writeValueWithoutResponse(new Uint8Array([1]).buffer);
+      fail('Expected DOMException');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(DOMException);
+      expect(e.name).toBe('NotSupportedError');
+    }
+  });
+
+  test('writeValueWithResponse succeeds with write property', async () => {
+    const device = mock.addDevice({
+      name: 'Write OK',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            { uuid: 'chr', properties: { read: true, write: true }, value: new Uint8Array([0]) },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+
+    await char.writeValueWithResponse(new Uint8Array([99]).buffer);
+    const value = await char.readValue();
+    expect(value.getUint8(0)).toBe(99);
+  });
+
+  test('writeValueWithoutResponse succeeds with writeWithoutResponse property', async () => {
+    const device = mock.addDevice({
+      name: 'WWR OK',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            { uuid: 'chr', properties: { read: true, writeWithoutResponse: true }, value: new Uint8Array([0]) },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+
+    await char.writeValueWithoutResponse(new Uint8Array([55]).buffer);
+    const value = await char.readValue();
+    expect(value.getUint8(0)).toBe(55);
+  });
+
+  test('startNotifications throws NotSupportedError without notify/indicate', async () => {
+    const device = mock.addDevice({
+      name: 'No Notify',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            { uuid: 'chr', properties: { read: true, notify: false, indicate: false } },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+
+    try {
+      await char.startNotifications();
+      fail('Expected DOMException');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(DOMException);
+      expect(e.name).toBe('NotSupportedError');
+    }
+  });
+});
+
+describe('DOMException error names', () => {
+  let mock: ReturnType<typeof createMockBluetooth>;
+
+  beforeEach(() => {
+    mock = createMockBluetooth();
+  });
+
+  afterEach(() => {
+    mock.reset();
+  });
+
+  test('GATT operations throw NetworkError when disconnected', async () => {
+    const device = mock.addDevice(devices.heartRate());
+    const btDevice = device.asBluetoothDevice();
+
+    try {
+      await btDevice.gatt!.getPrimaryService(BLE_UUIDS.services.HEART_RATE);
+      fail('Expected DOMException');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(DOMException);
+      expect(e.name).toBe('NetworkError');
+    }
+  });
+
+  test('missing service throws NotFoundError', async () => {
+    const device = mock.addDevice(devices.heartRate());
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+
+    try {
+      await btDevice.gatt!.getPrimaryService('nonexistent');
+      fail('Expected DOMException');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(DOMException);
+      expect(e.name).toBe('NotFoundError');
+    }
+  });
+
+  test('missing characteristic throws NotFoundError', async () => {
+    const device = mock.addDevice(devices.heartRate());
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService(
+      BLE_UUIDS.services.HEART_RATE
+    );
+
+    try {
+      await service.getCharacteristic('nonexistent');
+      fail('Expected DOMException');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(DOMException);
+      expect(e.name).toBe('NotFoundError');
+    }
+  });
+
+  test('read on non-readable throws NotSupportedError', async () => {
+    const device = mock.addDevice({
+      name: 'No Read',
+      serviceUUIDs: ['svc'],
+      services: [
+        {
+          uuid: 'svc',
+          characteristics: [
+            { uuid: 'chr', properties: { read: false, write: true } },
+          ],
+        },
+      ],
+    });
+
+    const btDevice = device.asBluetoothDevice();
+    await btDevice.gatt!.connect();
+    const service = await btDevice.gatt!.getPrimaryService('svc');
+    const char = await service.getCharacteristic('chr');
+
+    try {
+      await char.readValue();
+      fail('Expected DOMException');
+    } catch (e: any) {
+      expect(e).toBeInstanceOf(DOMException);
+      expect(e.name).toBe('NotSupportedError');
+    }
   });
 });
 

@@ -53,8 +53,10 @@ export {
   MockGATTServer,
   MockService,
   MockCharacteristic,
+  MockDescriptor,
   type MockServiceConfig,
   type MockCharacteristicConfig,
+  type MockDescriptorConfig,
 } from './mocks/characteristics';
 
 /** Common Bluetooth SIG UUIDs for test convenience */
@@ -72,6 +74,14 @@ export const BLE_UUIDS = {
     MANUFACTURER_NAME: '00002a29-0000-1000-8000-00805f9b34fb',
     MODEL_NUMBER: '00002a24-0000-1000-8000-00805f9b34fb',
     TEMPERATURE: '00002a6e-0000-1000-8000-00805f9b34fb',
+  },
+  descriptors: {
+    /** Client Characteristic Configuration Descriptor */
+    CCCD: '00002902-0000-1000-8000-00805f9b34fb',
+    /** Characteristic User Description */
+    USER_DESCRIPTION: '00002901-0000-1000-8000-00805f9b34fb',
+    /** Characteristic Presentation Format */
+    PRESENTATION_FORMAT: '00002904-0000-1000-8000-00805f9b34fb',
   },
 } as const;
 

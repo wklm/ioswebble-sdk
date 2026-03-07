@@ -12,16 +12,22 @@ import type { MockBleDevice } from './device';
 export interface MockCharacteristicConfig {
   /** Characteristic UUID */
   uuid: string;
-  /** Characteristic properties */
+  /** Characteristic properties (all default to false except read) */
   properties?: {
+    broadcast?: boolean;
     read?: boolean;
     write?: boolean;
     writeWithoutResponse?: boolean;
     notify?: boolean;
     indicate?: boolean;
+    authenticatedSignedWrites?: boolean;
+    reliableWrite?: boolean;
+    writableAuxiliaries?: boolean;
   };
   /** Initial value (DataView or Uint8Array) */
   value?: ArrayBuffer | Uint8Array;
+  /** Descriptors for this characteristic */
+  descriptors?: MockDescriptorConfig[];
 }
 
 export interface MockServiceConfig {
@@ -31,6 +37,13 @@ export interface MockServiceConfig {
   isPrimary?: boolean;
   /** Characteristics in this service */
   characteristics?: MockCharacteristicConfig[];
+}
+
+export interface MockDescriptorConfig {
+  /** Descriptor UUID */
+  uuid: string;
+  /** Initial value */
+  value?: ArrayBuffer | Uint8Array;
 }
 
 // --- Mock GATT Server ---
@@ -214,24 +227,33 @@ export class MockService {
 export class MockCharacteristic {
   readonly uuid: string;
   private _properties: {
+    broadcast: boolean;
     read: boolean;
     write: boolean;
     writeWithoutResponse: boolean;
     notify: boolean;
     indicate: boolean;
+    authenticatedSignedWrites: boolean;
+    reliableWrite: boolean;
+    writableAuxiliaries: boolean;
   };
   private _value: DataView;
   private _notifying = false;
   private _listeners: Map<string, Set<EventListener>> = new Map();
+  private _descriptors: Map<string, MockDescriptor> = new Map();
 
   constructor(config: MockCharacteristicConfig) {
     this.uuid = config.uuid;
     this._properties = {
+      broadcast: config.properties?.broadcast ?? false,
       read: config.properties?.read ?? true,
       write: config.properties?.write ?? false,
       writeWithoutResponse: config.properties?.writeWithoutResponse ?? false,
       notify: config.properties?.notify ?? false,
       indicate: config.properties?.indicate ?? false,
+      authenticatedSignedWrites: config.properties?.authenticatedSignedWrites ?? false,
+      reliableWrite: config.properties?.reliableWrite ?? false,
+      writableAuxiliaries: config.properties?.writableAuxiliaries ?? false,
     };
 
     if (config.value) {
@@ -245,6 +267,10 @@ export class MockCharacteristic {
       this._value = new DataView(buffer);
     } else {
       this._value = new DataView(new ArrayBuffer(0));
+    }
+
+    for (const descConfig of config.descriptors ?? []) {
+      this._descriptors.set(descConfig.uuid, new MockDescriptor(descConfig));
     }
   }
 
@@ -293,6 +319,11 @@ export class MockCharacteristic {
     return this._notifying;
   }
 
+  /** Get a mock descriptor for test control */
+  getDesc(uuid: string): MockDescriptor | undefined {
+    return this._descriptors.get(uuid);
+  }
+
   asBluetoothRemoteGATTCharacteristic(
     service: BluetoothRemoteGATTService
   ): BluetoothRemoteGATTCharacteristic {
@@ -301,15 +332,15 @@ export class MockCharacteristic {
       uuid: this.uuid,
       service,
       properties: {
-        broadcast: false,
+        broadcast: this._properties.broadcast,
         read: this._properties.read,
         writeWithoutResponse: this._properties.writeWithoutResponse,
         write: this._properties.write,
         notify: this._properties.notify,
         indicate: this._properties.indicate,
-        authenticatedSignedWrites: false,
-        reliableWrite: false,
-        writableAuxiliaries: false,
+        authenticatedSignedWrites: this._properties.authenticatedSignedWrites,
+        reliableWrite: this._properties.reliableWrite,
+        writableAuxiliaries: this._properties.writableAuxiliaries,
       },
       get value() {
         return self._value;
@@ -374,10 +405,27 @@ export class MockCharacteristic {
         self._listeners.get(type)?.delete(listener);
       },
       dispatchEvent: () => true,
-      getDescriptor: async () => {
-        throw new DOMException('Not implemented', 'NotSupportedError');
+      getDescriptor: async (uuid: string) => {
+        const desc = self._descriptors.get(uuid);
+        if (!desc) {
+          throw new DOMException(
+            `No Descriptors matching UUID ${uuid} found`,
+            'NotFoundError'
+          );
+        }
+        return desc.asBluetoothRemoteGATTDescriptor(
+          self.asBluetoothRemoteGATTCharacteristic(service)
+        );
       },
-      getDescriptors: async () => [],
+      getDescriptors: async (uuid?: string) => {
+        const descriptors = uuid
+          ? [self._descriptors.get(uuid)].filter(Boolean)
+          : Array.from(self._descriptors.values());
+        const charProxy = self.asBluetoothRemoteGATTCharacteristic(service);
+        return (descriptors as MockDescriptor[]).map((d) =>
+          d.asBluetoothRemoteGATTDescriptor(charProxy)
+        );
+      },
       oncharacteristicvaluechanged: null,
     } as unknown as BluetoothRemoteGATTCharacteristic;
   }
@@ -388,5 +436,68 @@ export class MockCharacteristic {
         ? value
         : (value as DataView).buffer ?? (value as Uint8Array).buffer;
     this._value = new DataView(buffer);
+  }
+}
+
+// --- Mock Descriptor ---
+
+export class MockDescriptor {
+  readonly uuid: string;
+  private _value: DataView;
+
+  constructor(config: MockDescriptorConfig) {
+    this.uuid = config.uuid;
+    if (config.value) {
+      const buffer =
+        config.value instanceof Uint8Array
+          ? config.value.buffer.slice(
+              config.value.byteOffset,
+              config.value.byteOffset + config.value.byteLength
+            )
+          : config.value;
+      this._value = new DataView(buffer);
+    } else {
+      this._value = new DataView(new ArrayBuffer(0));
+    }
+  }
+
+  /** Set the descriptor value (for test setup) */
+  setValue(data: ArrayBuffer | Uint8Array): void {
+    const buffer =
+      data instanceof Uint8Array
+        ? data.buffer.slice(
+            data.byteOffset,
+            data.byteOffset + data.byteLength
+          )
+        : data;
+    this._value = new DataView(buffer);
+  }
+
+  /** Get the current value */
+  get value(): DataView {
+    return this._value;
+  }
+
+  asBluetoothRemoteGATTDescriptor(
+    characteristic: BluetoothRemoteGATTCharacteristic
+  ): BluetoothRemoteGATTDescriptor {
+    const self = this;
+    return {
+      uuid: this.uuid,
+      characteristic,
+      get value() {
+        return self._value;
+      },
+      readValue: async () => {
+        return self._value;
+      },
+      writeValue: async (value: BufferSource) => {
+        const buffer =
+          value instanceof ArrayBuffer
+            ? value
+            : (value as DataView).buffer ?? (value as Uint8Array).buffer;
+        self._value = new DataView(buffer);
+      },
+    } as unknown as BluetoothRemoteGATTDescriptor;
   }
 }

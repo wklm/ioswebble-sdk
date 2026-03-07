@@ -5,9 +5,17 @@ export interface WebBLEOptions {
   platform?: Platform;
 }
 
+export interface BluetoothLEScanFilter {
+  services?: string[];
+  name?: string;
+  namePrefix?: string;
+}
+
 export interface RequestDeviceOptions {
   filters?: BluetoothLEScanFilter[];
+  exclusionFilters?: BluetoothLEScanFilter[];
   optionalServices?: string[];
+  optionalManufacturerData?: number[];
   acceptAllDevices?: boolean;
 }
 
