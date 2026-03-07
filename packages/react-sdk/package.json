@@ -80,7 +80,10 @@
     "bluetooth-low-energy",
     "ai",
     "agent",
-    "mcp"
+    "mcp",
+    "polyfill",
+    "navigator.bluetooth",
+    "cross-browser"
   ],
   "author": "wklm",
   "license": "MIT",

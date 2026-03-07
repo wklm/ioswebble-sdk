@@ -7,7 +7,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "AGENTS.md"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs --dts",
@@ -24,7 +25,10 @@
     "gatt",
     "scaffold",
     "ai",
-    "agent"
+    "agent",
+    "polyfill",
+    "navigator.bluetooth",
+    "cross-browser"
   ],
   "author": "wklm",
   "repository": {

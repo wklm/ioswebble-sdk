@@ -20,6 +20,9 @@ characteristic UUIDs, and binary parsing format per the Bluetooth SIG spec.
 | `BatteryProfile` | `battery_service` | `readLevel()`, `onLevel(cb)` |
 | `DeviceInfoProfile` | `device_information` | `readManufacturer()`, `readModel()`, `readAll()` |
 
+## Safari iOS Support
+Add `import '@wklm/core/auto'` to your app entry point for transparent Safari iOS support.
+
 ## Core pattern
 ```typescript
 import { HeartRateProfile } from '@wklm/profiles';

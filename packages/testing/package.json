@@ -13,7 +13,7 @@
     }
   },
   "sideEffects": false,
-  "files": ["dist", "README.md"],
+  "files": ["dist", "README.md", "AGENTS.md"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -23,7 +23,7 @@
   },
   "keywords": [
     "bluetooth", "ble", "web-bluetooth", "webble", "testing", "mock",
-    "jest", "vitest", "safari", "ios", "gatt"
+    "jest", "vitest", "safari", "ios", "gatt", "polyfill", "navigator.bluetooth"
   ],
   "author": "wklm",
   "license": "MIT",

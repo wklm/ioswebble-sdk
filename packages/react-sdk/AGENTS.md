@@ -6,6 +6,9 @@ device discovery/connection/notifications, and pre-built UI components.
 Optionally integrates with `@wklm/core`, `@wklm/profiles`, and
 `@wklm/detect`.
 
+## Safari iOS Support
+Add `import '@wklm/core/auto'` to your app entry point for transparent Safari iOS support. This is separate from the React hooks below.
+
 ## Provider setup
 Wrap your app in `WebBLEProvider`. All hooks require this context.
 
@@ -71,6 +74,30 @@ function HeartRateMonitor() {
 - `<InstallationWizard />` — iOS extension install guide
 
 ## Common Mistakes
+
+### User Gesture Required — useEffect Trap (Safari iOS)
+`requestDevice()` MUST be called from a user gesture (click/tap handler). Safari iOS blocks Bluetooth requests without a user gesture. The #1 mistake in React is calling `requestDevice` inside `useEffect` — this silently fails.
+
+```tsx
+// CORRECT — triggered by user click
+function Scanner() {
+  const { requestDevice } = useBluetooth();
+  return (
+    <button onClick={async () => {
+      const device = await requestDevice({ filters: [{ services: ['heart_rate'] }] });
+    }}>Connect</button>
+  );
+}
+
+// WRONG — silently fails on Safari iOS (no user gesture)
+function Scanner() {
+  const { requestDevice } = useBluetooth();
+  useEffect(() => {
+    requestDevice({ filters: [{ services: ['heart_rate'] }] }); // SecurityError
+  }, []);
+  return <div>Scanning...</div>;
+}
+```
 
 ### Use Hooks, Not Raw Web APIs
 ```tsx

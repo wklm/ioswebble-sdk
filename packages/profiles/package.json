@@ -35,7 +35,7 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build && npm run typecheck"
   },
-  "keywords": ["bluetooth", "ble", "profiles", "heart-rate", "battery", "webble", "gatt", "device-info", "web-bluetooth", "ios", "safari", "ai", "agent"],
+  "keywords": ["bluetooth", "ble", "profiles", "heart-rate", "battery", "webble", "gatt", "device-info", "web-bluetooth", "ios", "safari", "ai", "agent", "polyfill", "navigator.bluetooth", "cross-browser"],
   "author": "wklm",
   "license": "MIT",
   "repository": {

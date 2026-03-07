@@ -8,7 +8,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "AGENTS.md"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs && NODE_OPTIONS=--max-old-space-size=8192 tsc --emitDeclarationOnly",
@@ -28,7 +29,9 @@
     "model-context-protocol",
     "claude",
     "cursor",
-    "copilot"
+    "copilot",
+    "polyfill",
+    "navigator.bluetooth"
   ],
   "author": "wklm",
   "repository": {

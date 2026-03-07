@@ -29,7 +29,7 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build && npm run typecheck"
   },
-  "keywords": ["ios", "safari", "bluetooth", "ble", "web-bluetooth", "webble", "extension", "detect", "install-banner", "ai", "agent", "mcp"],
+  "keywords": ["ios", "safari", "bluetooth", "ble", "web-bluetooth", "webble", "extension", "detect", "install-banner", "ai", "agent", "mcp", "polyfill", "navigator.bluetooth", "cross-browser"],
   "author": "wklm",
   "license": "MIT",
   "repository": {

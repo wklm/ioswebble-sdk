@@ -1,8 +1,12 @@
-# iOSWebBLE Agent Instructions
+# @wklm/detect — Agent Instructions
 
 ## What this package does
 Detects iOS Safari, checks if the iOSWebBLE extension is installed,
 and shows an install banner if not. No-op on all other platforms.
+
+> **Note**: For BLE operations, use `@wklm/core` (not this package).
+> Use `import '@wklm/core/auto'` for transparent Safari iOS polyfill.
+> This package is ONLY for extension detection and install banners.
 
 ## How it works
 - Import '@wklm/detect/auto' for automatic initialization

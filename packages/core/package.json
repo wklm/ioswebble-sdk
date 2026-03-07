@@ -1,7 +1,7 @@
 {
   "name": "@wklm/core",
   "version": "1.0.0-beta.1",
-  "description": "Web Bluetooth SDK — scan, connect, read/write BLE devices from iOS Safari",
+  "description": "Web Bluetooth polyfill for Safari iOS — scan, connect, read/write BLE devices from any browser",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -10,18 +10,27 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./auto": {
+      "types": "./dist/auto.d.ts",
+      "import": "./dist/auto.mjs",
+      "require": "./dist/auto.js"
+    },
+    "./global": {
+      "types": "./dist/global.d.ts"
     }
   },
-  "sideEffects": false,
+  "sideEffects": ["./dist/auto.mjs", "./dist/auto.js"],
   "files": ["dist", "README.md", "AGENTS.md", "CONTEXT.md"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build && npm run typecheck"
+    "prepublishOnly": "npm run build && npm run typecheck",
+    "postinstall": "echo '\\n  @wklm/core installed. Add `import \"@wklm/core/auto\"` to your entry point for Safari iOS Bluetooth support.\\n'"
   },
-  "keywords": ["bluetooth", "ble", "web-bluetooth", "webble", "safari", "sdk", "ios", "gatt", "bluetooth-low-energy", "ai", "agent", "mcp"],
+  "keywords": ["bluetooth", "ble", "web-bluetooth", "webble", "safari", "sdk", "ios", "gatt", "bluetooth-low-energy", "ai", "agent", "mcp", "polyfill", "navigator.bluetooth", "cross-browser"],
   "author": "wklm",
   "license": "MIT",
   "repository": {

@@ -3,7 +3,7 @@
 /**
  * @wklm/mcp — MCP Server for iOSWebBLE
  *
- * Exposes 7 tools + 6 resources for AI agents to manage iOSWebBLE integration:
+ * Exposes 9 tools + 6 resources for AI agents to manage iOSWebBLE integration:
  *
  * Tools:
  * - ioswebble_init: Add iOSWebBLE to a web project
@@ -13,6 +13,8 @@
  * - ioswebble_get_example: Return complete code examples by use case
  * - ioswebble_troubleshoot: Diagnose issues from error code or symptom
  * - ioswebble_docs: Return documentation by topic
+ * - webble_suggest: Analyze project and recommend @wklm packages
+ * - webble_check_compliance: Check code for Safari iOS compliance issues
  *
  * Resources:
  * - ioswebble://docs/quickstart
@@ -33,6 +35,8 @@ import { scaffoldProfileTool } from './tools/scaffold-profile';
 import { getExampleTool } from './tools/get-example';
 import { troubleshootTool } from './tools/troubleshoot';
 import { docsTool } from './tools/docs';
+import { suggestTool } from './tools/suggest';
+import { checkComplianceTool } from './tools/check-compliance';
 import { registerResources } from './resources';
 
 const server = new McpServer({
@@ -47,8 +51,8 @@ const server = new McpServer({
 server.registerTool(
   'ioswebble_init',
   {
-    title: 'Add iOSWebBLE to a web project',
-    description: 'Auto-detects framework and adds detection snippet.',
+    title: 'Add Safari iOS Bluetooth support to a web project',
+    description: 'Auto-detects framework (React, Next.js, Vue, etc.) and adds Web Bluetooth polyfill (@wklm/core/auto) + detection snippet. Makes navigator.bluetooth work on Safari iOS.',
     annotations: {
       readOnlyHint: false,
       destructiveHint: false,
@@ -89,8 +93,8 @@ server.registerTool(
 server.registerTool(
   'ioswebble_check',
   {
-    title: 'Verify iOSWebBLE integration',
-    description: 'Checks @wklm/detect, @wklm/core, and @wklm/profiles are correctly set up.',
+    title: 'Verify Web Bluetooth / Safari iOS integration',
+    description: 'Checks @wklm/core, @wklm/detect, and @wklm/profiles are correctly set up for BLE support.',
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,
@@ -110,8 +114,8 @@ server.registerTool(
 server.registerTool(
   'ioswebble_add',
   {
-    title: 'Add a @wklm package',
-    description: 'Install a @wklm package and generate starter code. Auto-detects framework.',
+    title: 'Add a Web Bluetooth SDK package',
+    description: 'Install a @wklm package (core, profiles, react, detect) and generate starter code for BLE / Safari iOS Bluetooth.',
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,
@@ -135,8 +139,8 @@ server.registerTool(
 server.registerTool(
   'ioswebble_scaffold_profile',
   {
-    title: 'Scaffold a custom BLE profile',
-    description: 'Generate a typed custom BLE profile using defineProfile() from @wklm/profiles.',
+    title: 'Scaffold a custom Bluetooth device profile',
+    description: 'Generate a typed custom BLE device profile using defineProfile() from @wklm/profiles. For heart rate, battery, etc. use built-in profiles instead.',
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,
@@ -169,8 +173,8 @@ server.registerTool(
 server.registerTool(
   'ioswebble_get_example',
   {
-    title: 'Get a BLE code example',
-    description: 'Return a complete, copy-pasteable code example for a BLE use case.',
+    title: 'Get a Web Bluetooth code example',
+    description: 'Return a complete, copy-pasteable code example for a Bluetooth Low Energy use case (Safari iOS + Chrome).',
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,
@@ -200,8 +204,8 @@ server.registerTool(
 server.registerTool(
   'ioswebble_troubleshoot',
   {
-    title: 'Troubleshoot BLE issues',
-    description: 'Diagnose BLE issues from a WebBLEError code or symptom description.',
+    title: 'Troubleshoot Web Bluetooth / Safari iOS issues',
+    description: 'Diagnose Bluetooth Low Energy issues from a WebBLEError code or symptom description. Covers Safari iOS extension and Chrome native.',
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,
@@ -233,8 +237,8 @@ server.registerTool(
 server.registerTool(
   'ioswebble_docs',
   {
-    title: 'Look up documentation',
-    description: 'Return documentation for a specific topic: quickstart, api, react, profiles, or errors.',
+    title: 'Look up Web Bluetooth SDK documentation',
+    description: 'Return WebBLE SDK documentation for a specific topic: quickstart, api, react, profiles, or errors. Covers Safari iOS and Chrome.',
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,
@@ -249,6 +253,62 @@ server.registerTool(
   },
   async ({ topic }) => {
     return docsTool(topic);
+  }
+);
+
+// Tool 8: Suggest packages for a project
+server.registerTool(
+  'webble_suggest',
+  {
+    title: 'Suggest WebBLE SDK setup for a project',
+    description:
+      'Analyzes a web project and recommends which @wklm packages to install and how to configure them for Safari iOS Bluetooth support.',
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      projectPath: z.string().describe('Path to the web project root'),
+      goal: z
+        .string()
+        .optional()
+        .describe(
+          'What the user wants to build (e.g. "heart rate monitor", "BLE scanner")'
+        ),
+    },
+  },
+  async ({ projectPath, goal }) => {
+    return suggestTool(projectPath, goal);
+  }
+);
+
+// Tool 9: Check code for Safari iOS compliance
+server.registerTool(
+  'webble_check_compliance',
+  {
+    title: 'Check Web Bluetooth code for Safari iOS compliance',
+    description:
+      'Statically checks JavaScript/TypeScript code for common Safari iOS Web Bluetooth issues: missing user gestures, useEffect traps, missing error handling.',
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    inputSchema: {
+      code: z
+        .string()
+        .describe('JavaScript/TypeScript code to check for compliance'),
+      filePath: z
+        .string()
+        .optional()
+        .describe('Optional file path for context in error messages'),
+    },
+  },
+  async ({ code, filePath }) => {
+    return checkComplianceTool(code, filePath);
   }
 );
 

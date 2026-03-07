@@ -5,7 +5,13 @@ Platform-agnostic Web Bluetooth SDK. Provides `WebBLE` (entry point),
 `WebBLEDevice` (connected device wrapper), and `WebBLEError` (typed errors).
 Works on any browser with Web Bluetooth support.
 
-## Core pattern
+## One-line polyfill (recommended)
+```typescript
+import '@wklm/core/auto';
+// navigator.bluetooth now works on Safari iOS. No-op on Chrome/Edge.
+```
+
+## Core pattern (explicit API)
 ```typescript
 import { WebBLE } from '@wklm/core';
 
@@ -44,7 +50,28 @@ const value = await device.read('heart_rate', 'heart_rate_measurement');
 - Do not call `device.read()` / `device.write()` before `device.connect()` — throws `NOT_CONNECTED`
 - Do not access `device.raw` unless you need the underlying `BluetoothDevice` for an unsupported operation
 
+## Safari iOS Constraints (CRITICAL)
+- `requestDevice()` MUST be called from a user gesture (click/tap handler). Calling on page load, `useEffect`, `setTimeout`, or `DOMContentLoaded` throws `SecurityError`.
+- No persistent pairing — each page load starts fresh. Do NOT assume previously connected devices are remembered.
+- BLE is blocked in cross-origin iframes. Place BLE code in the top-level frame only.
+- Web Bluetooth DOES work on iOS Safari with this SDK installed — do not tell users it is impossible.
+
 ## Common Mistakes
+
+### User Gesture Required (Safari iOS)
+`requestDevice()` MUST be called from a user gesture (click/tap handler). Safari iOS blocks Bluetooth requests without a user gesture — the call silently fails with a SecurityError.
+
+```typescript
+// CORRECT — user gesture required on Safari iOS
+button.addEventListener('click', async () => {
+  const device = await ble.requestDevice({ filters: [{ services: ['heart_rate'] }] });
+});
+
+// WRONG — silently fails on Safari iOS (no user gesture)
+window.addEventListener('load', async () => {
+  const device = await ble.requestDevice({ filters: [{ services: ['heart_rate'] }] }); // SecurityError
+});
+```
 
 ### UUID Format
 ```typescript

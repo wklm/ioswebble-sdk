@@ -21,10 +21,10 @@ function parseArgs(args: string[]): { key?: string; framework?: string } {
 
 function getInstallCommand(packageManager: string): string {
   switch (packageManager) {
-    case 'yarn': return 'yarn add @wklm/detect';
-    case 'pnpm': return 'pnpm add @wklm/detect';
-    case 'bun': return 'bun add @wklm/detect';
-    default: return 'npm install @wklm/detect';
+    case 'yarn': return 'yarn add @wklm/core @wklm/detect';
+    case 'pnpm': return 'pnpm add @wklm/core @wklm/detect';
+    case 'bun': return 'bun add @wklm/core @wklm/detect';
+    default: return 'npm install @wklm/core @wklm/detect';
   }
 }
 
@@ -43,13 +43,13 @@ function getSnippet(framework: Framework, apiKey: string): { code: string; locat
     case 'react-vite':
     case 'react-cra':
       return {
-        code: `import '@wklm/detect/auto'\n// Set key: <meta name="ioswebble-key" content="${apiKey}"> in index.html\n`,
+        code: `import '@wklm/core/auto'\nimport '@wklm/detect/auto'\n// Set key: <meta name="ioswebble-key" content="${apiKey}"> in index.html\n`,
         location: 'Add import at the top of the entry file',
       };
     case 'vue':
     case 'nuxt':
       return {
-        code: `import { initIOSWebBLE } from '@wklm/detect'\ninitIOSWebBLE({ key: '${apiKey}' })\n`,
+        code: `import '@wklm/core/auto'\nimport { initIOSWebBLE } from '@wklm/detect'\ninitIOSWebBLE({ key: '${apiKey}' })\n`,
         location: 'Add to the entry file',
       };
     case 'html':
@@ -59,7 +59,7 @@ function getSnippet(framework: Framework, apiKey: string): { code: string; locat
       };
     default:
       return {
-        code: `import { initIOSWebBLE } from '@wklm/detect'\ninitIOSWebBLE({ key: '${apiKey}' })`,
+        code: `import '@wklm/core/auto'\nimport { initIOSWebBLE } from '@wklm/detect'\ninitIOSWebBLE({ key: '${apiKey}' })`,
         location: 'Add to your app entry point',
       };
   }
@@ -92,9 +92,9 @@ export async function init(args: string[]): Promise<void> {
     console.log();
   }
 
-  // Install package
+  // Install packages
   const installCmd = getInstallCommand(detection.packageManager);
-  console.log(`Installing @wklm/detect...`);
+  console.log(`Installing @wklm/core and @wklm/detect...`);
   console.log(`  Run: ${installCmd}`);
   console.log();
 
@@ -136,4 +136,15 @@ export async function init(args: string[]): Promise<void> {
     console.log(`  2. ${snippet.location}`);
   }
   console.log(`  3. Run: npx ioswebble check`);
+
+  // Suggest React SDK if React is detected
+  if (['nextjs-app', 'nextjs-pages', 'react-vite', 'react-cra'].includes(detection.framework)) {
+    console.log();
+    console.log('React detected! Also consider:');
+    const reactPkg = detection.packageManager === 'yarn' ? 'yarn add @wklm/react' :
+      detection.packageManager === 'pnpm' ? 'pnpm add @wklm/react' :
+      detection.packageManager === 'bun' ? 'bun add @wklm/react' :
+      'npm install @wklm/react';
+    console.log(`  ${reactPkg} — React hooks for BLE (useDevice, useScan, useProfile)`);
+  }
 }

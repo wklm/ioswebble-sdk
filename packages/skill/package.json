@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "description": "Agent skill for WebBLE SDK integration — works with Claude Code, Cursor, Copilot",
   "main": "SKILL.md",
-  "files": ["SKILL.md", "README.md"],
-  "keywords": ["skill", "agent", "bluetooth", "ios", "safari", "ble", "web-bluetooth", "webble", "claude", "cursor", "copilot", "mcp", "ai"],
+  "files": ["SKILL.md", "README.md", "AGENTS.md"],
+  "keywords": ["skill", "agent", "bluetooth", "ios", "safari", "ble", "web-bluetooth", "webble", "claude", "cursor", "copilot", "mcp", "ai", "polyfill", "navigator.bluetooth"],
   "author": "wklm",
   "license": "MIT",
   "repository": {
