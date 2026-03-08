@@ -22,7 +22,8 @@ export default [
       {
         file: packageJson.main,
         format: 'cjs',
-        sourcemap: true
+        sourcemap: true,
+        exports: 'named'
       }
     ],
     plugins: [
@@ -48,7 +49,8 @@ export default [
         react: 'React',
         'react-dom': 'ReactDOM'
       },
-      sourcemap: true
+      sourcemap: true,
+      exports: 'named'
     },
     plugins: [
       peerDepsExternal(),

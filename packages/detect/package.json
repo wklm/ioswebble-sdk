@@ -7,18 +7,18 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./auto": {
       "import": "./dist/auto.mjs",
       "require": "./dist/auto.js"
     },
     "./react": {
+      "types": "./dist/react.d.ts",
       "import": "./dist/react.mjs",
-      "require": "./dist/react.js",
-      "types": "./dist/react.d.ts"
+      "require": "./dist/react.js"
     }
   },
   "sideEffects": false,
