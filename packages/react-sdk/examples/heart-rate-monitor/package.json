@@ -1,7 +1,7 @@
 {
-  "name": "@wklm/example-heart-rate-monitor",
+  "name": "@ios-web-bluetooth/example-heart-rate-monitor",
   "version": "1.0.0",
-  "description": "Heart Rate Monitor example using @wklm/react SDK",
+  "description": "Heart Rate Monitor example using @ios-web-bluetooth/react SDK",
   "main": "index.tsx",
   "scripts": {
     "start": "react-scripts start",
@@ -11,7 +11,7 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "@wklm/react": "^1.0.0-beta.1",
+    "@ios-web-bluetooth/react": "^1.0.0-beta.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -33,7 +33,7 @@
     "setupFilesAfterEnv": ["<rootDir>/setupTests.ts"],
     "moduleNameMapper": {
       "\\.(css|less|scss|sass)$": "identity-obj-proxy",
-      "@wklm/react": "<rootDir>/../../src/index.ts"
+      "@ios-web-bluetooth/react": "<rootDir>/../../src/index.ts"
     }
   },
   "browserslist": {

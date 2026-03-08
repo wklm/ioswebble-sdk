@@ -1,4 +1,4 @@
-import type { WebBLEDevice, NotificationCallback } from '@wklm/core';
+import type { WebBLEDevice, NotificationCallback } from '@ios-web-bluetooth/core';
 
 /**
  * Abstract base class for all BLE GATT profiles.
@@ -12,8 +12,8 @@ import type { WebBLEDevice, NotificationCallback } from '@wklm/core';
  *
  * @example
  * ```ts
- * import { BaseProfile } from '@wklm/profiles';
- * import type { WebBLEDevice } from '@wklm/core';
+ * import { BaseProfile } from '@ios-web-bluetooth/profiles';
+ * import type { WebBLEDevice } from '@ios-web-bluetooth/core';
  *
  * class TemperatureProfile extends BaseProfile {
  *   protected readonly service = 'health_thermometer';
@@ -100,7 +100,7 @@ interface DefinedProfile<C extends Record<string, CharacteristicConfig<any>>> {
  *
  * @example
  * ```ts
- * import { defineProfile } from '@wklm/profiles';
+ * import { defineProfile } from '@ios-web-bluetooth/profiles';
  *
  * const EnvironmentProfile = defineProfile({
  *   name: 'Environment',

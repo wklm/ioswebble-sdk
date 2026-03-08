@@ -28,7 +28,7 @@ export interface UseDeviceReturn {
  *
  * @example
  * ```tsx
- * import { useBluetooth, useDevice } from '@wklm/react';
+ * import { useBluetooth, useDevice } from '@ios-web-bluetooth/react';
  *
  * function DevicePanel() {
  *   const { requestDevice } = useBluetooth();

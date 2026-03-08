@@ -1,5 +1,5 @@
 /**
- * Type definitions for @wklm/react SDK
+ * Type definitions for @ios-web-bluetooth/react SDK
  */
 
 // Configuration types
@@ -117,8 +117,8 @@ export interface BluetoothAdvertisingEvent {
   txPower: number;
 }
 
-// Error types — re-exported from @wklm/core for compatibility
-// Users who don't install @wklm/core get this lightweight version
+// Error types — re-exported from @ios-web-bluetooth/core for compatibility
+// Users who don't install @ios-web-bluetooth/core get this lightweight version
 export { WebBLEError } from './compat-error';
 
 // Hook return types

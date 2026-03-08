@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * @wklm/cli
+ * @ios-web-bluetooth/cli
  *
  * CLI tool for integrating iOSWebBLE into web projects.
  * Usage: npx ioswebble <command> [options]

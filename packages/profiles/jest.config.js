@@ -4,6 +4,6 @@ module.exports = {
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/tests'],
   moduleNameMapper: {
-    '^@wklm/core$': '<rootDir>/../core/src/index.ts',
+    '^@ios-web-bluetooth/core$': '<rootDir>/../core/src/index.ts',
   },
 };

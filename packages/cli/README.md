@@ -1,4 +1,4 @@
-# @wklm/cli
+# @ios-web-bluetooth/cli
 
 CLI tool for integrating iOSWebBLE into web projects. Auto-detects your framework and adds the detection snippet.
 
@@ -19,7 +19,7 @@ npx ioswebble check
 
 | Command | Description |
 |---------|-------------|
-| `init` | Detect framework (Next.js, React, Vue, Nuxt, HTML, etc.) and inject the `@wklm/detect` snippet into your entry file |
+| `init` | Detect framework (Next.js, React, Vue, Nuxt, HTML, etc.) and inject the `@ios-web-bluetooth/detect` snippet into your entry file |
 | `check` | Verify that iOSWebBLE is correctly integrated in the current project |
 
 ## Options
@@ -36,11 +36,11 @@ npx ioswebble check
 MCP server for coding agents (Claude Code, Cursor, Copilot):
 
 ```
-npx -y @wklm/mcp
+npx -y @ios-web-bluetooth/mcp
 ```
 
 Full SDK reference for LLM context: <https://ioswebble.com/llms-full.txt>
 
 ## Two scopes
 
-The **`@wklm/*`** packages (`core`, `profiles`, `react`) are the cross-browser BLE SDK -- they work on any platform with Web Bluetooth support (Chrome, Edge, iOS Safari via the extension). The **`@wklm/*`** packages (`detect`, `cli`, `mcp`, `skill`) handle iOS-specific extension detection, install prompts, and agent tooling. Use both together for full iOS Safari coverage.
+The **`@ios-web-bluetooth/*`** packages (`core`, `profiles`, `react`) are the cross-browser BLE SDK -- they work on any platform with Web Bluetooth support (Chrome, Edge, iOS Safari via the extension). The **`@ios-web-bluetooth/*`** packages (`detect`, `cli`, `mcp`, `skill`) handle iOS-specific extension detection, install prompts, and agent tooling. Use both together for full iOS Safari coverage.

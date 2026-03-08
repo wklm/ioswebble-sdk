@@ -1,7 +1,7 @@
 /**
  * ioswebble_scaffold_profile tool implementation
  *
- * Generates a typed custom BLE profile using defineProfile() from @wklm/profiles.
+ * Generates a typed custom BLE profile using defineProfile() from @ios-web-bluetooth/profiles.
  */
 
 interface ToolResult {
@@ -68,8 +68,8 @@ export async function scaffoldProfileTool(
   const lines: string[] = [];
 
   // File header
-  lines.push(`import { defineProfile } from '@wklm/profiles'`);
-  lines.push(`import type { WebBLEDevice } from '@wklm/core'`);
+  lines.push(`import { defineProfile } from '@ios-web-bluetooth/profiles'`);
+  lines.push(`import type { WebBLEDevice } from '@ios-web-bluetooth/core'`);
   lines.push('');
 
   // Generate data types for notify characteristics
@@ -104,7 +104,7 @@ export async function scaffoldProfileTool(
   // Generate usage example
   lines.push(`// --- Usage example ---`);
   lines.push(`//`);
-  lines.push(`// import { WebBLE } from '@wklm/core'`);
+  lines.push(`// import { WebBLE } from '@ios-web-bluetooth/core'`);
   lines.push(`// import { ${className} } from './${name.toLowerCase().replace(/\s+/g, '-')}-profile'`);
   lines.push(`//`);
   lines.push(`// const ble = new WebBLE()`);

@@ -1,5 +1,5 @@
 {
-  "name": "@wklm/core",
+  "name": "@ios-web-bluetooth/core",
   "version": "2.0.0-beta.2",
   "description": "The only Web Bluetooth polyfill for Safari iOS — make navigator.bluetooth work on iPhone. Scan, connect, read/write BLE devices from any browser",
   "main": "dist/index.js",
@@ -28,7 +28,7 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build && npm run typecheck",
-    "postinstall": "echo '\\n  @wklm/core installed. Add `import \"@wklm/core/auto\"` to your entry point for Safari iOS Bluetooth support.\\n'"
+    "postinstall": "echo '\\n  @ios-web-bluetooth/core installed. Add `import \"@ios-web-bluetooth/core/auto\"` to your entry point for Safari iOS Bluetooth support.\\n'"
   },
   "keywords": ["bluetooth", "ble", "web-bluetooth", "webbluetooth", "webble", "safari", "sdk", "ios", "gatt", "bluetooth-low-energy", "ai", "agent", "mcp", "polyfill", "cross-browser", "web-bluetooth-polyfill", "safari-bluetooth", "ios-bluetooth", "bluetooth-polyfill", "web-bluetooth-safari", "navigator-bluetooth", "iphone-bluetooth"],
   "author": "wklm",

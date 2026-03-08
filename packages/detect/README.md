@@ -1,17 +1,17 @@
-# @wklm/detect
+# @ios-web-bluetooth/detect
 
 Detect the iOSWebBLE Safari extension on iOS. Auto-show an install banner when the extension is not found. No-op on all other platforms.
 
 ## Install
 
 ```bash
-npm install @wklm/detect
+npm install @ios-web-bluetooth/detect
 ```
 
 ## Usage
 
 ```typescript
-import { initIOSWebBLE } from '@wklm/detect';
+import { initIOSWebBLE } from '@ios-web-bluetooth/detect';
 
 await initIOSWebBLE({
   operatorName: 'FitTracker',
@@ -24,7 +24,7 @@ await initIOSWebBLE({
 For React/Next.js:
 
 ```tsx
-import { IOSWebBLEProvider } from '@wklm/detect/react';
+import { IOSWebBLEProvider } from '@ios-web-bluetooth/detect/react';
 
 export default function Layout({ children }) {
   return <IOSWebBLEProvider>{children}</IOSWebBLEProvider>;
@@ -39,11 +39,11 @@ For plain HTML (no bundler):
 
 ## Standalone usage (no React, no profiles)
 
-You can use `@wklm/detect` with `@wklm/core` only -- no React, no profiles package needed. Together they are ~6KB gzipped.
+You can use `@ios-web-bluetooth/detect` with `@ios-web-bluetooth/core` only -- no React, no profiles package needed. Together they are ~6KB gzipped.
 
 ```typescript
-import { initIOSWebBLE, isIOSSafari } from '@wklm/detect';
-import { WebBLE, WebBLEError } from '@wklm/core';
+import { initIOSWebBLE, isIOSSafari } from '@ios-web-bluetooth/detect';
+import { WebBLE, WebBLEError } from '@ios-web-bluetooth/core';
 
 // 1. On iOS Safari, detect the extension and prompt install if missing
 if (isIOSSafari()) {
@@ -79,10 +79,10 @@ try {
 
 | Package | Purpose | Size |
 |---------|---------|------|
-| `@wklm/core` | BLE scanning, connecting, GATT read/write/subscribe | ~4KB gzip |
-| `@wklm/detect` | iOS extension detection + install banner | ~2KB gzip |
-| `@wklm/profiles` | Typed BLE profiles (heart rate, battery, etc.) | Optional |
-| `@wklm/react-sdk` | React hooks (`useDevice`, `useCharacteristic`) | Optional |
+| `@ios-web-bluetooth/core` | BLE scanning, connecting, GATT read/write/subscribe | ~4KB gzip |
+| `@ios-web-bluetooth/detect` | iOS extension detection + install banner | ~2KB gzip |
+| `@ios-web-bluetooth/profiles` | Typed BLE profiles (heart rate, battery, etc.) | Optional |
+| `@ios-web-bluetooth/react` | React hooks (`useDevice`, `useCharacteristic`) | Optional |
 
 ## API
 
@@ -112,11 +112,11 @@ try {
 MCP server for coding agents (Claude Code, Cursor, Copilot):
 
 ```
-npx -y @wklm/mcp
+npx -y @ios-web-bluetooth/mcp
 ```
 
 Full SDK reference for LLM context: <https://ioswebble.com/llms-full.txt>
 
 ## Two scopes
 
-The **`@wklm/*`** packages (`core`, `profiles`, `react`) are the cross-browser BLE SDK -- they work on any platform with Web Bluetooth support (Chrome, Edge, iOS Safari via the extension). The **`@wklm/*`** packages (`detect`, `cli`, `mcp`, `skill`) handle iOS-specific extension detection, install prompts, and agent tooling. Use both together for full iOS Safari coverage.
+The **`@ios-web-bluetooth/*`** packages (`core`, `profiles`, `react`) are the cross-browser BLE SDK -- they work on any platform with Web Bluetooth support (Chrome, Edge, iOS Safari via the extension). The **`@ios-web-bluetooth/*`** packages (`detect`, `cli`, `mcp`, `skill`) handle iOS-specific extension detection, install prompts, and agent tooling. Use both together for full iOS Safari coverage.

@@ -2,11 +2,11 @@
  * Heart Rate Monitor Example
  * 
  * A complete example demonstrating Web Bluetooth heart rate monitoring
- * with the @wklm/react SDK
+ * with the @ios-web-bluetooth/react SDK
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { WebBLE } from '@wklm/react';
+import { WebBLE } from '@ios-web-bluetooth/react';
 import './HeartRateMonitor.css';
 
 interface HeartRateData {

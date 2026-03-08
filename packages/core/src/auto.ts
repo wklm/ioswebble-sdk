@@ -1,7 +1,7 @@
 /**
- * @wklm/core/auto — Transparent Web Bluetooth polyfill.
+ * @ios-web-bluetooth/core/auto — Transparent Web Bluetooth polyfill.
  *
- * Usage: import '@wklm/core/auto';
+ * Usage: import '@ios-web-bluetooth/core/auto';
  *
  * - Chrome/Edge (native bluetooth): no-op
  * - Safari iOS (with extension): ensures navigator.bluetooth maps to extension API
@@ -74,14 +74,14 @@ function applyPolyfill(): void {
       get(_target, prop) {
         if (prop === 'requestDevice') {
           return async (...args: unknown[]) => {
-            // Attempt dynamic import of @wklm/detect for install banner
+            // Attempt dynamic import of @ios-web-bluetooth/detect for install banner
             try {
-              const detect = await import('@wklm/detect');
+              const detect = await import('@ios-web-bluetooth/detect');
               if (typeof detect.showInstallBanner === 'function') {
                 detect.showInstallBanner();
               }
             } catch {
-              // @wklm/detect not installed — throw descriptive error
+              // @ios-web-bluetooth/detect not installed — throw descriptive error
             }
             throw new Error(
               'Web Bluetooth is not supported on this platform. ' +

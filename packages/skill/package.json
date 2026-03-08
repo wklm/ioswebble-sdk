@@ -1,5 +1,5 @@
 {
-  "name": "@wklm/skill",
+  "name": "@ios-web-bluetooth/skill",
   "version": "0.1.1",
   "description": "Agent skill for WebBLE SDK integration — works with Claude Code, Cursor, Copilot",
   "main": "SKILL.md",

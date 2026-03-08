@@ -4,7 +4,7 @@ import { ExtensionDetector } from './ExtensionDetector';
 
 function reportBLEEvent(apiKey: string | undefined, event: string) {
   if (!apiKey) return;
-  import('@wklm/detect').then(m => m.reportEvent(apiKey, event)).catch(() => {});
+  import('@ios-web-bluetooth/detect').then(m => m.reportEvent(apiKey, event)).catch(() => {});
 }
 
 interface WebBLEConfig {
@@ -28,7 +28,7 @@ interface WebBLEContextValue {
   devices: BluetoothDevice[];
   error: Error | null;
   config?: WebBLEConfig;
-  /** @wklm/core instance (available when @wklm/core is installed) */
+  /** @ios-web-bluetooth/core instance (available when @ios-web-bluetooth/core is installed) */
   core: any | null;
 
   // Methods
@@ -54,15 +54,15 @@ interface WebBLEProviderProps {
  * Place this near the root of your application. It handles:
  * - Bluetooth availability detection
  * - Safari Web Extension detection (via `webble:extension:ready` event)
- * - Optional iOS install prompt (when `apiKey` is provided and `@wklm/detect` is installed)
- * - Lazy-loading of `@wklm/core` if available as a peer dependency
+ * - Optional iOS install prompt (when `apiKey` is provided and `@ios-web-bluetooth/detect` is installed)
+ * - Lazy-loading of `@ios-web-bluetooth/core` if available as a peer dependency
  *
  * @param props.children - React children to render inside the provider.
  * @param props.config - Optional configuration (auto-connect, retry, API key, etc.).
  *
  * @example
  * ```tsx
- * import { WebBLEProvider } from '@wklm/react';
+ * import { WebBLEProvider } from '@ios-web-bluetooth/react';
  *
  * function App() {
  *   return (
@@ -75,7 +75,7 @@ interface WebBLEProviderProps {
  *
  * @example
  * ```tsx
- * // With iOS install prompt (requires @wklm/detect peer dep)
+ * // With iOS install prompt (requires @ios-web-bluetooth/detect peer dep)
  * <WebBLEProvider
  *   config={{
  *     apiKey: 'wbl_your_key',
@@ -96,9 +96,9 @@ export function WebBLEProvider({ children, config }: WebBLEProviderProps) {
   const [currentScan, setCurrentScan] = useState<BluetoothLEScan | null>(null);
   const [coreInstance, setCoreInstance] = useState<any | null>(null);
 
-  // Lazy-load @wklm/core if available
+  // Lazy-load @ios-web-bluetooth/core if available
   useEffect(() => {
-    import('@wklm/core').then(({ WebBLE }) => {
+    import('@ios-web-bluetooth/core').then(({ WebBLE }) => {
       setCoreInstance(new WebBLE());
     }).catch(() => {});
   }, []);
@@ -148,7 +148,7 @@ export function WebBLEProvider({ children, config }: WebBLEProviderProps) {
     };
   }, [detector]);
 
-  // iOS Safari install prompt via @wklm/detect (optional peer dependency)
+  // iOS Safari install prompt via @ios-web-bluetooth/detect (optional peer dependency)
   useEffect(() => {
     if (!config?.apiKey) return;
     if (isExtensionInstalled) return;
@@ -156,7 +156,7 @@ export function WebBLEProvider({ children, config }: WebBLEProviderProps) {
     let cancelled = false;
     (async () => {
       try {
-        const detect = await import('@wklm/detect');
+        const detect = await import('@ios-web-bluetooth/detect');
         if (cancelled) return;
         await detect.initIOSWebBLE({
           key: config.apiKey!,
@@ -165,7 +165,7 @@ export function WebBLEProvider({ children, config }: WebBLEProviderProps) {
           onReady: () => setIsExtensionInstalled(true),
         });
       } catch {
-        // @wklm/detect not installed — silent fallback
+        // @ios-web-bluetooth/detect not installed — silent fallback
       }
     })();
 
@@ -289,7 +289,7 @@ export function WebBLEProvider({ children, config }: WebBLEProviderProps) {
  *
  * @example
  * ```tsx
- * import { useWebBLE } from '@wklm/react';
+ * import { useWebBLE } from '@ios-web-bluetooth/react';
  *
  * function StatusBar() {
  *   const { isAvailable, isExtensionInstalled, devices } = useWebBLE();

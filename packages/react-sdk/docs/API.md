@@ -1,6 +1,6 @@
-# @wklm/react API Documentation
+# @ios-web-bluetooth/react API Documentation
 
-Complete API reference for the @wklm/react SDK.
+Complete API reference for the @ios-web-bluetooth/react SDK.
 
 ## Table of Contents
 
@@ -27,7 +27,7 @@ Complete API reference for the @wklm/react SDK.
 The root provider component that enables Web Bluetooth functionality in your React app.
 
 ```tsx
-import { WebBLE } from '@wklm/react';
+import { WebBLE } from '@ios-web-bluetooth/react';
 
 <WebBLE.Provider config={config}>
   <App />
@@ -486,7 +486,7 @@ interface BluetoothRemoteGATTCharacteristic extends EventTarget {
 Detect WebBLE extension installation.
 
 ```typescript
-import { ExtensionDetector } from '@wklm/react';
+import { ExtensionDetector } from '@ios-web-bluetooth/react';
 
 const detector = new ExtensionDetector();
 const isInstalled = await detector.detect();
@@ -497,7 +497,7 @@ const isInstalled = await detector.detect();
 Low-level Web Bluetooth client.
 
 ```typescript
-import { WebBLEClient } from '@wklm/react';
+import { WebBLEClient } from '@ios-web-bluetooth/react';
 
 const client = new WebBLEClient({
   autoConnect: true,
@@ -513,7 +513,7 @@ const device = await client.requestDevice();
 Utility functions for Bluetooth operations.
 
 ```typescript
-import { bluetoothUtils } from '@wklm/react';
+import { bluetoothUtils } from '@ios-web-bluetooth/react';
 
 // Parse characteristic value
 const heartRate = bluetoothUtils.parseHeartRate(dataView);
@@ -625,7 +625,7 @@ navigator.bluetooth.requestDevice({ filters: [{ services: ['heart_rate'] }] })
   .then(service => service.getCharacteristic('heart_rate_measurement'))
   .then(characteristic => characteristic.startNotifications());
 
-// After (@wklm/react)
+// After (@ios-web-bluetooth/react)
 const { requestDevice } = WebBLE.useBluetooth();
 const { startNotifications } = WebBLE.useCharacteristic('heart_rate_measurement');
 

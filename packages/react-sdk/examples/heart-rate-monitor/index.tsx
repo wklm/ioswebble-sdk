@@ -4,7 +4,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { WebBLE } from '@wklm/react';
+import { WebBLE } from '@ios-web-bluetooth/react';
 import { HeartRateMonitor } from './HeartRateMonitor';
 import './index.css';
 

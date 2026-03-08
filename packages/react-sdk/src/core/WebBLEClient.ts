@@ -115,7 +115,7 @@ export class WebBLEClient {
       const server = await device.gatt.connect();
 
       if (this.config.apiKey) {
-        import('@wklm/detect').then(m => m.reportEvent(this.config.apiKey!, 'ble_connected')).catch(() => {});
+        import('@ios-web-bluetooth/detect').then(m => m.reportEvent(this.config.apiKey!, 'ble_connected')).catch(() => {});
       }
 
       // Clear any reconnect timer

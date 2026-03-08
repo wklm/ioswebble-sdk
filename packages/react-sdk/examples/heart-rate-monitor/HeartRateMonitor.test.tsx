@@ -9,10 +9,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { HeartRateMonitor } from './HeartRateMonitor';
-import { WebBLE } from '@wklm/react';
+import { WebBLE } from '@ios-web-bluetooth/react';
 
 // Mock the WebBLE hooks
-jest.mock('@wklm/react', () => ({
+jest.mock('@ios-web-bluetooth/react', () => ({
   WebBLE: {
     Provider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     useBluetooth: jest.fn(),

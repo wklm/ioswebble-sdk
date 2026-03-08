@@ -19,7 +19,7 @@ interface WebBLEContextValue {
     devices: BluetoothDevice[];
     error: Error | null;
     config?: WebBLEConfig$2;
-    /** @wklm/core instance (available when @wklm/core is installed) */
+    /** @ios-web-bluetooth/core instance (available when @ios-web-bluetooth/core is installed) */
     core: any | null;
     requestDevice: (options?: RequestDeviceOptions) => Promise<BluetoothDevice | null>;
     getDevices: () => Promise<BluetoothDevice[]>;
@@ -39,15 +39,15 @@ interface WebBLEProviderProps {
  * Place this near the root of your application. It handles:
  * - Bluetooth availability detection
  * - Safari Web Extension detection (via `webble:extension:ready` event)
- * - Optional iOS install prompt (when `apiKey` is provided and `@wklm/detect` is installed)
- * - Lazy-loading of `@wklm/core` if available as a peer dependency
+ * - Optional iOS install prompt (when `apiKey` is provided and `@ios-web-bluetooth/detect` is installed)
+ * - Lazy-loading of `@ios-web-bluetooth/core` if available as a peer dependency
  *
  * @param props.children - React children to render inside the provider.
  * @param props.config - Optional configuration (auto-connect, retry, API key, etc.).
  *
  * @example
  * ```tsx
- * import { WebBLEProvider } from '@wklm/react';
+ * import { WebBLEProvider } from '@ios-web-bluetooth/react';
  *
  * function App() {
  *   return (
@@ -60,7 +60,7 @@ interface WebBLEProviderProps {
  *
  * @example
  * ```tsx
- * // With iOS install prompt (requires @wklm/detect peer dep)
+ * // With iOS install prompt (requires @ios-web-bluetooth/detect peer dep)
  * <WebBLEProvider
  *   config={{
  *     apiKey: 'wbl_your_key',
@@ -90,7 +90,7 @@ declare function WebBLEProvider({ children, config }: WebBLEProviderProps): Reac
  *
  * @example
  * ```tsx
- * import { useWebBLE } from '@wklm/react';
+ * import { useWebBLE } from '@ios-web-bluetooth/react';
  *
  * function StatusBar() {
  *   const { isAvailable, isExtensionInstalled, devices } = useWebBLE();
@@ -194,7 +194,7 @@ declare class ExtensionDetector {
 }
 
 /**
- * Type definitions for @wklm/react SDK
+ * Type definitions for @ios-web-bluetooth/react SDK
  */
 interface WebBLEConfig {
     autoConnect?: boolean;
@@ -246,8 +246,8 @@ interface CharacteristicProperties {
     notify: boolean;
     indicate: boolean;
     authenticatedSignedWrites: boolean;
-    reliableWrite?: boolean;
-    writableAuxiliaries?: boolean;
+    reliableWrite: boolean;
+    writableAuxiliaries: boolean;
 }
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'disconnecting';
 type ScanState = 'idle' | 'scanning' | 'stopped';
@@ -328,7 +328,9 @@ interface ConnectionParameters {
 type ConnectionPriority = 'balanced' | 'high' | 'low-power';
 interface RequestDeviceOptions$1 {
     filters?: BluetoothLEScanFilter[];
+    exclusionFilters?: BluetoothLEScanFilter[];
     optionalServices?: BluetoothServiceUUID[];
+    optionalManufacturerData?: number[];
     acceptAllDevices?: boolean;
 }
 
@@ -345,7 +347,7 @@ interface RequestDeviceOptions$1 {
  *
  * @example
  * ```tsx
- * import { useBluetooth } from '@wklm/react';
+ * import { useBluetooth } from '@ios-web-bluetooth/react';
  *
  * function HeartRateButton() {
  *   const { isAvailable, isSupported, requestDevice, error } = useBluetooth();
@@ -400,7 +402,7 @@ interface UseDeviceReturn {
  *
  * @example
  * ```tsx
- * import { useBluetooth, useDevice } from '@wklm/react';
+ * import { useBluetooth, useDevice } from '@ios-web-bluetooth/react';
  *
  * function DevicePanel() {
  *   const { requestDevice } = useBluetooth();
@@ -489,7 +491,7 @@ declare function useNotifications(characteristic?: BluetoothRemoteGATTCharacteri
  *
  * @example
  * ```tsx
- * import { useScan } from '@wklm/react';
+ * import { useScan } from '@ios-web-bluetooth/react';
  *
  * function Scanner() {
  *   const { scanState, devices, start, stop, clear, error } = useScan();
@@ -528,7 +530,7 @@ declare function useScan(): UseScanReturn;
 declare function useConnection(deviceId?: string): UseConnectionReturn;
 
 /**
- * Hook that wraps a {@link BaseProfile} subclass from `@wklm/profiles`.
+ * Hook that wraps a {@link BaseProfile} subclass from `@ios-web-bluetooth/profiles`.
  *
  * Manages profile instantiation, connection, and teardown tied to the
  * React component lifecycle. A new profile instance is created whenever
@@ -542,8 +544,8 @@ declare function useConnection(deviceId?: string): UseConnectionReturn;
  *
  * @example
  * ```tsx
- * import { useProfile } from '@wklm/react';
- * import { HeartRateProfile } from '@wklm/profiles';
+ * import { useProfile } from '@ios-web-bluetooth/react';
+ * import { HeartRateProfile } from '@ios-web-bluetooth/profiles';
  *
  * function HeartRateMonitor({ device }: { device: BluetoothDevice }) {
  *   const { profile, connect, error } = useProfile(HeartRateProfile, device);
@@ -648,7 +650,7 @@ declare function parseValue(value: DataView, uuid: string): any;
 declare function formatValue(value: any, uuid: string): ArrayBuffer;
 
 /**
- * @wklm/react - Production-grade Web Bluetooth SDK for React
+ * @ios-web-bluetooth/react - Production-grade Web Bluetooth SDK for React
  *
  * One-line integration for Web Bluetooth in React applications
  * with full Safari support through the WebBLE extension.

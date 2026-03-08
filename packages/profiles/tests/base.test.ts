@@ -1,5 +1,5 @@
 import { defineProfile } from '../src/base';
-import type { WebBLEDevice } from '@wklm/core';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
 
 function makeMockDevice(): WebBLEDevice {
   return {

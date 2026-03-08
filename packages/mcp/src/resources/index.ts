@@ -21,12 +21,12 @@ export function registerResources(server: McpServer): void {
 
 ## Step 1: Install
 \`\`\`bash
-npm install @wklm/core
+npm install @ios-web-bluetooth/core
 \`\`\`
 
 ## Step 2: Connect and read
 \`\`\`typescript
-import { WebBLE } from '@wklm/core'
+import { WebBLE } from '@ios-web-bluetooth/core'
 
 const ble = new WebBLE()
 const device = await ble.requestDevice({
@@ -48,10 +48,10 @@ device.disconnect()
 
 ## Step 3: Add iOS detection (optional)
 \`\`\`bash
-npm install @wklm/detect
+npm install @ios-web-bluetooth/detect
 \`\`\`
 \`\`\`typescript
-import { initIOSWebBLE } from '@wklm/detect'
+import { initIOSWebBLE } from '@ios-web-bluetooth/detect'
 initIOSWebBLE({ key: 'wbl_YOUR_API_KEY' })
 \`\`\`
 
@@ -71,7 +71,7 @@ No-op on Chrome/Android where Web Bluetooth is native.
   // Resource 2: Full API Reference
   server.resource(
     'ioswebble://docs/api',
-    'Full API reference for @wklm/core, @wklm/profiles, and @wklm/react',
+    'Full API reference for @ios-web-bluetooth/core, @ios-web-bluetooth/profiles, and @ios-web-bluetooth/react',
     async () => ({
       contents: [
         {
@@ -79,7 +79,7 @@ No-op on Chrome/Android where Web Bluetooth is native.
           mimeType: 'text/markdown',
           text: `# iOSWebBLE API Reference
 
-## @wklm/core
+## @ios-web-bluetooth/core
 
 ### WebBLE
 \`\`\`typescript
@@ -122,7 +122,7 @@ getServiceName(uuid: string): string | undefined
 getCharacteristicName(uuid: string): string | undefined
 \`\`\`
 
-## @wklm/profiles
+## @ios-web-bluetooth/profiles
 
 ### HeartRateProfile — service: heart_rate (0x180D)
 - \`onHeartRate(cb: (data: HeartRateData) => void): () => void\`
@@ -158,7 +158,7 @@ p.subscribeChar(name, cb: (value: T) => void): () => void
 p.stop()
 \`\`\`
 
-## @wklm/react
+## @ios-web-bluetooth/react
 - \`<WebBLEProvider config={...}>\` — context provider
 - \`useWebBLE()\` — isAvailable, requestDevice, devices, error
 - \`useDevice(device)\` — connect, disconnect, isConnected, services
@@ -183,7 +183,7 @@ p.stop()
           text: `# Built-in BLE Profiles
 
 ## HeartRateProfile
-- **Package**: \`@wklm/profiles\`
+- **Package**: \`@ios-web-bluetooth/profiles\`
 - **Service**: \`heart_rate\` (0x180D)
 - **Characteristics**:
   - \`heart_rate_measurement\` (0x2A37) — Notify: BPM, contact, energy, RR intervals
@@ -193,14 +193,14 @@ p.stop()
 - **Data type**: \`HeartRateData { bpm, contact, energyExpended, rrIntervals }\`
 
 ## BatteryProfile
-- **Package**: \`@wklm/profiles\`
+- **Package**: \`@ios-web-bluetooth/profiles\`
 - **Service**: \`battery_service\` (0x180F)
 - **Characteristics**:
   - \`battery_level\` (0x2A19) — Read/Notify: 0-100%
 - **Methods**: \`readLevel()\`, \`onLevelChange(cb)\`, \`stop()\`
 
 ## DeviceInfoProfile
-- **Package**: \`@wklm/profiles\`
+- **Package**: \`@ios-web-bluetooth/profiles\`
 - **Service**: \`device_information\` (0x180A)
 - **Characteristics**:
   - \`model_number_string\` (0x2A24), \`serial_number_string\` (0x2A25)
@@ -213,7 +213,7 @@ p.stop()
 ## Custom profiles
 Use \`defineProfile()\` to create typed profiles for any BLE service:
 \`\`\`typescript
-import { defineProfile } from '@wklm/profiles'
+import { defineProfile } from '@ios-web-bluetooth/profiles'
 const MyProfile = defineProfile({
   name: 'My Sensor',
   service: 'my-service-uuid',
@@ -239,7 +239,7 @@ const MyProfile = defineProfile({
           mimeType: 'text/markdown',
           text: `# Bluetooth SIG UUID Reference
 
-All names below can be used directly in @wklm/core API calls (e.g. \`device.read('heart_rate', 'heart_rate_measurement')\`).
+All names below can be used directly in @ios-web-bluetooth/core API calls (e.g. \`device.read('heart_rate', 'heart_rate_measurement')\`).
 Short UUIDs like \`180d\` are also accepted and resolved to the full 128-bit form.
 
 ## Services (16-bit)
@@ -310,13 +310,13 @@ The base Bluetooth SIG UUID is: \`XXXXXXXX-0000-1000-8000-00805f9b34fb\`
           mimeType: 'text/markdown',
           text: `# WebBLEError Code Reference
 
-All errors are instances of \`WebBLEError\` from \`@wklm/core\`.
+All errors are instances of \`WebBLEError\` from \`@ios-web-bluetooth/core\`.
 Each has a \`.code\` (string) and \`.suggestion\` (human-readable fix).
 
 | Code | Cause | Suggestion |
 |------|-------|------------|
 | BLUETOOTH_UNAVAILABLE | Browser/device has no Bluetooth support | Check browser supports Web Bluetooth and Bluetooth is enabled |
-| EXTENSION_NOT_INSTALLED | iOS Safari without WebBLE extension | Install WebBLE app and enable Safari extension. Use @wklm/detect for auto-banner |
+| EXTENSION_NOT_INSTALLED | iOS Safari without WebBLE extension | Install WebBLE app and enable Safari extension. Use @ios-web-bluetooth/detect for auto-banner |
 | PERMISSION_DENIED | User denied Bluetooth permission | Request from user gesture (button click). If denied, user must re-grant in Settings |
 | DEVICE_NOT_FOUND | No device matching scan filters | Check device is powered on, in range, and filters are correct |
 | DEVICE_DISCONNECTED | GATT op on disconnected device | Call device.connect() first. Use device.on('disconnected', ...) for detection |
@@ -333,7 +333,7 @@ Each has a \`.code\` (string) and \`.suggestion\` (human-readable fix).
 
 ## Error handling pattern
 \`\`\`typescript
-import { WebBLEError } from '@wklm/core'
+import { WebBLEError } from '@ios-web-bluetooth/core'
 
 try {
   await device.read('heart_rate', 'heart_rate_measurement')
@@ -361,13 +361,13 @@ try {
   // Resource 6: TypeScript Schema
   server.resource(
     'ioswebble://schema',
-    'Full TypeScript type definitions for all @wklm/* public exports',
+    'Full TypeScript type definitions for all @ios-web-bluetooth/* public exports',
     async () => ({
       contents: [
         {
           uri: 'ioswebble://schema',
           mimeType: 'text/typescript',
-          text: `// @wklm/core — Public API Types
+          text: `// @ios-web-bluetooth/core — Public API Types
 
 export class WebBLE {
   constructor(options?: { platform?: Platform })
@@ -417,7 +417,7 @@ export interface RequestDeviceOptions {
   acceptAllDevices?: boolean
 }
 
-// @wklm/profiles — Public API Types
+// @ios-web-bluetooth/profiles — Public API Types
 
 export abstract class BaseProfile {
   constructor(device: WebBLEDevice)
@@ -452,7 +452,7 @@ export function defineProfile<T>(config: ProfileConfig<T>): new (device: WebBLED
 export interface HeartRateData { bpm: number; contact: boolean; energyExpended?: number; rrIntervals?: number[] }
 export interface DeviceInfo { modelNumber?: string; serialNumber?: string; firmwareRevision?: string; hardwareRevision?: string; softwareRevision?: string; manufacturerName?: string; systemId?: DataView }
 
-// @wklm/react — Public API Types
+// @ios-web-bluetooth/react — Public API Types
 
 export function WebBLEProvider(props: { config?: WebBLEConfig; children: React.ReactNode }): JSX.Element
 export function useBluetooth(): { isAvailable: boolean; isSupported: boolean; requestDevice: (opts?: RequestDeviceOptions) => Promise<WebBLEDevice | null>; getDevices: () => WebBLEDevice[]; error: WebBLEError | null }
@@ -463,7 +463,7 @@ export function useNotifications(): { subscribe: (service: string, char: string,
 export function useCharacteristic(): { read: (service: string, char: string) => Promise<DataView>; write: (service: string, char: string, value: BufferSource) => Promise<void>; value: DataView | null; error: WebBLEError | null }
 export function useConnection(): { connect: () => Promise<void>; disconnect: () => void; isConnected: boolean }
 
-// @wklm/detect — Public API Types
+// @ios-web-bluetooth/detect — Public API Types
 
 export function initIOSWebBLE(options: { key: string; appStoreUrl?: string; operatorName?: string }): void
 export function isIOSWebBLEInstalled(): boolean
@@ -487,7 +487,7 @@ export function IOSWebBLEProvider(props: { apiKey: string; children: React.React
 
 ## 1.0.0-beta.1 (March 2026)
 
-### @wklm/core
+### @ios-web-bluetooth/core
 - Initial release
 - \`WebBLE\` class with platform detection and device discovery
 - \`WebBLEDevice\` with full GATT operations: read, write, writeWithoutResponse, subscribe, notifications (async iterator)
@@ -496,26 +496,26 @@ export function IOSWebBLEProvider(props: { apiKey: string; children: React.React
 - Service and characteristic caching
 - Automatic subscription cleanup on disconnect
 
-### @wklm/profiles
+### @ios-web-bluetooth/profiles
 - \`HeartRateProfile\` — heart rate measurement, sensor location, energy reset
 - \`BatteryProfile\` — battery level read and notifications
 - \`DeviceInfoProfile\` — device information service with readAll()
 - \`defineProfile()\` factory for custom typed profiles
 - \`BaseProfile\` abstract class with connect/stop/read/write/subscribe
 
-### @wklm/react
-- \`WebBLEProvider\` context with @wklm/detect integration
+### @ios-web-bluetooth/react
+- \`WebBLEProvider\` context with @ios-web-bluetooth/detect integration
 - Hooks: useWebBLE, useDevice, useNotifications, useCharacteristic, useScan, useConnection, useProfile, useBluetooth
 - Components: DeviceScanner, ServiceExplorer, ConnectionStatus, InstallationWizard
-- Auto-detection of @wklm/core when installed alongside react SDK
+- Auto-detection of @ios-web-bluetooth/core when installed alongside react SDK
 
-### @wklm/detect
+### @ios-web-bluetooth/detect
 - iOS Safari extension detection
 - Auto install banner for iOS users
 - React provider component
 - No-op on platforms with native Web Bluetooth
 
-### @wklm/mcp
+### @ios-web-bluetooth/mcp
 - MCP server for AI coding agents
 - Tools: init, check, add, scaffold-profile, get-example, troubleshoot, docs
 - Resources: quickstart, api, profiles, uuids, errors, changelog

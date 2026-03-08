@@ -2,7 +2,7 @@
  * Auto-initialization for iOSWebBLE.
  *
  * Import this module to automatically detect and handle the extension:
- *   import '@wklm/detect/auto'
+ *   import '@ios-web-bluetooth/detect/auto'
  *
  * Reads the API key from:
  *   1. <meta name="ioswebble-key" content="wbl_xxxxx">

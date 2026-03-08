@@ -15,7 +15,7 @@ import type { UseScanReturn, ScanState, ScanOptions } from '../types';
  *
  * @example
  * ```tsx
- * import { useScan } from '@wklm/react';
+ * import { useScan } from '@ios-web-bluetooth/react';
  *
  * function Scanner() {
  *   const { scanState, devices, start, stop, clear, error } = useScan();

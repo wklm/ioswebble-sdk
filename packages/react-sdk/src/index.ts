@@ -1,5 +1,5 @@
 /**
- * @wklm/react - Production-grade Web Bluetooth SDK for React
+ * @ios-web-bluetooth/react - Production-grade Web Bluetooth SDK for React
  * 
  * One-line integration for Web Bluetooth in React applications
  * with full Safari support through the WebBLE extension.

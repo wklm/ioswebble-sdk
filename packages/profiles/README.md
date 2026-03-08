@@ -1,18 +1,18 @@
-# @wklm/profiles
+# @ios-web-bluetooth/profiles
 
 Pre-built BLE device profiles -- heart rate, battery, device info. Typed parsers for Bluetooth GATT characteristics.
 
 ## Install
 
 ```bash
-npm install @wklm/profiles @wklm/core
+npm install @ios-web-bluetooth/profiles @ios-web-bluetooth/core
 ```
 
 ## Usage
 
 ```typescript
-import { WebBLE } from '@wklm/core';
-import { HeartRateProfile } from '@wklm/profiles';
+import { WebBLE } from '@ios-web-bluetooth/core';
+import { HeartRateProfile } from '@ios-web-bluetooth/profiles';
 
 const ble = new WebBLE();
 const device = await ble.requestDevice({ filters: [{ services: ['heart_rate'] }] });
@@ -41,11 +41,11 @@ hr.stop(); // unsubscribe all
 MCP server for coding agents (Claude Code, Cursor, Copilot):
 
 ```
-npx -y @wklm/mcp
+npx -y @ios-web-bluetooth/mcp
 ```
 
 Full SDK reference for LLM context: <https://ioswebble.com/llms-full.txt>
 
 ## Two scopes
 
-The **`@wklm/*`** packages (`core`, `profiles`, `react`) are the cross-browser BLE SDK -- they work on any platform with Web Bluetooth support (Chrome, Edge, iOS Safari via the extension). The **`@wklm/*`** packages (`detect`, `cli`, `mcp`, `skill`) handle iOS-specific extension detection, install prompts, and agent tooling. Use both together for full iOS Safari coverage.
+The **`@ios-web-bluetooth/*`** packages (`core`, `profiles`, `react`) are the cross-browser BLE SDK -- they work on any platform with Web Bluetooth support (Chrome, Edge, iOS Safari via the extension). The **`@ios-web-bluetooth/*`** packages (`detect`, `cli`, `mcp`, `skill`) handle iOS-specific extension detection, install prompts, and agent tooling. Use both together for full iOS Safari coverage.

@@ -52,10 +52,10 @@ function detectFramework(projectPath: string): Framework {
 
 function getInstallCommand(pkg: Package): string {
   const names: Record<Package, string> = {
-    core: '@wklm/core',
-    profiles: '@wklm/profiles @wklm/core',
-    react: '@wklm/react @wklm/core',
-    detect: '@wklm/detect',
+    core: '@ios-web-bluetooth/core',
+    profiles: '@ios-web-bluetooth/profiles @ios-web-bluetooth/core',
+    react: '@ios-web-bluetooth/react @ios-web-bluetooth/core',
+    detect: '@ios-web-bluetooth/detect',
   };
   return `npm install ${names[pkg]}`;
 }
@@ -63,7 +63,7 @@ function getInstallCommand(pkg: Package): string {
 function getStarterCode(pkg: Package, framework: Framework): string {
   switch (pkg) {
     case 'core':
-      return `import { WebBLE } from '@wklm/core'
+      return `import { WebBLE } from '@ios-web-bluetooth/core'
 
 const ble = new WebBLE()
 
@@ -96,8 +96,8 @@ async function connectToDevice() {
 }`;
 
     case 'profiles':
-      return `import { WebBLE } from '@wklm/core'
-import { HeartRateProfile, BatteryProfile, DeviceInfoProfile } from '@wklm/profiles'
+      return `import { WebBLE } from '@ios-web-bluetooth/core'
+import { HeartRateProfile, BatteryProfile, DeviceInfoProfile } from '@ios-web-bluetooth/profiles'
 
 const ble = new WebBLE()
 
@@ -135,7 +135,7 @@ async function useProfiles() {
     case 'react':
       if (framework === 'nextjs-app' || framework === 'nextjs-pages') {
         return `// In your layout or _app file:
-import { WebBLEProvider } from '@wklm/react'
+import { WebBLEProvider } from '@ios-web-bluetooth/react'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -146,7 +146,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 }
 
 // In a component:
-import { useWebBLE, useDevice, useNotifications } from '@wklm/react'
+import { useWebBLE, useDevice, useNotifications } from '@ios-web-bluetooth/react'
 
 function HeartRateMonitor() {
   const { requestDevice, isAvailable, isExtensionInstalled } = useWebBLE()
@@ -172,7 +172,7 @@ function HeartRateMonitor() {
   )
 }`;
       }
-      return `import { WebBLEProvider, useWebBLE, useDevice } from '@wklm/react'
+      return `import { WebBLEProvider, useWebBLE, useDevice } from '@ios-web-bluetooth/react'
 
 // Wrap your app:
 function App() {
@@ -214,13 +214,13 @@ function MyComponent() {
 <script src="https://ioswebble.com/webble.js" data-key="wbl_YOUR_API_KEY"></script>`;
       }
       if (framework === 'nextjs-app' || framework === 'nextjs-pages') {
-        return `import { IOSWebBLEProvider } from '@wklm/detect/react'
+        return `import { IOSWebBLEProvider } from '@ios-web-bluetooth/detect/react'
 
 export default function Layout({ children }) {
   return <IOSWebBLEProvider apiKey="wbl_YOUR_API_KEY">{children}</IOSWebBLEProvider>
 }`;
       }
-      return `import { initIOSWebBLE } from '@wklm/detect'
+      return `import { initIOSWebBLE } from '@ios-web-bluetooth/detect'
 
 // Call once at app startup
 initIOSWebBLE({ key: 'wbl_YOUR_API_KEY' })`;
@@ -233,7 +233,7 @@ export async function addTool(projectPath: string, pkg: Package): Promise<ToolRe
   const starterCode = getStarterCode(pkg, framework);
 
   const lines: string[] = [];
-  lines.push(`## Install @wklm/${pkg === 'detect' ? '' : ''}${pkg === 'detect' ? '@wklm/detect' : `@wklm/${pkg}`}`);
+  lines.push(`## Install @ios-web-bluetooth/${pkg === 'detect' ? '' : ''}${pkg === 'detect' ? '@ios-web-bluetooth/detect' : `@ios-web-bluetooth/${pkg}`}`);
   lines.push('');
   lines.push(`Detected framework: **${framework}**`);
   lines.push('');
@@ -250,7 +250,7 @@ export async function addTool(projectPath: string, pkg: Package): Promise<ToolRe
   if (pkg === 'core') {
     lines.push('');
     lines.push('### Tip');
-    lines.push('Add `@wklm/profiles` for typed helpers: `HeartRateProfile`, `BatteryProfile`, `DeviceInfoProfile`.');
+    lines.push('Add `@ios-web-bluetooth/profiles` for typed helpers: `HeartRateProfile`, `BatteryProfile`, `DeviceInfoProfile`.');
   }
   if (pkg === 'profiles') {
     lines.push('');

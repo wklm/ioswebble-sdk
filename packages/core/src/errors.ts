@@ -36,7 +36,7 @@ export type WebBLEErrorCode =
 
 const SUGGESTIONS: Record<WebBLEErrorCode, string> = {
   BLUETOOTH_UNAVAILABLE: 'Check that the browser supports Web Bluetooth and the device has Bluetooth enabled.',
-  EXTENSION_NOT_INSTALLED: 'Install the WebBLE iOS app and enable the Safari extension. Use @wklm/detect to show an install banner.',
+  EXTENSION_NOT_INSTALLED: 'Install the WebBLE iOS app and enable the Safari extension. Use @ios-web-bluetooth/detect to show an install banner.',
   PERMISSION_DENIED: 'The user denied Bluetooth permission. Request permission again with a user gesture (button click).',
   DEVICE_NOT_FOUND: 'No matching device found. Check your scan filters or ensure the device is advertising.',
   DEVICE_DISCONNECTED: 'Call device.connect() before performing GATT operations.',

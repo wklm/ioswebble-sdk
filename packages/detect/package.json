@@ -1,5 +1,5 @@
 {
-  "name": "@wklm/detect",
+  "name": "@ios-web-bluetooth/detect",
   "version": "0.1.1",
   "description": "Detect WebBLE Safari extension on iOS. Auto-show install banner when extension not found",
   "main": "dist/index.js",

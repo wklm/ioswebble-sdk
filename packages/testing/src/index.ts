@@ -1,5 +1,5 @@
 /**
- * @wklm/testing — Mock Bluetooth API for testing BLE web apps
+ * @ios-web-bluetooth/testing — Mock Bluetooth API for testing BLE web apps
  *
  * Provides stateful mocks for the Web Bluetooth API:
  * - MockBluetooth: drop-in replacement for navigator.bluetooth
@@ -7,7 +7,7 @@
  * - MockCharacteristic: value simulation and notification pump
  *
  * Usage:
- *   import { createMockBluetooth, installMockBluetooth } from '@wklm/testing'
+ *   import { createMockBluetooth, installMockBluetooth } from '@ios-web-bluetooth/testing'
  *
  *   // Option A: Create and install on navigator.bluetooth
  *   const mock = installMockBluetooth({ available: true })

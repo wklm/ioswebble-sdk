@@ -1,4 +1,4 @@
-# @wklm/mcp — Agent Instructions
+# @ios-web-bluetooth/mcp — Agent Instructions
 
 ## What this package does
 MCP (Model Context Protocol) server for AI coding agents. Provides tools for
@@ -7,7 +7,7 @@ and troubleshooting WebBLE issues.
 
 ## How to use
 ```bash
-npx -y @wklm/mcp
+npx -y @ios-web-bluetooth/mcp
 ```
 
 Add to your MCP config (Claude Code, Cursor, etc.):
@@ -16,7 +16,7 @@ Add to your MCP config (Claude Code, Cursor, etc.):
   "mcpServers": {
     "ioswebble": {
       "command": "npx",
-      "args": ["-y", "@wklm/mcp"]
+      "args": ["-y", "@ios-web-bluetooth/mcp"]
     }
   }
 }
@@ -28,7 +28,7 @@ Add to your MCP config (Claude Code, Cursor, etc.):
 |---|---|
 | `ioswebble_init` | Add WebBLE to a web project (auto-detects framework) |
 | `ioswebble_check` | Verify integration is correct |
-| `ioswebble_add` | Install a @wklm package + generate boilerplate |
+| `ioswebble_add` | Install a @ios-web-bluetooth package + generate boilerplate |
 | `ioswebble_scaffold_profile` | Generate a typed custom BLE profile |
 | `ioswebble_get_example` | Get complete code examples by use case |
 | `ioswebble_troubleshoot` | Diagnose issues from error code or symptom |

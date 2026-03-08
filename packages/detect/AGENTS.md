@@ -1,15 +1,15 @@
-# @wklm/detect — Agent Instructions
+# @ios-web-bluetooth/detect — Agent Instructions
 
 ## What this package does
 Detects iOS Safari, checks if the iOSWebBLE extension is installed,
 and shows an install banner if not. No-op on all other platforms.
 
-> **Note**: For BLE operations, use `@wklm/core` (not this package).
-> Use `import '@wklm/core/auto'` for transparent Safari iOS polyfill.
+> **Note**: For BLE operations, use `@ios-web-bluetooth/core` (not this package).
+> Use `import '@ios-web-bluetooth/core/auto'` for transparent Safari iOS polyfill.
 > This package is ONLY for extension detection and install banners.
 
 ## How it works
-- Import '@wklm/detect/auto' for automatic initialization
+- Import '@ios-web-bluetooth/detect/auto' for automatic initialization
 - Or call initIOSWebBLE({ key }) manually
 - Or use <IOSWebBLEProvider apiKey="wbl_xxxxx"> for React apps
 - The package dispatches events: 'ioswebble:ready' and 'ioswebble:notinstalled'
@@ -30,7 +30,7 @@ and shows an install banner if not. No-op on all other platforms.
 ### React / Next.js (App Router)
 In app/layout.tsx:
 ```tsx
-import { IOSWebBLEProvider } from '@wklm/detect/react'
+import { IOSWebBLEProvider } from '@ios-web-bluetooth/detect/react'
 export default function RootLayout({ children }) {
   return <IOSWebBLEProvider apiKey="wbl_xxxxx">{children}</IOSWebBLEProvider>
 }
@@ -39,7 +39,7 @@ export default function RootLayout({ children }) {
 ### Next.js (Pages Router)
 In pages/_app.tsx:
 ```tsx
-import { IOSWebBLEProvider } from '@wklm/detect/react'
+import { IOSWebBLEProvider } from '@ios-web-bluetooth/detect/react'
 export default function App({ Component, pageProps }) {
   return <IOSWebBLEProvider apiKey="wbl_xxxxx"><Component {...pageProps} /></IOSWebBLEProvider>
 }
@@ -52,12 +52,12 @@ export default function App({ Component, pageProps }) {
 
 ### Any framework (manual)
 ```typescript
-import { initIOSWebBLE } from '@wklm/detect'
+import { initIOSWebBLE } from '@ios-web-bluetooth/detect'
 initIOSWebBLE({ key: 'wbl_xxxxx' })
 ```
 
 ### Auto-init
 ```typescript
 // Set key via meta tag: <meta name="ioswebble-key" content="wbl_xxxxx">
-import '@wklm/detect/auto'
+import '@ios-web-bluetooth/detect/auto'
 ```

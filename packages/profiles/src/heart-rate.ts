@@ -1,4 +1,4 @@
-import type { WebBLEDevice } from '@wklm/core';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
 import { BaseProfile } from './base';
 
 /**
@@ -32,7 +32,7 @@ export interface HeartRateData {
  *
  * @example
  * ```ts
- * import { HeartRateProfile } from '@wklm/profiles';
+ * import { HeartRateProfile } from '@ios-web-bluetooth/profiles';
  *
  * const hr = new HeartRateProfile(device);
  * await hr.connect();
@@ -95,7 +95,7 @@ export class HeartRateProfile extends BaseProfile {
  *
  * @example
  * ```ts
- * import { parseHeartRate } from '@wklm/profiles';
+ * import { parseHeartRate } from '@ios-web-bluetooth/profiles';
  *
  * // Manually parse a DataView from a notification
  * const data = parseHeartRate(characteristicValue);

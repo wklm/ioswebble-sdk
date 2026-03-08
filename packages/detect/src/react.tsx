@@ -2,7 +2,7 @@
  * React component for iOSWebBLE detection.
  *
  * Usage:
- *   import { IOSWebBLEProvider } from '@wklm/detect/react'
+ *   import { IOSWebBLEProvider } from '@ios-web-bluetooth/detect/react'
  *
  *   export default function Layout({ children }) {
  *     return <IOSWebBLEProvider apiKey="wbl_xxxxx">{children}</IOSWebBLEProvider>

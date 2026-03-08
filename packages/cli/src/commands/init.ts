@@ -21,10 +21,10 @@ function parseArgs(args: string[]): { key?: string; framework?: string } {
 
 function getInstallCommand(packageManager: string): string {
   switch (packageManager) {
-    case 'yarn': return 'yarn add @wklm/core @wklm/detect';
-    case 'pnpm': return 'pnpm add @wklm/core @wklm/detect';
-    case 'bun': return 'bun add @wklm/core @wklm/detect';
-    default: return 'npm install @wklm/core @wklm/detect';
+    case 'yarn': return 'yarn add @ios-web-bluetooth/core @ios-web-bluetooth/detect';
+    case 'pnpm': return 'pnpm add @ios-web-bluetooth/core @ios-web-bluetooth/detect';
+    case 'bun': return 'bun add @ios-web-bluetooth/core @ios-web-bluetooth/detect';
+    default: return 'npm install @ios-web-bluetooth/core @ios-web-bluetooth/detect';
   }
 }
 
@@ -32,24 +32,24 @@ function getSnippet(framework: Framework, apiKey: string): { code: string; locat
   switch (framework) {
     case 'nextjs-app':
       return {
-        code: `import { IOSWebBLEProvider } from '@wklm/detect/react'\n`,
+        code: `import { IOSWebBLEProvider } from '@ios-web-bluetooth/detect/react'\n`,
         location: 'Wrap children with <IOSWebBLEProvider apiKey="' + apiKey + '">{children}</IOSWebBLEProvider>',
       };
     case 'nextjs-pages':
       return {
-        code: `import { IOSWebBLEProvider } from '@wklm/detect/react'\n`,
+        code: `import { IOSWebBLEProvider } from '@ios-web-bluetooth/detect/react'\n`,
         location: 'Wrap <Component /> with <IOSWebBLEProvider apiKey="' + apiKey + '">...</IOSWebBLEProvider>',
       };
     case 'react-vite':
     case 'react-cra':
       return {
-        code: `import '@wklm/core/auto'\nimport '@wklm/detect/auto'\n// Set key: <meta name="ioswebble-key" content="${apiKey}"> in index.html\n`,
+        code: `import '@ios-web-bluetooth/core/auto'\nimport '@ios-web-bluetooth/detect/auto'\n// Set key: <meta name="ioswebble-key" content="${apiKey}"> in index.html\n`,
         location: 'Add import at the top of the entry file',
       };
     case 'vue':
     case 'nuxt':
       return {
-        code: `import '@wklm/core/auto'\nimport { initIOSWebBLE } from '@wklm/detect'\ninitIOSWebBLE({ key: '${apiKey}' })\n`,
+        code: `import '@ios-web-bluetooth/core/auto'\nimport { initIOSWebBLE } from '@ios-web-bluetooth/detect'\ninitIOSWebBLE({ key: '${apiKey}' })\n`,
         location: 'Add to the entry file',
       };
     case 'html':
@@ -59,7 +59,7 @@ function getSnippet(framework: Framework, apiKey: string): { code: string; locat
       };
     default:
       return {
-        code: `import '@wklm/core/auto'\nimport { initIOSWebBLE } from '@wklm/detect'\ninitIOSWebBLE({ key: '${apiKey}' })`,
+        code: `import '@ios-web-bluetooth/core/auto'\nimport { initIOSWebBLE } from '@ios-web-bluetooth/detect'\ninitIOSWebBLE({ key: '${apiKey}' })`,
         location: 'Add to your app entry point',
       };
   }
@@ -80,7 +80,7 @@ export async function init(args: string[]): Promise<void> {
   const apiKey = options.key || process.env.IOSWEBBLE_API_KEY || 'YOUR_API_KEY';
 
   if (options.key) {
-    const { validateApiKey } = await import('@wklm/detect');
+    const { validateApiKey } = await import('@ios-web-bluetooth/detect');
     console.log('Validating API key...');
     const config = await validateApiKey(options.key);
     if (config) {
@@ -94,7 +94,7 @@ export async function init(args: string[]): Promise<void> {
 
   // Install packages
   const installCmd = getInstallCommand(detection.packageManager);
-  console.log(`Installing @wklm/core and @wklm/detect...`);
+  console.log(`Installing @ios-web-bluetooth/core and @ios-web-bluetooth/detect...`);
   console.log(`  Run: ${installCmd}`);
   console.log();
 
@@ -141,10 +141,10 @@ export async function init(args: string[]): Promise<void> {
   if (['nextjs-app', 'nextjs-pages', 'react-vite', 'react-cra'].includes(detection.framework)) {
     console.log();
     console.log('React detected! Also consider:');
-    const reactPkg = detection.packageManager === 'yarn' ? 'yarn add @wklm/react' :
-      detection.packageManager === 'pnpm' ? 'pnpm add @wklm/react' :
-      detection.packageManager === 'bun' ? 'bun add @wklm/react' :
-      'npm install @wklm/react';
+    const reactPkg = detection.packageManager === 'yarn' ? 'yarn add @ios-web-bluetooth/react' :
+      detection.packageManager === 'pnpm' ? 'pnpm add @ios-web-bluetooth/react' :
+      detection.packageManager === 'bun' ? 'bun add @ios-web-bluetooth/react' :
+      'npm install @ios-web-bluetooth/react';
     console.log(`  ${reactPkg} — React hooks for BLE (useDevice, useScan, useProfile)`);
   }
 }

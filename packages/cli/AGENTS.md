@@ -1,4 +1,4 @@
-# @wklm/cli — Agent Instructions
+# @ios-web-bluetooth/cli — Agent Instructions
 
 ## What this package does
 CLI tool to scaffold BLE web app projects, verify integration, and generate
@@ -14,8 +14,8 @@ profile boilerplate. Auto-detects framework (React, Next.js, Vue, etc.).
 
 ## How `init` works
 1. Detects framework from `package.json` (Next.js, React+Vite, Vue, etc.)
-2. Installs `@wklm/core` and `@wklm/detect`
-3. Adds `import '@wklm/core/auto'` to entry point
+2. Installs `@ios-web-bluetooth/core` and `@ios-web-bluetooth/detect`
+3. Adds `import '@ios-web-bluetooth/core/auto'` to entry point
 4. Adds framework-appropriate detection snippet
 5. Prints next steps
 

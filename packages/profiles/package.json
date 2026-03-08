@@ -1,5 +1,5 @@
 {
-  "name": "@wklm/profiles",
+  "name": "@ios-web-bluetooth/profiles",
   "version": "1.0.0-beta.2",
   "description": "Pre-built BLE device profiles — heart rate, battery, device info. Typed parsers for Bluetooth GATT characteristics",
   "main": "dist/index.js",
@@ -51,11 +51,11 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@wklm/core": ">=2.0.0-beta.2"
+    "@ios-web-bluetooth/core": ">=2.0.0-beta.2"
   },
   "devDependencies": {
     "@types/jest": "^29",
-    "@wklm/core": ">=2.0.0-beta.2",
+    "@ios-web-bluetooth/core": ">=2.0.0-beta.2",
     "jest": "^29",
     "jest-environment-jsdom": "^29",
     "ts-jest": "^29",

@@ -8,7 +8,7 @@ import type { Platform, WebBLEOptions, RequestDeviceOptions } from './types';
  *
  * @example
  * ```typescript
- * import { WebBLE } from '@wklm/core'
+ * import { WebBLE } from '@ios-web-bluetooth/core'
  *
  * const ble = new WebBLE()
  * const device = await ble.requestDevice({

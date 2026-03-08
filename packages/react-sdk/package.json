@@ -1,5 +1,5 @@
 {
-  "name": "@wklm/react",
+  "name": "@ios-web-bluetooth/react",
   "version": "2.0.0-beta.2",
   "description": "React hooks for Bluetooth Low Energy — useDevice, useScan, useProfile. Real-time BLE data in React",
   "main": "dist/index.js",
@@ -30,14 +30,14 @@
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
-    "@wklm/detect": ">=0.1.0",
-    "@wklm/core": ">=2.0.0-beta.2",
-    "@wklm/profiles": ">=1.0.0-beta.2"
+    "@ios-web-bluetooth/detect": ">=0.1.0",
+    "@ios-web-bluetooth/core": ">=2.0.0-beta.2",
+    "@ios-web-bluetooth/profiles": ">=1.0.0-beta.2"
   },
   "peerDependenciesMeta": {
-    "@wklm/detect": { "optional": true },
-    "@wklm/core": { "optional": true },
-    "@wklm/profiles": { "optional": true }
+    "@ios-web-bluetooth/detect": { "optional": true },
+    "@ios-web-bluetooth/core": { "optional": true },
+    "@ios-web-bluetooth/profiles": { "optional": true }
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.0",

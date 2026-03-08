@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * @wklm/mcp — MCP Server for iOSWebBLE
+ * @ios-web-bluetooth/mcp — MCP Server for iOSWebBLE
  *
  * Exposes 9 tools + 6 resources for AI agents to manage iOSWebBLE integration:
  *
@@ -13,7 +13,7 @@
  * - ioswebble_get_example: Return complete code examples by use case
  * - ioswebble_troubleshoot: Diagnose issues from error code or symptom
  * - ioswebble_docs: Return documentation by topic
- * - webble_suggest: Analyze project and recommend @wklm packages
+ * - webble_suggest: Analyze project and recommend @ios-web-bluetooth packages
  * - webble_check_compliance: Check code for Safari iOS compliance issues
  *
  * Resources:
@@ -52,7 +52,7 @@ server.registerTool(
   'ioswebble_init',
   {
     title: 'Add Safari iOS Bluetooth support to a web project',
-    description: 'Auto-detects framework (React, Next.js, Vue, etc.) and adds Web Bluetooth polyfill (@wklm/core/auto) + detection snippet. Makes navigator.bluetooth work on Safari iOS.',
+    description: 'Auto-detects framework (React, Next.js, Vue, etc.) and adds Web Bluetooth polyfill (@ios-web-bluetooth/core/auto) + detection snippet. Makes navigator.bluetooth work on Safari iOS.',
     annotations: {
       readOnlyHint: false,
       destructiveHint: false,
@@ -94,7 +94,7 @@ server.registerTool(
   'ioswebble_check',
   {
     title: 'Verify Web Bluetooth / Safari iOS integration',
-    description: 'Checks @wklm/core, @wklm/detect, and @wklm/profiles are correctly set up for BLE support.',
+    description: 'Checks @ios-web-bluetooth/core, @ios-web-bluetooth/detect, and @ios-web-bluetooth/profiles are correctly set up for BLE support.',
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,
@@ -115,7 +115,7 @@ server.registerTool(
   'ioswebble_add',
   {
     title: 'Add a Web Bluetooth SDK package',
-    description: 'Install a @wklm package (core, profiles, react, detect) and generate starter code for BLE / Safari iOS Bluetooth.',
+    description: 'Install a @ios-web-bluetooth package (core, profiles, react, detect) and generate starter code for BLE / Safari iOS Bluetooth.',
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,
@@ -140,7 +140,7 @@ server.registerTool(
   'ioswebble_scaffold_profile',
   {
     title: 'Scaffold a custom Bluetooth device profile',
-    description: 'Generate a typed custom BLE device profile using defineProfile() from @wklm/profiles. For heart rate, battery, etc. use built-in profiles instead.',
+    description: 'Generate a typed custom BLE device profile using defineProfile() from @ios-web-bluetooth/profiles. For heart rate, battery, etc. use built-in profiles instead.',
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,
@@ -262,7 +262,7 @@ server.registerTool(
   {
     title: 'Suggest WebBLE SDK setup for a project',
     description:
-      'Analyzes a web project and recommends which @wklm packages to install and how to configure them for Safari iOS Bluetooth support.',
+      'Analyzes a web project and recommends which @ios-web-bluetooth packages to install and how to configure them for Safari iOS Bluetooth support.',
     annotations: {
       readOnlyHint: true,
       destructiveHint: false,

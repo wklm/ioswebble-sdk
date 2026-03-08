@@ -12,7 +12,7 @@ import type { UseBluetoothReturn } from '../types';
  *
  * @example
  * ```tsx
- * import { useBluetooth } from '@wklm/react';
+ * import { useBluetooth } from '@ios-web-bluetooth/react';
  *
  * function HeartRateButton() {
  *   const { isAvailable, isSupported, requestDevice, error } = useBluetooth();

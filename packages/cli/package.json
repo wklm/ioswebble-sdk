@@ -1,5 +1,5 @@
 {
-  "name": "@wklm/cli",
+  "name": "@ios-web-bluetooth/cli",
   "version": "0.1.1",
   "description": "CLI for iOSWebBLE — init, check, scaffold BLE profiles for web apps",
   "bin": {
@@ -47,7 +47,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@wklm/detect": "^0.1.1"
+    "@ios-web-bluetooth/detect": "^0.1.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

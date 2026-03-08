@@ -2,7 +2,7 @@
  * ioswebble_docs tool implementation
  *
  * Returns documentation for a given topic. All API references match the real
- * source code in @wklm/core, @wklm/profiles, and @wklm/react.
+ * source code in @ios-web-bluetooth/core, @ios-web-bluetooth/profiles, and @ios-web-bluetooth/react.
  */
 
 interface ToolResult {
@@ -23,22 +23,22 @@ Your existing Web Bluetooth code works unchanged. You only need to add a detecti
 
 \`\`\`bash
 # Core BLE SDK
-npm install @wklm/core
+npm install @ios-web-bluetooth/core
 
 # Optional: typed BLE profiles
-npm install @wklm/profiles
+npm install @ios-web-bluetooth/profiles
 
 # Optional: React hooks & components
-npm install @wklm/react
+npm install @ios-web-bluetooth/react
 
 # Optional: iOS detection + install banner
-npm install @wklm/detect
+npm install @ios-web-bluetooth/detect
 \`\`\`
 
 ## Step 2: Add code
 
 \`\`\`typescript
-import { WebBLE } from '@wklm/core'
+import { WebBLE } from '@ios-web-bluetooth/core'
 
 const ble = new WebBLE()
 
@@ -71,7 +71,7 @@ device.disconnect()
 ## Step 3: Add iOS detection (optional)
 
 \`\`\`typescript
-import { initIOSWebBLE } from '@wklm/detect'
+import { initIOSWebBLE } from '@ios-web-bluetooth/detect'
 initIOSWebBLE({ key: 'wbl_YOUR_API_KEY' })
 \`\`\`
 
@@ -86,13 +86,13 @@ It is a no-op on Chrome/Android where Web Bluetooth is natively supported.
 
   api: `# iOSWebBLE API Reference
 
-## @wklm/core
+## @ios-web-bluetooth/core
 
 ### class WebBLE
 Entry point for BLE operations.
 
 \`\`\`typescript
-import { WebBLE } from '@wklm/core'
+import { WebBLE } from '@ios-web-bluetooth/core'
 const ble = new WebBLE(options?: WebBLEOptions)
 \`\`\`
 
@@ -141,7 +141,7 @@ Represents a connected BLE device. Wraps BluetoothDevice with caching and cleanu
 Typed BLE error with error code and recovery suggestion.
 
 \`\`\`typescript
-import { WebBLEError } from '@wklm/core'
+import { WebBLEError } from '@ios-web-bluetooth/core'
 \`\`\`
 
 **Properties**:
@@ -157,19 +157,19 @@ import { WebBLEError } from '@wklm/core'
 ### UUID utilities
 
 \`\`\`typescript
-import { resolveUUID, getServiceName, getCharacteristicName } from '@wklm/core'
+import { resolveUUID, getServiceName, getCharacteristicName } from '@ios-web-bluetooth/core'
 \`\`\`
 
 - \`resolveUUID(nameOrUUID: string): string\` — Resolve name/short-UUID to full 128-bit UUID
 - \`getServiceName(uuid: string): string | undefined\` — Reverse lookup: UUID to service name
 - \`getCharacteristicName(uuid: string): string | undefined\` — Reverse lookup: UUID to characteristic name`,
 
-  react: `# @wklm/react — React SDK
+  react: `# @ios-web-bluetooth/react — React SDK
 
 ## Setup
 
 \`\`\`tsx
-import { WebBLEProvider } from '@wklm/react'
+import { WebBLEProvider } from '@ios-web-bluetooth/react'
 
 function App() {
   return (
@@ -198,7 +198,7 @@ const {
   isScanning,             // boolean — LE scan active
   devices,                // BluetoothDevice[] — discovered devices
   error,                  // Error | null
-  core,                   // WebBLE instance (if @wklm/core installed)
+  core,                   // WebBLE instance (if @ios-web-bluetooth/core installed)
   requestDevice,          // (options?) => Promise<BluetoothDevice | null>
   getDevices,             // () => Promise<BluetoothDevice[]>
   requestLEScan,          // (options?) => Promise<BluetoothLEScan | null>
@@ -253,7 +253,7 @@ const {
 - \`<ConnectionStatus />\` — connection state indicator
 - \`<InstallationWizard />\` — iOS extension install guide`,
 
-  profiles: `# @wklm/profiles — Typed BLE Profiles
+  profiles: `# @ios-web-bluetooth/profiles — Typed BLE Profiles
 
 ## Built-in profiles
 
@@ -261,8 +261,8 @@ const {
 Service: \`heart_rate\` (0x180D)
 
 \`\`\`typescript
-import { HeartRateProfile } from '@wklm/profiles'
-import type { HeartRateData } from '@wklm/profiles'
+import { HeartRateProfile } from '@ios-web-bluetooth/profiles'
+import type { HeartRateData } from '@ios-web-bluetooth/profiles'
 
 const hr = new HeartRateProfile(device)
 
@@ -288,7 +288,7 @@ hr.stop()
 Service: \`battery_service\` (0x180F)
 
 \`\`\`typescript
-import { BatteryProfile } from '@wklm/profiles'
+import { BatteryProfile } from '@ios-web-bluetooth/profiles'
 
 const battery = new BatteryProfile(device)
 
@@ -303,8 +303,8 @@ battery.stop()
 Service: \`device_information\` (0x180A)
 
 \`\`\`typescript
-import { DeviceInfoProfile } from '@wklm/profiles'
-import type { DeviceInfo } from '@wklm/profiles'
+import { DeviceInfoProfile } from '@ios-web-bluetooth/profiles'
+import type { DeviceInfo } from '@ios-web-bluetooth/profiles'
 
 const info = new DeviceInfoProfile(device)
 
@@ -326,7 +326,7 @@ const model = await info.readModelNumber()
 ## Custom profiles with defineProfile()
 
 \`\`\`typescript
-import { defineProfile } from '@wklm/profiles'
+import { defineProfile } from '@ios-web-bluetooth/profiles'
 
 const MyProfile = defineProfile({
   name: 'My Sensor',
@@ -374,10 +374,10 @@ abstract class BaseProfile {
 
   errors: `# iOSWebBLE Error Reference
 
-All errors are instances of \`WebBLEError\` from \`@wklm/core\`.
+All errors are instances of \`WebBLEError\` from \`@ios-web-bluetooth/core\`.
 
 \`\`\`typescript
-import { WebBLEError } from '@wklm/core'
+import { WebBLEError } from '@ios-web-bluetooth/core'
 
 try {
   const device = await ble.requestDevice({ ... })
@@ -394,7 +394,7 @@ try {
 | Code | When | Suggestion |
 |------|------|------------|
 | \`BLUETOOTH_UNAVAILABLE\` | Browser/device doesn't support BLE | Check browser + Bluetooth enabled |
-| \`EXTENSION_NOT_INSTALLED\` | iOS Safari without WebBLE extension | Add @wklm/detect for install banner |
+| \`EXTENSION_NOT_INSTALLED\` | iOS Safari without WebBLE extension | Add @ios-web-bluetooth/detect for install banner |
 | \`PERMISSION_DENIED\` | User denied Bluetooth permission | Must trigger from user gesture |
 | \`DEVICE_NOT_FOUND\` | No matching device in scan | Check filters, device power, range |
 | \`DEVICE_DISCONNECTED\` | GATT op on disconnected device | Call device.connect() first |

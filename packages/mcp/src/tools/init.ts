@@ -70,17 +70,17 @@ function getSnippetForFramework(framework: Framework, apiKey: string): string {
   switch (framework) {
     case 'nextjs-app':
     case 'nextjs-pages':
-      return `import { IOSWebBLEProvider } from '@wklm/detect/react'`;
+      return `import { IOSWebBLEProvider } from '@ios-web-bluetooth/detect/react'`;
     case 'react-vite':
     case 'react-cra':
-      return `import '@wklm/detect/auto'`;
+      return `import '@ios-web-bluetooth/detect/auto'`;
     case 'vue':
     case 'nuxt':
-      return `import { initIOSWebBLE } from '@wklm/detect'\ninitIOSWebBLE({ key: '${apiKey}' })`;
+      return `import { initIOSWebBLE } from '@ios-web-bluetooth/detect'\ninitIOSWebBLE({ key: '${apiKey}' })`;
     case 'html':
       return `<script src="https://ioswebble.com/webble.js" data-key="${apiKey}"></script>`;
     default:
-      return `import { initIOSWebBLE } from '@wklm/detect'\ninitIOSWebBLE({ key: '${apiKey}' })`;
+      return `import { initIOSWebBLE } from '@ios-web-bluetooth/detect'\ninitIOSWebBLE({ key: '${apiKey}' })`;
   }
 }
 
@@ -127,7 +127,7 @@ export async function initTool(
 
   lines.push('');
   lines.push('Next steps:');
-  lines.push('1. Install: npm install @wklm/detect');
+  lines.push('1. Install: npm install @ios-web-bluetooth/detect');
   if (resolvedFramework === 'nextjs-app' || resolvedFramework === 'nextjs-pages') {
     lines.push(`2. Wrap children with <IOSWebBLEProvider apiKey="${key}">{children}</IOSWebBLEProvider>`);
   }

@@ -1,6 +1,6 @@
 # Heart Rate Monitor Example
 
-A complete example demonstrating how to build a heart rate monitoring application using the @wklm/react SDK.
+A complete example demonstrating how to build a heart rate monitoring application using the @ios-web-bluetooth/react SDK.
 
 ## Features
 
@@ -222,7 +222,7 @@ const xml = dataToXML(recordedData);
 
 - [Web Bluetooth Specification](https://webbluetoothcg.github.io/web-bluetooth/)
 - [Heart Rate Service Specification](https://www.bluetooth.com/specifications/gatt/services/)
-- [@wklm/react Documentation](https://github.com/wklm/WebBLE-Safari-Extension)
+- [@ios-web-bluetooth/react Documentation](https://github.com/wklm/WebBLE-Safari-Extension)
 
 ## License
 

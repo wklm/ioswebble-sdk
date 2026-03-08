@@ -1,4 +1,4 @@
-import type { WebBLEDevice } from '@wklm/core';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
 import { BaseProfile } from './base';
 
 const decoder = new TextDecoder();
@@ -36,7 +36,7 @@ export interface DeviceInfo {
  *
  * @example
  * ```ts
- * import { DeviceInfoProfile } from '@wklm/profiles';
+ * import { DeviceInfoProfile } from '@ios-web-bluetooth/profiles';
  *
  * const info = new DeviceInfoProfile(device);
  * await info.connect();

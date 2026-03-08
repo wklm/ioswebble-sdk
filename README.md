@@ -6,22 +6,22 @@ Web Bluetooth SDK for iOS Safari. Scan, connect, and talk to BLE devices from an
 
 | Package | Purpose | Size |
 |---------|---------|------|
-| [`@wklm/core`](packages/core) | BLE scanning, connecting, GATT read/write/subscribe | ~4KB gzip |
-| [`@wklm/detect`](packages/detect) | iOS extension detection + install banner | ~2KB gzip |
-| [`@wklm/profiles`](packages/profiles) | Typed BLE profiles (heart rate, battery, etc.) | Optional |
-| [`@wklm/react-sdk`](packages/react-sdk) | React hooks (`useDevice`, `useCharacteristic`) | Optional |
-| [`@wklm/cli`](packages/cli) | CLI tooling | Optional |
-| [`@wklm/mcp`](packages/mcp) | MCP server for AI coding agents | Optional |
+| [`@ios-web-bluetooth/core`](packages/core) | BLE scanning, connecting, GATT read/write/subscribe | ~4KB gzip |
+| [`@ios-web-bluetooth/detect`](packages/detect) | iOS extension detection + install banner | ~2KB gzip |
+| [`@ios-web-bluetooth/profiles`](packages/profiles) | Typed BLE profiles (heart rate, battery, etc.) | Optional |
+| [`@ios-web-bluetooth/react-sdk`](packages/react-sdk) | React hooks (`useDevice`, `useCharacteristic`) | Optional |
+| [`@ios-web-bluetooth/cli`](packages/cli) | CLI tooling | Optional |
+| [`@ios-web-bluetooth/mcp`](packages/mcp) | MCP server for AI coding agents | Optional |
 
 ## Quick Start
 
 ```bash
-npm install @wklm/core @wklm/detect
+npm install @ios-web-bluetooth/core @ios-web-bluetooth/detect
 ```
 
 ```typescript
-import { initIOSWebBLE, isIOSSafari } from '@wklm/detect';
-import { WebBLE, WebBLEError } from '@wklm/core';
+import { initIOSWebBLE, isIOSSafari } from '@ios-web-bluetooth/detect';
+import { WebBLE, WebBLEError } from '@ios-web-bluetooth/core';
 
 // 1. On iOS Safari, detect the extension and prompt install if missing
 if (isIOSSafari()) {
@@ -83,7 +83,7 @@ try {
 MCP server for coding agents (Claude Code, Cursor, Copilot):
 
 ```
-npx -y @wklm/mcp
+npx -y @ios-web-bluetooth/mcp
 ```
 
 Full SDK reference for LLM context: <https://ioswebble.com/llms-full.txt>
@@ -92,8 +92,8 @@ Full SDK reference for LLM context: <https://ioswebble.com/llms-full.txt>
 
 Each package has its own README with full API reference:
 
-- [`@wklm/core` README](packages/core/README.md) -- scanning, connecting, GATT operations, error codes
-- [`@wklm/detect` README](packages/detect/README.md) -- extension detection, install banners, React provider
+- [`@ios-web-bluetooth/core` README](packages/core/README.md) -- scanning, connecting, GATT operations, error codes
+- [`@ios-web-bluetooth/detect` README](packages/detect/README.md) -- extension detection, install banners, React provider
 
 ## License
 

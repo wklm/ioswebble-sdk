@@ -1,5 +1,5 @@
 /**
- * Hook that wraps a {@link BaseProfile} subclass from `@wklm/profiles`.
+ * Hook that wraps a {@link BaseProfile} subclass from `@ios-web-bluetooth/profiles`.
  *
  * Manages profile instantiation, connection, and teardown tied to the
  * React component lifecycle. A new profile instance is created whenever
@@ -13,8 +13,8 @@
  *
  * @example
  * ```tsx
- * import { useProfile } from '@wklm/react';
- * import { HeartRateProfile } from '@wklm/profiles';
+ * import { useProfile } from '@ios-web-bluetooth/react';
+ * import { HeartRateProfile } from '@ios-web-bluetooth/profiles';
  *
  * function HeartRateMonitor({ device }: { device: BluetoothDevice }) {
  *   const { profile, connect, error } = useProfile(HeartRateProfile, device);

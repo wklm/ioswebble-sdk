@@ -2,7 +2,7 @@
  * ioswebble_get_example tool implementation
  *
  * Returns complete, copy-pasteable code examples for common BLE use cases.
- * All examples use the real @wklm/core and @wklm/profiles APIs.
+ * All examples use the real @ios-web-bluetooth/core and @ios-web-bluetooth/profiles APIs.
  */
 
 interface ToolResult {
@@ -23,8 +23,8 @@ const EXAMPLES: Record<UseCase, { title: string; description: string; code: stri
   'heart-rate': {
     title: 'Heart Rate Monitor',
     description: 'Connect to a heart rate sensor and stream BPM data using HeartRateProfile.',
-    code: `import { WebBLE } from '@wklm/core'
-import { HeartRateProfile } from '@wklm/profiles'
+    code: `import { WebBLE } from '@ios-web-bluetooth/core'
+import { HeartRateProfile } from '@ios-web-bluetooth/profiles'
 
 async function monitorHeartRate() {
   const ble = new WebBLE()
@@ -90,8 +90,8 @@ monitorHeartRate()`,
   'battery': {
     title: 'Battery Level Monitor',
     description: 'Read and subscribe to battery level changes using BatteryProfile.',
-    code: `import { WebBLE } from '@wklm/core'
-import { BatteryProfile } from '@wklm/profiles'
+    code: `import { WebBLE } from '@ios-web-bluetooth/core'
+import { BatteryProfile } from '@ios-web-bluetooth/profiles'
 
 async function monitorBattery() {
   const ble = new WebBLE()
@@ -127,8 +127,8 @@ monitorBattery()`,
   'device-info': {
     title: 'Device Information Reader',
     description: 'Read all device information fields using DeviceInfoProfile.',
-    code: `import { WebBLE } from '@wklm/core'
-import { DeviceInfoProfile } from '@wklm/profiles'
+    code: `import { WebBLE } from '@ios-web-bluetooth/core'
+import { DeviceInfoProfile } from '@ios-web-bluetooth/profiles'
 
 async function readDeviceInfo() {
   const ble = new WebBLE()
@@ -169,8 +169,8 @@ readDeviceInfo()`,
   'custom-profile': {
     title: 'Custom BLE Profile with defineProfile()',
     description: 'Create a typed profile for any BLE service using defineProfile().',
-    code: `import { WebBLE } from '@wklm/core'
-import { defineProfile } from '@wklm/profiles'
+    code: `import { WebBLE } from '@ios-web-bluetooth/core'
+import { defineProfile } from '@ios-web-bluetooth/profiles'
 
 // Define a custom profile for an environmental sensor
 const EnvironmentProfile = defineProfile({
@@ -227,7 +227,7 @@ readEnvironment()`,
   },
 
   'react-hooks': {
-    title: 'React Integration with @wklm/react',
+    title: 'React Integration with @ios-web-bluetooth/react',
     description: 'Full React app with WebBLEProvider, hooks, and heart rate display.',
     code: `import React, { useState } from 'react'
 import {
@@ -235,7 +235,7 @@ import {
   useWebBLE,
   useDevice,
   useNotifications,
-} from '@wklm/react'
+} from '@ios-web-bluetooth/react'
 
 // 1. Wrap your app with WebBLEProvider
 function App() {
@@ -298,7 +298,7 @@ export default App`,
   'scan-filter': {
     title: 'Scan with Filters',
     description: 'Various ways to filter BLE device scans using requestDevice options.',
-    code: `import { WebBLE } from '@wklm/core'
+    code: `import { WebBLE } from '@ios-web-bluetooth/core'
 
 const ble = new WebBLE()
 
@@ -371,7 +371,7 @@ async function safeConnect() {
   'notifications': {
     title: 'BLE Notifications (Callback & AsyncIterator)',
     description: 'Two patterns for receiving BLE notifications: subscribe callback and async iterator.',
-    code: `import { WebBLE } from '@wklm/core'
+    code: `import { WebBLE } from '@ios-web-bluetooth/core'
 
 const ble = new WebBLE()
 

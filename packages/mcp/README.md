@@ -1,4 +1,4 @@
-# @wklm/mcp
+# @ios-web-bluetooth/mcp
 
 MCP server for AI coding agents -- scaffold BLE web apps, verify integration, get code examples. Works with Claude Code, Cursor, Copilot, and any MCP-compatible client.
 
@@ -11,7 +11,7 @@ Add to your `claude_desktop_config.json` (or equivalent MCP config):
   "mcpServers": {
     "ioswebble": {
       "command": "npx",
-      "args": ["-y", "@wklm/mcp"]
+      "args": ["-y", "@ios-web-bluetooth/mcp"]
     }
   }
 }
@@ -20,7 +20,7 @@ Add to your `claude_desktop_config.json` (or equivalent MCP config):
 Or run directly:
 
 ```bash
-npx -y @wklm/mcp
+npx -y @ios-web-bluetooth/mcp
 ```
 
 ## Tools
@@ -41,4 +41,4 @@ For LLM context: <https://ioswebble.com/llms-full.txt>
 
 ## Two scopes
 
-The **`@wklm/*`** packages (`core`, `profiles`, `react`) are the cross-browser BLE SDK -- they work on any platform with Web Bluetooth support (Chrome, Edge, iOS Safari via the extension). The **`@wklm/*`** packages (`detect`, `cli`, `mcp`, `skill`) handle iOS-specific extension detection, install prompts, and agent tooling. Use both together for full iOS Safari coverage.
+The **`@ios-web-bluetooth/*`** packages (`core`, `profiles`, `react`) are the cross-browser BLE SDK -- they work on any platform with Web Bluetooth support (Chrome, Edge, iOS Safari via the extension). The **`@ios-web-bluetooth/*`** packages (`detect`, `cli`, `mcp`, `skill`) handle iOS-specific extension detection, install prompts, and agent tooling. Use both together for full iOS Safari coverage.

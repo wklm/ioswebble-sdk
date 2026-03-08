@@ -1,4 +1,4 @@
-import type { WebBLEDevice } from '@wklm/core';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
 import { BaseProfile } from './base';
 
 /**
@@ -9,7 +9,7 @@ import { BaseProfile } from './base';
  *
  * @example
  * ```ts
- * import { BatteryProfile } from '@wklm/profiles';
+ * import { BatteryProfile } from '@ios-web-bluetooth/profiles';
  *
  * const battery = new BatteryProfile(device);
  * await battery.connect();

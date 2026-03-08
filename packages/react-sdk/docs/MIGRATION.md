@@ -1,8 +1,8 @@
 # Migration Guide
 
-## Migrating from Vanilla Web Bluetooth to @wklm/react
+## Migrating from Vanilla Web Bluetooth to @ios-web-bluetooth/react
 
-This guide helps you migrate existing Web Bluetooth code to use the @wklm/react SDK.
+This guide helps you migrate existing Web Bluetooth code to use the @ios-web-bluetooth/react SDK.
 
 ## Quick Comparison
 
@@ -38,10 +38,10 @@ function handleValue(event) {
 }
 ```
 
-### @wklm/react
+### @ios-web-bluetooth/react
 
 ```tsx
-import { WebBLE } from '@wklm/react';
+import { WebBLE } from '@ios-web-bluetooth/react';
 
 function HeartRateMonitor() {
   const { requestDevice } = WebBLE.useBluetooth();
@@ -82,13 +82,13 @@ function HeartRateMonitor() {
 First, install the SDK:
 
 ```bash
-npm install @wklm/react
+npm install @ios-web-bluetooth/react
 ```
 
 Wrap your app with the provider:
 
 ```tsx
-import { WebBLE } from '@wklm/react';
+import { WebBLE } from '@ios-web-bluetooth/react';
 
 function App() {
   return (
@@ -121,7 +121,7 @@ async function requestDevice() {
 }
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 function Component() {
@@ -172,7 +172,7 @@ function onDisconnected() {
 }
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 function Component() {
@@ -216,7 +216,7 @@ async function discoverServices() {
 }
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 function Component() {
@@ -252,7 +252,7 @@ async function readBatteryLevel() {
 }
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 function BatteryLevel() {
@@ -297,7 +297,7 @@ async function setLightColor(r, g, b) {
 }
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 function LightControl() {
@@ -360,7 +360,7 @@ async function stopNotifications() {
 }
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 function HeartRateMonitor() {
@@ -432,7 +432,7 @@ function stopScan() {
 }
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 function DeviceScanner() {
@@ -487,7 +487,7 @@ try {
 }
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 function Component() {
@@ -542,7 +542,7 @@ function updateConnectionState(connected) {
 }
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 // State is managed by hooks
@@ -587,7 +587,7 @@ function cleanup() {
 window.addEventListener('beforeunload', cleanup);
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 // Cleanup is automatic with React hooks
@@ -634,7 +634,7 @@ class HeartRateService {
 }
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 // Create a custom hook instead
@@ -686,7 +686,7 @@ navigator.bluetooth.requestDevice(options)
   });
 ```
 
-#### After (@wklm/react)
+#### After (@ios-web-bluetooth/react)
 
 ```tsx
 function Component() {
@@ -733,14 +733,14 @@ test('connects to device', async () => {
 });
 ```
 
-### After (@wklm/react)
+### After (@ios-web-bluetooth/react)
 
 ```tsx
 import { render, screen } from '@testing-library/react';
-import { WebBLE } from '@wklm/react';
+import { WebBLE } from '@ios-web-bluetooth/react';
 
 // Mock the WebBLE hooks
-jest.mock('@wklm/react', () => ({
+jest.mock('@ios-web-bluetooth/react', () => ({
   WebBLE: {
     Provider: ({ children }) => children,
     useBluetooth: () => ({

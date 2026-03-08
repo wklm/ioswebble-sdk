@@ -13,5 +13,5 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   treeshake: true,
-  external: ['@wklm/core'],
+  external: ['@ios-web-bluetooth/core'],
 });

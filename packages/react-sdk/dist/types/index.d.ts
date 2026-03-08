@@ -1,5 +1,5 @@
 /**
- * Type definitions for @wklm/react SDK
+ * Type definitions for @ios-web-bluetooth/react SDK
  */
 export interface WebBLEConfig {
     autoConnect?: boolean;
@@ -51,8 +51,8 @@ export interface CharacteristicProperties {
     notify: boolean;
     indicate: boolean;
     authenticatedSignedWrites: boolean;
-    reliableWrite?: boolean;
-    writableAuxiliaries?: boolean;
+    reliableWrite: boolean;
+    writableAuxiliaries: boolean;
 }
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'disconnecting';
 export interface ConnectionOptions {
@@ -94,11 +94,7 @@ export interface BluetoothAdvertisingEvent {
     rssi: number;
     txPower: number;
 }
-export declare class WebBLEError extends Error {
-    code?: string | undefined;
-    device?: BluetoothDevice | undefined;
-    constructor(message: string, code?: string | undefined, device?: BluetoothDevice | undefined);
-}
+export { WebBLEError } from './compat-error';
 export interface UseBluetoothReturn {
     isAvailable: boolean;
     isExtensionInstalled: boolean;
@@ -169,7 +165,9 @@ export interface ConnectionParameters {
 export type ConnectionPriority = 'balanced' | 'high' | 'low-power';
 export interface RequestDeviceOptions {
     filters?: BluetoothLEScanFilter[];
+    exclusionFilters?: BluetoothLEScanFilter[];
     optionalServices?: BluetoothServiceUUID[];
+    optionalManufacturerData?: number[];
     acceptAllDevices?: boolean;
 }
 export type ValueParser<T = any> = (value: DataView) => T;

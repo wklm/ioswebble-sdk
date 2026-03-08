@@ -1,5 +1,5 @@
 /**
- * @wklm/detect
+ * @ios-web-bluetooth/detect
  *
  * Detects iOS Safari, checks if the iOSWebBLE extension is installed,
  * and shows an install banner if not. No-op on all other platforms.

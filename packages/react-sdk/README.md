@@ -1,7 +1,7 @@
-# @wklm/react - Production-Grade Web Bluetooth SDK for React
+# @ios-web-bluetooth/react - Production-Grade Web Bluetooth SDK for React
 
-[![npm version](https://img.shields.io/npm/v/@wklm/react.svg)](https://www.npmjs.com/package/@wklm/react)
-[![License](https://img.shields.io/npm/l/@wklm/react.svg)](https://github.com/wklm/WebBLE-Safari-Extension/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/@ios-web-bluetooth/react.svg)](https://www.npmjs.com/package/@ios-web-bluetooth/react)
+[![License](https://img.shields.io/npm/l/@ios-web-bluetooth/react.svg)](https://github.com/wklm/WebBLE-Safari-Extension/blob/main/LICENSE)
 [![Test Coverage](https://img.shields.io/badge/coverage-89%25-brightgreen)](https://github.com/wklm/WebBLE-Safari-Extension)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
@@ -20,11 +20,11 @@ A production-ready React SDK for Web Bluetooth, enabling seamless BLE device int
 ## Installation
 
 ```bash
-npm install @wklm/react
+npm install @ios-web-bluetooth/react
 # or
-yarn add @wklm/react
+yarn add @ios-web-bluetooth/react
 # or
-pnpm add @wklm/react
+pnpm add @ios-web-bluetooth/react
 ```
 
 ## Quick Start
@@ -32,7 +32,7 @@ pnpm add @wklm/react
 ### Basic Setup
 
 ```tsx
-import { WebBLE } from '@wklm/react';
+import { WebBLE } from '@ios-web-bluetooth/react';
 
 function App() {
   return (
@@ -46,7 +46,7 @@ function App() {
 ### Connect to a Device
 
 ```tsx
-import { WebBLE } from '@wklm/react';
+import { WebBLE } from '@ios-web-bluetooth/react';
 
 function MyComponent() {
   const { requestDevice, isAvailable } = WebBLE.useBluetooth();
@@ -266,7 +266,7 @@ function MyComponent() {
 ### TypeScript Support
 
 ```tsx
-import { WebBLE, BluetoothDevice, BluetoothService } from '@wklm/react';
+import { WebBLE, BluetoothDevice, BluetoothService } from '@ios-web-bluetooth/react';
 
 interface HeartRateData {
   heartRate: number;

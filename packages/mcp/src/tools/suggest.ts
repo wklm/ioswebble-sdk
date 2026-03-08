@@ -1,7 +1,7 @@
 /**
  * webble_suggest tool implementation
  *
- * Analyzes a web project and recommends which @wklm packages to install
+ * Analyzes a web project and recommends which @ios-web-bluetooth packages to install
  * and how to configure them for Safari iOS Bluetooth support.
  */
 
@@ -70,11 +70,11 @@ export async function suggestTool(
   else if (hasAngular) framework = 'Angular';
 
   // Check what's already installed
-  const hasCore = '@wklm/core' in allDeps;
-  const hasReactSdk = '@wklm/react' in allDeps;
-  const hasDetect = '@wklm/detect' in allDeps;
-  const hasProfiles = '@wklm/profiles' in allDeps;
-  const hasTesting = '@wklm/testing' in allDeps;
+  const hasCore = '@ios-web-bluetooth/core' in allDeps;
+  const hasReactSdk = '@ios-web-bluetooth/react' in allDeps;
+  const hasDetect = '@ios-web-bluetooth/detect' in allDeps;
+  const hasProfiles = '@ios-web-bluetooth/profiles' in allDeps;
+  const hasTesting = '@ios-web-bluetooth/testing' in allDeps;
 
   // Check for existing BLE code
   let hasBleCode = false;
@@ -102,21 +102,21 @@ export async function suggestTool(
 
   // Always recommend core
   if (!hasCore) {
-    rec.packages.push('@wklm/core');
+    rec.packages.push('@ios-web-bluetooth/core');
   } else {
-    rec.notes.push('@wklm/core is already installed.');
+    rec.notes.push('@ios-web-bluetooth/core is already installed.');
   }
 
-  // React-based frameworks get @wklm/react
+  // React-based frameworks get @ios-web-bluetooth/react
   if ((hasReact || hasNext) && !hasReactSdk) {
-    rec.packages.push('@wklm/react');
+    rec.packages.push('@ios-web-bluetooth/react');
   }
 
   // Always recommend detect for install banner
   if (!hasDetect) {
-    rec.packages.push('@wklm/detect');
+    rec.packages.push('@ios-web-bluetooth/detect');
     rec.notes.push(
-      '@wklm/detect shows an install banner on iOS Safari when the extension is missing.'
+      '@ios-web-bluetooth/detect shows an install banner on iOS Safari when the extension is missing.'
     );
   }
 
@@ -126,7 +126,7 @@ export async function suggestTool(
     /heart.?rate|battery|device.?info|profile/i.test(goal) &&
     !hasProfiles
   ) {
-    rec.packages.push('@wklm/profiles');
+    rec.packages.push('@ios-web-bluetooth/profiles');
   }
 
   // Suggest testing if they have test infrastructure
@@ -136,9 +136,9 @@ export async function suggestTool(
       'vitest' in allDeps ||
       '@testing-library/react' in allDeps)
   ) {
-    rec.packages.push('@wklm/testing');
+    rec.packages.push('@ios-web-bluetooth/testing');
     rec.notes.push(
-      '@wklm/testing provides mock BLE devices for your test suite.'
+      '@ios-web-bluetooth/testing provides mock BLE devices for your test suite.'
     );
   }
 
@@ -152,10 +152,10 @@ export async function suggestTool(
   // Build code snippet based on framework
   if (hasReact || hasNext) {
     rec.codeSnippet = `// Add to your app entry point (e.g. layout.tsx or main.tsx)
-import '@wklm/core/auto';
+import '@ios-web-bluetooth/core/auto';
 
 // In your BLE component:
-import { WebBLEProvider, useBluetooth } from '@wklm/react';
+import { WebBLEProvider, useBluetooth } from '@ios-web-bluetooth/react';
 
 function App() {
   return (
@@ -176,10 +176,10 @@ function MyBLEComponent() {
 }`;
   } else {
     rec.codeSnippet = `// Add to your app entry point
-import '@wklm/core/auto';
+import '@ios-web-bluetooth/core/auto';
 
 // In your BLE code:
-import { WebBLE } from '@wklm/core';
+import { WebBLE } from '@ios-web-bluetooth/core';
 
 const ble = new WebBLE();
 
@@ -193,7 +193,7 @@ document.querySelector('#connect').addEventListener('click', async () => {
 
   if (hasBleCode) {
     rec.notes.push(
-      'Existing navigator.bluetooth usage detected. The SDK wraps this automatically — your existing code will work with `import \'@wklm/core/auto\'`.'
+      'Existing navigator.bluetooth usage detected. The SDK wraps this automatically — your existing code will work with `import \'@ios-web-bluetooth/core/auto\'`.'
     );
   }
 

@@ -197,7 +197,7 @@ export async function checkComplianceTool(
             line: lineNum,
             issue:
               'Full Bluetooth SIG UUID used instead of short human-readable name',
-            fix: "Use the short name: 'heart_rate' instead of '0000180d-0000-1000-8000-00805f9b34fb'. See @wklm/core resolveUUID().",
+            fix: "Use the short name: 'heart_rate' instead of '0000180d-0000-1000-8000-00805f9b34fb'. See @ios-web-bluetooth/core resolveUUID().",
           });
         }
       }

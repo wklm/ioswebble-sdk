@@ -13,25 +13,25 @@ WebBLE is a Web Bluetooth SDK for web apps. It works on Chrome natively and on i
 
 | You want to... | Install | Scope |
 |---|---|---|
-| Scan, connect, read/write BLE devices | `npm install @wklm/core` | @wklm |
-| Use typed device profiles (heart rate, battery, device info) | `npm install @wklm/profiles` | @wklm |
-| React hooks and components for BLE | `npm install @wklm/react` | @wklm |
-| Detect iOS Safari extension, show install banner | `npm install @wklm/detect` | @wklm |
-| AI agent MCP tools | `npx -y @wklm/mcp` | @wklm |
-| CLI scaffolding | `npx ioswebble init` | @wklm |
+| Scan, connect, read/write BLE devices | `npm install @ios-web-bluetooth/core` | @ios-web-bluetooth |
+| Use typed device profiles (heart rate, battery, device info) | `npm install @ios-web-bluetooth/profiles` | @ios-web-bluetooth |
+| React hooks and components for BLE | `npm install @ios-web-bluetooth/react` | @ios-web-bluetooth |
+| Detect iOS Safari extension, show install banner | `npm install @ios-web-bluetooth/detect` | @ios-web-bluetooth |
+| AI agent MCP tools | `npx -y @ios-web-bluetooth/mcp` | @ios-web-bluetooth |
+| CLI scaffolding | `npx ioswebble init` | @ios-web-bluetooth |
 
-**Scope**: All packages are published under `@wklm/*`.
+**Scope**: All packages are published under `@ios-web-bluetooth/*`.
 
 ## Integration Path A: New BLE Application
 
 ### Step 1: Install
 ```
-npm install @wklm/core
+npm install @ios-web-bluetooth/core
 ```
 
 ### Step 2: Scan and connect
 ```typescript
-import { WebBLE } from '@wklm/core'
+import { WebBLE } from '@ios-web-bluetooth/core'
 
 const ble = new WebBLE()
 const device = await ble.requestDevice({
@@ -51,10 +51,10 @@ device.subscribe('heart_rate', 'heart_rate_measurement', (data) => {
 
 ### Step 4 (optional): Use a typed profile
 ```
-npm install @wklm/profiles
+npm install @ios-web-bluetooth/profiles
 ```
 ```typescript
-import { HeartRateProfile } from '@wklm/profiles'
+import { HeartRateProfile } from '@ios-web-bluetooth/profiles'
 
 const profile = new HeartRateProfile(device)
 profile.onHeartRate((data) => {
@@ -64,10 +64,10 @@ profile.onHeartRate((data) => {
 
 ### Step 5 (optional): Add iOS Safari support
 ```
-npm install @wklm/detect
+npm install @ios-web-bluetooth/detect
 ```
 ```typescript
-import { initIOSWebBLE } from '@wklm/detect'
+import { initIOSWebBLE } from '@ios-web-bluetooth/detect'
 initIOSWebBLE({})
 ```
 
@@ -75,21 +75,21 @@ initIOSWebBLE({})
 
 ### Step 1: Install
 ```
-npm install @wklm/detect
+npm install @ios-web-bluetooth/detect
 ```
 
 ### Step 2: Add detection
 
 For React/Next.js:
 ```tsx
-import { IOSWebBLEProvider } from '@wklm/detect/react'
+import { IOSWebBLEProvider } from '@ios-web-bluetooth/detect/react'
 // Wrap your app:
 <IOSWebBLEProvider>{children}</IOSWebBLEProvider>
 ```
 
 For any framework:
 ```typescript
-import { initIOSWebBLE } from '@wklm/detect'
+import { initIOSWebBLE } from '@ios-web-bluetooth/detect'
 initIOSWebBLE({})
 ```
 
@@ -108,7 +108,7 @@ npx ioswebble check
 {
   "ioswebble": {
     "command": "npx",
-    "args": ["-y", "@wklm/mcp"]
+    "args": ["-y", "@ios-web-bluetooth/mcp"]
   }
 }
 ```
@@ -116,8 +116,8 @@ npx ioswebble check
 ## Rules
 - Do NOT modify existing `navigator.bluetooth` calls — the extension handles compatibility
 - Use human-readable UUID names (`'heart_rate'`) not hex (`'0x180D'`) — the SDK resolves automatically
-- Use `@wklm/profiles` for standard devices instead of writing raw GATT parsing code
-- For React, use `@wklm/react` hooks instead of raw event listeners
+- Use `@ios-web-bluetooth/profiles` for standard devices instead of writing raw GATT parsing code
+- For React, use `@ios-web-bluetooth/react` hooks instead of raw event listeners
 - API key is optional (campaign tracking only)
 - The detect snippet only shows an install banner on iOS Safari when the extension is not installed
 - Works alongside native Web Bluetooth on Chrome/Android (no-op on non-iOS)

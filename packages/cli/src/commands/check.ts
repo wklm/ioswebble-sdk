@@ -49,21 +49,21 @@ export async function check(_args: string[]): Promise<void> {
 
   console.log('Checking iOSWebBLE integration...\n');
 
-  // 1. Check if @wklm/detect is in dependencies
+  // 1. Check if @ios-web-bluetooth/detect is in dependencies
   const pkgPath = path.join(projectPath, 'package.json');
   if (fs.existsSync(pkgPath)) {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
     const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
-    if (!allDeps['@wklm/detect']) {
-      issues.push('Package @wklm/detect not found in dependencies');
+    if (!allDeps['@ios-web-bluetooth/detect']) {
+      issues.push('Package @ios-web-bluetooth/detect not found in dependencies');
     } else {
-      console.log('  [pass] @wklm/detect found in dependencies');
+      console.log('  [pass] @ios-web-bluetooth/detect found in dependencies');
     }
   } else {
     // Check for CDN usage in HTML files
     const hasCdn = await grepProject(projectPath, /ioswebble\.com\/detect/);
     if (!hasCdn) {
-      issues.push('No @wklm/detect package or CDN script found');
+      issues.push('No @ios-web-bluetooth/detect package or CDN script found');
     } else {
       console.log('  [pass] CDN script tag found');
     }

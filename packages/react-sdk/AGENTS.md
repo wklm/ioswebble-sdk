@@ -1,19 +1,19 @@
-# @wklm/react — Agent Instructions
+# @ios-web-bluetooth/react — Agent Instructions
 
 ## What this package does
 React SDK for Web Bluetooth. Provides `WebBLEProvider` (context), hooks for
 device discovery/connection/notifications, and pre-built UI components.
-Optionally integrates with `@wklm/core`, `@wklm/profiles`, and
-`@wklm/detect`.
+Optionally integrates with `@ios-web-bluetooth/core`, `@ios-web-bluetooth/profiles`, and
+`@ios-web-bluetooth/detect`.
 
 ## Safari iOS Support
-Add `import '@wklm/core/auto'` to your app entry point for transparent Safari iOS support. This is separate from the React hooks below.
+Add `import '@ios-web-bluetooth/core/auto'` to your app entry point for transparent Safari iOS support. This is separate from the React hooks below.
 
 ## Provider setup
 Wrap your app in `WebBLEProvider`. All hooks require this context.
 
 ```tsx
-import { WebBLEProvider } from '@wklm/react';
+import { WebBLEProvider } from '@ios-web-bluetooth/react';
 
 function App() {
   return (
@@ -26,7 +26,7 @@ function App() {
 
 Config options: `autoConnect`, `cacheTimeout`, `retryAttempts`, `apiKey`,
 `operatorName`, `appStoreUrl`. The `apiKey` enables automatic iOS Safari
-install prompts via `@wklm/detect`.
+install prompts via `@ios-web-bluetooth/detect`.
 
 ## Hook reference
 
@@ -35,15 +35,15 @@ install prompts via `@wklm/detect`.
 | `useBluetooth()` | Main entry — availability, device requests | `isAvailable`, `isSupported`, `requestDevice`, `getDevices`, `error` |
 | `useDevice(device)` | Manage a specific device | `isConnected`, `isConnecting`, `connect`, `disconnect`, `services`, `error` |
 | `useScan()` | BLE scanning | `startScan`, `stopScan`, `isScanning`, `devices` |
-| `useProfile(ProfileClass, device)` | Bind a `@wklm/profiles` profile to a device | `profile`, `connect`, `error` |
+| `useProfile(ProfileClass, device)` | Bind a `@ios-web-bluetooth/profiles` profile to a device | `profile`, `connect`, `error` |
 | `useNotifications()` | Characteristic notifications | subscribe/unsubscribe helpers |
 | `useCharacteristic()` | Read/write a single characteristic | `read`, `write`, `value`, `error` |
 | `useConnection()` | Connection state management | connection lifecycle helpers |
 
 ## Core pattern
 ```tsx
-import { WebBLEProvider, useBluetooth, useDevice, useProfile } from '@wklm/react';
-import { HeartRateProfile } from '@wklm/profiles';
+import { WebBLEProvider, useBluetooth, useDevice, useProfile } from '@ios-web-bluetooth/react';
+import { HeartRateProfile } from '@ios-web-bluetooth/profiles';
 
 function HeartRateMonitor() {
   const { requestDevice } = useBluetooth();

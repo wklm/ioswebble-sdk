@@ -1,5 +1,5 @@
 {
-  "name": "@wklm/mcp",
+  "name": "@ios-web-bluetooth/mcp",
   "version": "0.1.1",
   "description": "MCP server for AI coding agents — scaffold BLE web apps, look up UUIDs, get code examples",
   "main": "dist/index.js",
@@ -52,7 +52,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@wklm/detect": "^0.1.1",
+    "@ios-web-bluetooth/detect": "^0.1.1",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.22.0"
   },

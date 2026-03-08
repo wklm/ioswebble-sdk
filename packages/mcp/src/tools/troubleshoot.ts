@@ -2,7 +2,7 @@
  * ioswebble_troubleshoot tool implementation
  *
  * Diagnoses issues from error codes or symptom descriptions.
- * Error codes match WebBLEErrorCode from @wklm/core/errors.ts.
+ * Error codes match WebBLEErrorCode from @ios-web-bluetooth/core/errors.ts.
  */
 
 interface ToolResult {
@@ -37,12 +37,12 @@ if (!ble.isSupported) {
     title: 'WebBLE Extension Not Installed',
     cause: 'The user is on iOS Safari but has not installed the WebBLE app/extension.',
     fix: [
-      'Add `@wklm/detect` to show an automatic install banner on iOS Safari.',
+      'Add `@ios-web-bluetooth/detect` to show an automatic install banner on iOS Safari.',
       'The detection snippet is a no-op on Chrome/Android (native Web Bluetooth).',
       'Direct users to install the WebBLE app from the App Store.',
       'After installing, they must enable the extension in Safari Settings > Extensions.',
     ],
-    code: `import { initIOSWebBLE } from '@wklm/detect'
+    code: `import { initIOSWebBLE } from '@ios-web-bluetooth/detect'
 initIOSWebBLE({ key: 'wbl_YOUR_API_KEY' })`,
   },
 

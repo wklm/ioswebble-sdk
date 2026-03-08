@@ -1,4 +1,4 @@
-# @wklm/core — Web Bluetooth Polyfill for Safari iOS
+# @ios-web-bluetooth/core — Web Bluetooth Polyfill for Safari iOS
 
 > **The Web Bluetooth API (`navigator.bluetooth`) is not available in Safari.**
 > This SDK fixes that. One import and your BLE web app works on iPhone.
@@ -8,18 +8,18 @@
 ## Install
 
 ```bash
-npm install @wklm/core
+npm install @ios-web-bluetooth/core
 ```
 
 ```typescript
-import '@wklm/core/auto';
+import '@ios-web-bluetooth/core/auto';
 // navigator.bluetooth now works everywhere — Safari iOS, Chrome, Edge.
 ```
 
 Or use the explicit API for full control:
 
 ```typescript
-import { WebBLE } from '@wklm/core';
+import { WebBLE } from '@ios-web-bluetooth/core';
 
 const ble = new WebBLE();
 const device = await ble.requestDevice({
@@ -35,23 +35,23 @@ Zero dependencies. `sideEffects: false` enables tree-shaking — only what you i
 
 ```typescript
 // Full SDK (~4KB gzipped)
-import { WebBLE, WebBLEDevice, WebBLEError } from '@wklm/core';
+import { WebBLE, WebBLEDevice, WebBLEError } from '@ios-web-bluetooth/core';
 
 // Just UUID helpers (~1KB gzipped)
-import { resolveUUID, getServiceName } from '@wklm/core';
+import { resolveUUID, getServiceName } from '@ios-web-bluetooth/core';
 
 // Just platform detection (~0.5KB gzipped)
-import { detectPlatform } from '@wklm/core';
+import { detectPlatform } from '@ios-web-bluetooth/core';
 ```
 
-You do **not** need `@wklm/profiles` or `@wklm/react-sdk` for basic BLE operations. `@wklm/core` is fully self-contained.
+You do **not** need `@ios-web-bluetooth/profiles` or `@ios-web-bluetooth/react-sdk` for basic BLE operations. `@ios-web-bluetooth/core` is fully self-contained.
 
 ## Scanning for devices
 
 ### Filter by service UUID
 
 ```typescript
-import { WebBLE } from '@wklm/core';
+import { WebBLE } from '@ios-web-bluetooth/core';
 
 const ble = new WebBLE();
 const device = await ble.requestDevice({
@@ -98,7 +98,7 @@ const device = await ble.requestDevice({
 ### Error handling for scanning
 
 ```typescript
-import { WebBLE, WebBLEError } from '@wklm/core';
+import { WebBLE, WebBLEError } from '@ios-web-bluetooth/core';
 
 const ble = new WebBLE();
 try {
@@ -126,7 +126,7 @@ try {
 }
 ```
 
-> **iOS Safari note:** The WebBLE Safari extension must be installed and enabled under Settings > Apps > Safari > Extensions. Use `@wklm/detect` to auto-prompt users when the extension is missing.
+> **iOS Safari note:** The WebBLE Safari extension must be installed and enabled under Settings > Apps > Safari > Extensions. Use `@ios-web-bluetooth/detect` to auto-prompt users when the extension is missing.
 
 ## Connecting & GATT service access
 
@@ -158,7 +158,7 @@ await device.read('0000180d-0000-1000-8000-00805f9b34fb', '00002a37-0000-1000-80
 Use `resolveUUID()` to convert names to full UUIDs:
 
 ```typescript
-import { resolveUUID, getServiceName } from '@wklm/core';
+import { resolveUUID, getServiceName } from '@ios-web-bluetooth/core';
 
 resolveUUID('heart_rate');               // '0000180d-0000-1000-8000-00805f9b34fb'
 getServiceName('0000180d-0000-1000-8000-00805f9b34fb'); // 'heart_rate'
@@ -238,7 +238,7 @@ async function connectWithRetry(ble: WebBLE, maxRetries = 3) {
 ### Full lifecycle example
 
 ```typescript
-import { WebBLE, WebBLEError } from '@wklm/core';
+import { WebBLE, WebBLEError } from '@ios-web-bluetooth/core';
 
 const ble = new WebBLE();
 
@@ -276,7 +276,7 @@ await device.disconnect();
 All SDK errors are `WebBLEError` instances with a typed `code` and a human-readable `suggestion`:
 
 ```typescript
-import { WebBLEError } from '@wklm/core';
+import { WebBLEError } from '@ios-web-bluetooth/core';
 
 try {
   await device.connect();
@@ -359,11 +359,11 @@ try {
 MCP server for coding agents (Claude Code, Cursor, Copilot):
 
 ```
-npx -y @wklm/mcp
+npx -y @ios-web-bluetooth/mcp
 ```
 
 Full SDK reference for LLM context: <https://ioswebble.com/llms-full.txt>
 
 ## Two scopes
 
-The **`@wklm/*`** packages (`core`, `profiles`, `react`) are the cross-browser BLE SDK -- they work on any platform with Web Bluetooth support (Chrome, Edge, iOS Safari via the extension). The **`@wklm/*`** packages (`detect`, `cli`, `mcp`, `skill`) handle iOS-specific extension detection, install prompts, and agent tooling. Use both together for full iOS Safari coverage.
+The **`@ios-web-bluetooth/*`** packages (`core`, `profiles`, `react`) are the cross-browser BLE SDK -- they work on any platform with Web Bluetooth support (Chrome, Edge, iOS Safari via the extension). The **`@ios-web-bluetooth/*`** packages (`detect`, `cli`, `mcp`, `skill`) handle iOS-specific extension detection, install prompts, and agent tooling. Use both together for full iOS Safari coverage.

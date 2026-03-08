@@ -1,4 +1,4 @@
-# @wklm/core — Agent Instructions
+# @ios-web-bluetooth/core — Agent Instructions
 
 ## What this package does
 Platform-agnostic Web Bluetooth SDK. Provides `WebBLE` (entry point),
@@ -7,13 +7,13 @@ Works on any browser with Web Bluetooth support.
 
 ## One-line polyfill (recommended)
 ```typescript
-import '@wklm/core/auto';
+import '@ios-web-bluetooth/core/auto';
 // navigator.bluetooth now works on Safari iOS. No-op on Chrome/Edge.
 ```
 
 ## Core pattern (explicit API)
 ```typescript
-import { WebBLE } from '@wklm/core';
+import { WebBLE } from '@ios-web-bluetooth/core';
 
 const ble = new WebBLE();
 const device = await ble.requestDevice({
@@ -42,10 +42,10 @@ const value = await device.read('heart_rate', 'heart_rate_measurement');
 - Call `device.connect()` before any read/write/subscribe
 - Check `WebBLEError.code` for programmatic error handling
 - Store the unsubscribe function returned by `device.subscribe()` and call it on cleanup
-- Use `@wklm/profiles` when a built-in profile exists for your device type
+- Use `@ios-web-bluetooth/profiles` when a built-in profile exists for your device type
 
 ## DO NOT
-- Do not write raw GATT parsing code when a profile exists in `@wklm/profiles`
+- Do not write raw GATT parsing code when a profile exists in `@ios-web-bluetooth/profiles`
 - Do not catch errors silently — surface `WebBLEError.code` and `.hint` to the user
 - Do not call `device.read()` / `device.write()` before `device.connect()` — throws `NOT_CONNECTED`
 - Do not access `device.raw` unless you need the underlying `BluetoothDevice` for an unsupported operation

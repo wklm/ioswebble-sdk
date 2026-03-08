@@ -2,9 +2,9 @@
  * ioswebble_check tool implementation
  *
  * Verifies iOSWebBLE integration by checking for:
- * - @wklm/detect in dependencies and source
- * - @wklm/core in dependencies and source
- * - @wklm/profiles in dependencies and source
+ * - @ios-web-bluetooth/detect in dependencies and source
+ * - @ios-web-bluetooth/core in dependencies and source
+ * - @ios-web-bluetooth/profiles in dependencies and source
  */
 
 import * as fs from 'fs';
@@ -58,14 +58,14 @@ export async function checkTool(projectPath: string): Promise<ToolResult> {
     allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
   }
 
-  // 1. @wklm/detect package check
-  if (allDeps['@wklm/detect']) {
-    checks.push('[PASS] @wklm/detect found in dependencies');
+  // 1. @ios-web-bluetooth/detect package check
+  if (allDeps['@ios-web-bluetooth/detect']) {
+    checks.push('[PASS] @ios-web-bluetooth/detect found in dependencies');
   } else {
-    issues.push('[FAIL] @wklm/detect not in dependencies. Run: npm install @wklm/detect');
+    issues.push('[FAIL] @ios-web-bluetooth/detect not in dependencies. Run: npm install @ios-web-bluetooth/detect');
   }
 
-  // 2. @wklm/detect usage check
+  // 2. @ios-web-bluetooth/detect usage check
   const hasDetectInit = grepProject(projectPath, /@ioswebble\/detect|ioswebble\.com\/detect|IOSWebBLEProvider|initIOSWebBLE/);
   if (hasDetectInit) {
     checks.push('[PASS] iOSWebBLE detection/initialization found in source files');
@@ -73,47 +73,47 @@ export async function checkTool(projectPath: string): Promise<ToolResult> {
     issues.push('[FAIL] No iOSWebBLE detection found. Use ioswebble_init or ioswebble_add to add it.');
   }
 
-  // 3. @wklm/core package check
-  if (allDeps['@wklm/core']) {
-    checks.push('[PASS] @wklm/core found in dependencies');
+  // 3. @ios-web-bluetooth/core package check
+  if (allDeps['@ios-web-bluetooth/core']) {
+    checks.push('[PASS] @ios-web-bluetooth/core found in dependencies');
 
     // Check for actual usage
-    const hasCoreUsage = grepProject(projectPath, /@wklm\/core|@webble\/core|new WebBLE|WebBLEDevice|WebBLEError/);
+    const hasCoreUsage = grepProject(projectPath, /@ios-web-bluetooth\/core|@webble\/core|new WebBLE|WebBLEDevice|WebBLEError/);
     if (hasCoreUsage) {
-      checks.push('[PASS] @wklm/core imports found in source files');
+      checks.push('[PASS] @ios-web-bluetooth/core imports found in source files');
     } else {
-      info.push('[INFO] @wklm/core is installed but no imports found in source files');
+      info.push('[INFO] @ios-web-bluetooth/core is installed but no imports found in source files');
     }
   } else {
-    info.push('[INFO] @wklm/core not installed (optional — needed for programmatic BLE access)');
+    info.push('[INFO] @ios-web-bluetooth/core not installed (optional — needed for programmatic BLE access)');
   }
 
-  // 4. @wklm/profiles package check
-  if (allDeps['@wklm/profiles']) {
-    checks.push('[PASS] @wklm/profiles found in dependencies');
+  // 4. @ios-web-bluetooth/profiles package check
+  if (allDeps['@ios-web-bluetooth/profiles']) {
+    checks.push('[PASS] @ios-web-bluetooth/profiles found in dependencies');
 
-    const hasProfileUsage = grepProject(projectPath, /@wklm\/profiles|@webble\/profiles|HeartRateProfile|BatteryProfile|DeviceInfoProfile|defineProfile/);
+    const hasProfileUsage = grepProject(projectPath, /@ios-web-bluetooth\/profiles|@webble\/profiles|HeartRateProfile|BatteryProfile|DeviceInfoProfile|defineProfile/);
     if (hasProfileUsage) {
-      checks.push('[PASS] @wklm/profiles imports found in source files');
+      checks.push('[PASS] @ios-web-bluetooth/profiles imports found in source files');
     } else {
-      info.push('[INFO] @wklm/profiles is installed but no imports found in source files');
+      info.push('[INFO] @ios-web-bluetooth/profiles is installed but no imports found in source files');
     }
   } else {
-    info.push('[INFO] @wklm/profiles not installed (optional — typed BLE profile helpers)');
+    info.push('[INFO] @ios-web-bluetooth/profiles not installed (optional — typed BLE profile helpers)');
   }
 
-  // 5. @wklm/react package check
-  if (allDeps['@wklm/react']) {
-    checks.push('[PASS] @wklm/react found in dependencies');
+  // 5. @ios-web-bluetooth/react package check
+  if (allDeps['@ios-web-bluetooth/react']) {
+    checks.push('[PASS] @ios-web-bluetooth/react found in dependencies');
 
-    const hasReactUsage = grepProject(projectPath, /@wklm\/react|@webble\/react|WebBLEProvider|useWebBLE|useDevice|useNotifications/);
+    const hasReactUsage = grepProject(projectPath, /@ios-web-bluetooth\/react|@webble\/react|WebBLEProvider|useWebBLE|useDevice|useNotifications/);
     if (hasReactUsage) {
-      checks.push('[PASS] @wklm/react imports found in source files');
+      checks.push('[PASS] @ios-web-bluetooth/react imports found in source files');
     } else {
-      info.push('[INFO] @wklm/react is installed but no imports found in source files');
+      info.push('[INFO] @ios-web-bluetooth/react is installed but no imports found in source files');
     }
   } else {
-    info.push('[INFO] @wklm/react not installed (optional — React hooks and components)');
+    info.push('[INFO] @ios-web-bluetooth/react not installed (optional — React hooks and components)');
   }
 
   // 6. HTTPS check (check for dev server config)

@@ -15,26 +15,26 @@ WebBLE is a Web Bluetooth SDK for web apps. It works on Chrome natively and on i
 
 | You want to... | Install | Scope |
 |---|---|---|
-| Scan, connect, read/write BLE devices | `npm install @wklm/core` | @wklm |
-| Use typed device profiles (heart rate, battery, device info) | `npm install @wklm/profiles` | @wklm |
-| React hooks and components for BLE | `npm install @wklm/react` | @wklm |
-| Detect iOS Safari extension, show install banner | `npm install @wklm/detect` | @wklm |
-| AI agent MCP tools | `npx -y @wklm/mcp` | @wklm |
-| CLI scaffolding | `npx ioswebble init` | @wklm |
+| Scan, connect, read/write BLE devices | `npm install @ios-web-bluetooth/core` | @ios-web-bluetooth |
+| Use typed device profiles (heart rate, battery, device info) | `npm install @ios-web-bluetooth/profiles` | @ios-web-bluetooth |
+| React hooks and components for BLE | `npm install @ios-web-bluetooth/react` | @ios-web-bluetooth |
+| Detect iOS Safari extension, show install banner | `npm install @ios-web-bluetooth/detect` | @ios-web-bluetooth |
+| AI agent MCP tools | `npx -y @ios-web-bluetooth/mcp` | @ios-web-bluetooth |
+| CLI scaffolding | `npx ioswebble init` | @ios-web-bluetooth |
 
-**Scope**: All packages are published under `@wklm/*`.
+**Scope**: All packages are published under `@ios-web-bluetooth/*`.
 
 ## Quick Start (iOS Safari detection — this package)
 
 ```typescript
-import { initIOSWebBLE } from '@wklm/detect'
+import { initIOSWebBLE } from '@ios-web-bluetooth/detect'
 initIOSWebBLE({})
 ```
 
-For the full SDK integration guide, see the canonical SKILL.md in `@wklm/skill` or https://ioswebble.com/llms-full.txt
+For the full SDK integration guide, see the canonical SKILL.md in `@ios-web-bluetooth/skill` or https://ioswebble.com/llms-full.txt
 
 ## Rules
 - Do NOT modify existing `navigator.bluetooth` calls
-- Use `@wklm/core` for BLE operations, `@wklm/detect` only for extension detection
+- Use `@ios-web-bluetooth/core` for BLE operations, `@ios-web-bluetooth/detect` only for extension detection
 - API key is optional (campaign tracking only)
 - Requires HTTPS (localhost excepted)

@@ -1,12 +1,12 @@
-# @wklm/testing — Agent Instructions
+# @ios-web-bluetooth/testing — Agent Instructions
 
 ## What this package does
-Mock Bluetooth API for testing `@wklm/core` apps. Provides stateful fake devices,
+Mock Bluetooth API for testing `@ios-web-bluetooth/core` apps. Provides stateful fake devices,
 simulated advertising, and a notification pump — no real Bluetooth hardware needed.
 
 ## Core pattern
 ```typescript
-import { MockBluetooth, MockDevice } from '@wklm/testing';
+import { MockBluetooth, MockDevice } from '@ios-web-bluetooth/testing';
 
 // Replace navigator.bluetooth with mock
 const mock = new MockBluetooth();
