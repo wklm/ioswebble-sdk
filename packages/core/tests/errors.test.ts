@@ -1,17 +1,18 @@
 import { WebBLEError } from '../src/errors';
 
 describe('WebBLEError', () => {
-  it('sets code, hint, and name', () => {
-    const err = new WebBLEError('UNSUPPORTED');
-    expect(err.code).toBe('UNSUPPORTED');
-    expect(err.hint).toBe('Web Bluetooth not available on this platform');
+  it('sets code, suggestion, and name', () => {
+    const err = new WebBLEError('BLUETOOTH_UNAVAILABLE');
+    expect(err.code).toBe('BLUETOOTH_UNAVAILABLE');
+    expect(err.suggestion).toBe('Check that the browser supports Web Bluetooth and the device has Bluetooth enabled.');
     expect(err.name).toBe('WebBLEError');
-    expect(err.message).toBe(err.hint);
+    expect(err.message).toBe(err.suggestion);
   });
 
-  it('appends custom message to hint', () => {
-    const err = new WebBLEError('GATT_ERROR', 'read failed');
-    expect(err.hint).toBe('GATT operation failed: read failed');
+  it('uses custom message instead of default suggestion for message', () => {
+    const err = new WebBLEError('GATT_OPERATION_FAILED', 'read failed');
+    expect(err.message).toBe('read failed');
+    expect(err.suggestion).toBe('The GATT operation failed. The device may have disconnected or the characteristic may be busy.');
   });
 
   it('is instanceof Error', () => {
@@ -45,16 +46,16 @@ describe('WebBLEError.from', () => {
     expect(err.code).toBe('DEVICE_NOT_FOUND');
   });
 
-  it('defaults to GATT_ERROR for unknown errors', () => {
+  it('defaults to GATT_OPERATION_FAILED for unknown errors', () => {
     const err = WebBLEError.from(new Error('something else'));
-    expect(err.code).toBe('GATT_ERROR');
-    expect(err.hint).toContain('something else');
+    expect(err.code).toBe('GATT_OPERATION_FAILED');
+    expect(err.message).toContain('something else');
   });
 
   it('handles string input', () => {
     const err = WebBLEError.from('raw string error');
-    expect(err.code).toBe('GATT_ERROR');
-    expect(err.hint).toContain('raw string error');
+    expect(err.code).toBe('GATT_OPERATION_FAILED');
+    expect(err.message).toContain('raw string error');
   });
 
   it('uses provided fallback code', () => {

@@ -36,7 +36,7 @@ describe('DeviceScanner', () => {
 
     mockUseScan.mockReturnValue({
       scanState: 'idle',
-      devices: new Map(),
+      devices: [],
       start: mockStart,
       stop: mockStop,
       clear: mockClear,
@@ -68,7 +68,7 @@ describe('DeviceScanner', () => {
     it('should show scanning state', () => {
       mockUseScan.mockReturnValue({
         scanState: 'scanning',
-        devices: new Map(),
+        devices: [],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -86,7 +86,7 @@ describe('DeviceScanner', () => {
       const error = new Error('Bluetooth not available');
       mockUseScan.mockReturnValue({
         scanState: 'idle',
-        devices: new Map(),
+        devices: [],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -102,14 +102,9 @@ describe('DeviceScanner', () => {
 
   describe('Device List', () => {
     it('should display discovered devices', () => {
-      const devices = new Map([
-        ['device-1', mockDevice1],
-        ['device-2', mockDevice2]
-      ]);
-
       mockUseScan.mockReturnValue({
         scanState: 'idle',
-        devices,
+        devices: [mockDevice1, mockDevice2],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -125,11 +120,10 @@ describe('DeviceScanner', () => {
 
     it('should handle devices without names', () => {
       const deviceWithoutName = { ...mockDevice1, name: null };
-      const devices = new Map([['device-1', deviceWithoutName]]);
 
       mockUseScan.mockReturnValue({
         scanState: 'idle',
-        devices,
+        devices: [deviceWithoutName],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -142,9 +136,9 @@ describe('DeviceScanner', () => {
     });
 
     it('should limit number of displayed devices', () => {
-      const devices = new Map();
+      const devices = [];
       for (let i = 1; i <= 15; i++) {
-        devices.set(`device-${i}`, {
+        devices.push({
           id: `device-${i}`,
           name: `Device ${i}`,
           gatt: {}
@@ -185,7 +179,7 @@ describe('DeviceScanner', () => {
     it('should stop scanning when stop button is clicked', () => {
       mockUseScan.mockReturnValue({
         scanState: 'scanning',
-        devices: new Map(),
+        devices: [],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -201,11 +195,9 @@ describe('DeviceScanner', () => {
     });
 
     it('should clear devices when clear button is clicked', () => {
-      const devices = new Map([['device-1', mockDevice1]]);
-
       mockUseScan.mockReturnValue({
         scanState: 'idle',
-        devices,
+        devices: [mockDevice1],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -245,11 +237,9 @@ describe('DeviceScanner', () => {
 
   describe('Device Selection', () => {
     it('should call onDeviceSelected when device is clicked', () => {
-      const devices = new Map([['device-1', mockDevice1]]);
-
       mockUseScan.mockReturnValue({
         scanState: 'idle',
-        devices,
+        devices: [mockDevice1],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -265,12 +255,11 @@ describe('DeviceScanner', () => {
     });
 
     it('should auto-connect when autoConnect is true', async () => {
-      const devices = new Map([['device-1', mockDevice1]]);
       mockConnect.mockResolvedValue(undefined);
 
       mockUseScan.mockReturnValue({
         scanState: 'idle',
-        devices,
+        devices: [mockDevice1],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -288,11 +277,9 @@ describe('DeviceScanner', () => {
     });
 
     it('should show connection status', () => {
-      const devices = new Map([['device-1', mockDevice1]]);
-
       mockUseScan.mockReturnValue({
         scanState: 'idle',
-        devices,
+        devices: [mockDevice1],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -331,11 +318,9 @@ describe('DeviceScanner', () => {
 
   describe('RSSI Display', () => {
     it('should show RSSI indicator when showRssi is true', () => {
-      const devices = new Map([['device-1', mockDevice1]]);
-
       mockUseScan.mockReturnValue({
         scanState: 'idle',
-        devices,
+        devices: [mockDevice1],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -350,11 +335,9 @@ describe('DeviceScanner', () => {
     });
 
     it('should not show RSSI when showRssi is false', () => {
-      const devices = new Map([['device-1', mockDevice1]]);
-
       mockUseScan.mockReturnValue({
         scanState: 'idle',
-        devices,
+        devices: [mockDevice1],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -375,11 +358,9 @@ describe('DeviceScanner', () => {
     });
 
     it('should have proper ARIA roles', () => {
-      const devices = new Map([['device-1', mockDevice1]]);
-
       mockUseScan.mockReturnValue({
         scanState: 'idle',
-        devices,
+        devices: [mockDevice1],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,
@@ -395,7 +376,7 @@ describe('DeviceScanner', () => {
     it('should show error with alert role', () => {
       mockUseScan.mockReturnValue({
         scanState: 'idle',
-        devices: new Map(),
+        devices: [],
         start: mockStart,
         stop: mockStop,
         clear: mockClear,

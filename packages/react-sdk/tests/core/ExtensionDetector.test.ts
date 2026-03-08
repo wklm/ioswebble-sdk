@@ -6,9 +6,7 @@ describe('ExtensionDetector', () => {
   let originalWindow: any;
   let addEventListenerSpy: jest.SpyInstance;
   let removeEventListenerSpy: jest.SpyInstance;
-  let postMessageSpy: jest.SpyInstance;
   let openSpy: jest.SpyInstance;
-  let consoleDebugSpy: jest.SpyInstance;
 
   beforeEach(() => {
     detector = new ExtensionDetector();
@@ -18,9 +16,7 @@ describe('ExtensionDetector', () => {
     // Setup spies
     addEventListenerSpy = jest.spyOn(window, 'addEventListener');
     removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
-    postMessageSpy = jest.spyOn(window, 'postMessage');
     openSpy = jest.spyOn(window, 'open').mockImplementation(() => null as any);
-    consoleDebugSpy = jest.spyOn(console, 'debug').mockImplementation();
     
     // Reset timers
     jest.useFakeTimers();
@@ -30,22 +26,33 @@ describe('ExtensionDetector', () => {
     jest.clearAllMocks();
     jest.clearAllTimers();
     jest.useRealTimers();
-    Object.defineProperty(global, 'navigator', {
-      value: originalNavigator,
-      writable: true,
-      configurable: true
-    });
+    // Restore window first (may have been set to undefined)
     Object.defineProperty(global, 'window', {
       value: originalWindow,
       writable: true,
       configurable: true
     });
+    Object.defineProperty(global, 'navigator', {
+      value: originalNavigator,
+      writable: true,
+      configurable: true
+    });
+    // Clean up __webble__ marker after window is restored
+    if (typeof global.window !== 'undefined') {
+      delete (global.window as any).__webble__;
+    }
   });
 
   describe('isInstalled', () => {
-    it('should return true when navigator.bluetooth exists', () => {
+    it('should return true when window.__webble__ is set', () => {
+      (global.window as any).__webble__ = true;
+
+      expect(detector.isInstalled()).toBe(true);
+    });
+
+    it('should return true when navigator.bluetooth.__webble is set', () => {
       Object.defineProperty(global.navigator, 'bluetooth', {
-        value: {},
+        value: { __webble: true },
         writable: true,
         configurable: true
       });
@@ -53,25 +60,30 @@ describe('ExtensionDetector', () => {
       expect(detector.isInstalled()).toBe(true);
     });
 
-    it('should return false when navigator.bluetooth does not exist', () => {
+    it('should return false when no __webble markers exist', () => {
       // @ts-ignore
       delete global.navigator.bluetooth;
       
       expect(detector.isInstalled()).toBe(false);
     });
 
-    it('should cache the detection result', () => {
+    it('should return false when navigator.bluetooth exists but has no __webble marker', () => {
       Object.defineProperty(global.navigator, 'bluetooth', {
         value: {},
         writable: true,
         configurable: true
       });
 
+      expect(detector.isInstalled()).toBe(false);
+    });
+
+    it('should cache the detection result', () => {
+      (global.window as any).__webble__ = true;
+
       expect(detector.isInstalled()).toBe(true);
       
-      // Remove bluetooth API
-      // @ts-ignore
-      delete global.navigator.bluetooth;
+      // Remove the marker
+      delete (global.window as any).__webble__;
       
       // Should still return true due to caching
       expect(detector.isInstalled()).toBe(true);
@@ -90,11 +102,7 @@ describe('ExtensionDetector', () => {
 
   describe('detect', () => {
     it('should resolve immediately if already detected', async () => {
-      Object.defineProperty(global.navigator, 'bluetooth', {
-        value: {},
-        writable: true,
-        configurable: true
-      });
+      (global.window as any).__webble__ = true;
 
       // First detection sets the flag
       detector.isInstalled();
@@ -124,21 +132,6 @@ describe('ExtensionDetector', () => {
       expect(removeEventListenerSpy).toHaveBeenCalledWith(
         'webble:extension:ready',
         expect.any(Function)
-      );
-    });
-
-    it('should send ping message to extension', async () => {
-      // @ts-ignore
-      delete global.navigator.bluetooth;
-
-      detector.detect();
-      
-      expect(postMessageSpy).toHaveBeenCalledWith(
-        {
-          type: 'webble:ping',
-          source: 'webble-react-sdk'
-        },
-        '*'
       );
     });
 
@@ -174,27 +167,6 @@ describe('ExtensionDetector', () => {
       expect(addEventListenerSpy).toHaveBeenCalledTimes(1); // Only one detection
     });
 
-    it('should handle ping errors gracefully', async () => {
-      // @ts-ignore
-      delete global.navigator.bluetooth;
-      
-      postMessageSpy.mockImplementation(() => {
-        throw new Error('PostMessage failed');
-      });
-
-      const detectPromise = detector.detect();
-      
-      expect(consoleDebugSpy).toHaveBeenCalledWith(
-        'Failed to ping extension:',
-        expect.any(Error)
-      );
-      
-      jest.advanceTimersByTime(3000);
-      
-      const result = await detectPromise;
-      expect(result).toBe(false);
-    });
-
     it('should handle undefined window', async () => {
       Object.defineProperty(global, 'window', {
         value: undefined,
@@ -209,18 +181,14 @@ describe('ExtensionDetector', () => {
       expect(result).toBe(false);
     });
 
-    it('should detect when bluetooth becomes available during detection', async () => {
+    it('should detect when __webble marker becomes available during detection', async () => {
       // @ts-ignore
       delete global.navigator.bluetooth;
 
       const detectPromise = detector.detect();
       
-      // Simulate bluetooth becoming available
-      Object.defineProperty(global.navigator, 'bluetooth', {
-        value: {},
-        writable: true,
-        configurable: true
-      });
+      // Simulate extension setting the __webble__ marker
+      (global.window as any).__webble__ = true;
       
       // Timeout check calls isInstalled again
       jest.advanceTimersByTime(3000);
@@ -231,55 +199,39 @@ describe('ExtensionDetector', () => {
   });
 
   describe('getInstallationInstructions', () => {
-    it('should return iOS instructions for iPhone', () => {
-      Object.defineProperty(global.navigator, 'userAgent', {
-        value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)',
-        writable: true,
-        configurable: true
-      });
-
+    it('should return iOSWebBLE installation instructions', () => {
       const instructions = detector.getInstallationInstructions();
-      expect(instructions).toContain('iOS');
-      expect(instructions).toContain('App Store');
-      expect(instructions).toContain('Settings > Safari > Extensions');
-    });
-
-    it('should return iOS instructions for iPad', () => {
-      Object.defineProperty(global.navigator, 'userAgent', {
-        value: 'Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X)',
-        writable: true,
-        configurable: true
-      });
-
-      const instructions = detector.getInstallationInstructions();
-      expect(instructions).toContain('iOS');
+      expect(instructions).toContain('iOSWebBLE');
+      expect(instructions).toContain('aA in the address bar');
       expect(instructions).toContain('App Store');
     });
 
-    it('should return macOS instructions for Mac', () => {
+    it('should include extension enable steps', () => {
+      const instructions = detector.getInstallationInstructions();
+      expect(instructions).toContain('Manage Extensions');
+      expect(instructions).toContain('Always Allow');
+      expect(instructions).toContain('Refresh this page');
+    });
+
+    it('should return the same instructions regardless of user agent', () => {
+      // Instructions are no longer platform-specific
       Object.defineProperty(global.navigator, 'userAgent', {
         value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
         writable: true,
         configurable: true
       });
 
-      const instructions = detector.getInstallationInstructions();
-      expect(instructions).toContain('macOS');
-      expect(instructions).toContain('Mac App Store');
-      expect(instructions).toContain('Safari > Preferences > Extensions');
-    });
-
-    it('should return generic instructions for other platforms', () => {
+      const macInstructions = detector.getInstallationInstructions();
+      
       Object.defineProperty(global.navigator, 'userAgent', {
         value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         writable: true,
         configurable: true
       });
 
-      const instructions = detector.getInstallationInstructions();
-      expect(instructions).toContain('browser');
-      expect(instructions).not.toContain('iOS');
-      expect(instructions).not.toContain('macOS');
+      const winInstructions = detector.getInstallationInstructions();
+      
+      expect(macInstructions).toBe(winInstructions);
     });
   });
 
@@ -294,7 +246,7 @@ describe('ExtensionDetector', () => {
       detector.openExtensionStore();
       
       expect(openSpy).toHaveBeenCalledWith(
-        'https://apps.apple.com/app/webble-safari-extension',
+        'https://apps.apple.com/app/ioswebble/id0000000000',
         '_blank'
       );
     });
@@ -309,12 +261,12 @@ describe('ExtensionDetector', () => {
       detector.openExtensionStore();
       
       expect(openSpy).toHaveBeenCalledWith(
-        'https://apps.apple.com/app/webble-safari-extension',
+        'https://apps.apple.com/app/ioswebble/id0000000000',
         '_blank'
       );
     });
 
-    it('should open Mac App Store for macOS', () => {
+    it('should open ioswebble.com for macOS', () => {
       Object.defineProperty(global.navigator, 'userAgent', {
         value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
         writable: true,
@@ -324,12 +276,12 @@ describe('ExtensionDetector', () => {
       detector.openExtensionStore();
       
       expect(openSpy).toHaveBeenCalledWith(
-        'https://apps.apple.com/app/webble-safari-extension',
+        'https://ioswebble.com',
         '_blank'
       );
     });
 
-    it('should open GitHub for other platforms', () => {
+    it('should open ioswebble.com for other platforms', () => {
       Object.defineProperty(global.navigator, 'userAgent', {
         value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         writable: true,
@@ -339,7 +291,7 @@ describe('ExtensionDetector', () => {
       detector.openExtensionStore();
       
       expect(openSpy).toHaveBeenCalledWith(
-        'https://github.com/yourusername/webble-extension',
+        'https://ioswebble.com',
         '_blank'
       );
     });
@@ -546,8 +498,9 @@ describe('ExtensionDetector', () => {
         configurable: true
       });
       
+      // Set __webble marker so isInstalled() returns true
       Object.defineProperty(global.navigator, 'bluetooth', {
-        value: {},
+        value: { __webble: true },
         writable: true,
         configurable: true
       });

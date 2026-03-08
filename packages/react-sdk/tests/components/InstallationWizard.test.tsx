@@ -9,41 +9,58 @@ jest.mock('../../src/core/ExtensionDetector');
 
 const MockExtensionDetector = ExtensionDetector as jest.MockedClass<typeof ExtensionDetector>;
 
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: jest.fn((key: string) => store[key] || null),
+    setItem: jest.fn((key: string, value: string) => { store[key] = value; }),
+    removeItem: jest.fn((key: string) => { delete store[key]; }),
+    clear: jest.fn(() => { store = {}; }),
+  };
+})();
+Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
 describe('InstallationWizard', () => {
   let mockDetector: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    localStorageMock.clear();
     
     // Create mock instance methods
     mockDetector = {
       detect: jest.fn(),
+      isInstalled: jest.fn().mockReturnValue(false),
       getInstallationInstructions: jest.fn(),
-      openExtensionStore: jest.fn()
+      openExtensionStore: jest.fn(),
+      isBrowserSupported: jest.fn().mockReturnValue(true),
+      getBrowserCompatibilityMessage: jest.fn().mockReturnValue(null),
     };
     
     // Mock constructor to return our mock instance
     MockExtensionDetector.mockImplementation(() => mockDetector);
   });
 
-  describe('Initial loading state', () => {
-    it('should show checking message initially', async () => {
+  describe('Checking state', () => {
+    it('should render null while checking', async () => {
       mockDetector.detect.mockImplementation(() => new Promise(() => {})); // Never resolves
       
-      render(<InstallationWizard />);
+      const { container } = render(<InstallationWizard />);
       
-      expect(screen.getByText('Checking for WebBLE extension...')).toBeInTheDocument();
+      // Component returns null during checking
+      expect(container.innerHTML).toBe('');
     });
   });
 
   describe('Extension installed state', () => {
-    it('should show installed message when extension is detected', async () => {
+    it('should render null when extension is detected', async () => {
       mockDetector.detect.mockResolvedValue(true);
       
-      render(<InstallationWizard />);
+      const { container } = render(<InstallationWizard />);
       
       await waitFor(() => {
-        expect(screen.getByText('✓ WebBLE extension is installed')).toBeInTheDocument();
+        expect(container.innerHTML).toBe('');
       });
     });
 
@@ -58,62 +75,89 @@ describe('InstallationWizard', () => {
       });
     });
 
-    it('should not show installation instructions when installed', async () => {
+    it('should not show any UI when installed', async () => {
       mockDetector.detect.mockResolvedValue(true);
-      mockDetector.getInstallationInstructions.mockReturnValue('Installation instructions');
       
-      render(<InstallationWizard />);
+      const { container } = render(<InstallationWizard />);
       
       await waitFor(() => {
-        expect(screen.queryByText('WebBLE Extension Required')).not.toBeInTheDocument();
-        expect(screen.queryByText('Installation instructions')).not.toBeInTheDocument();
+        expect(container.innerHTML).toBe('');
       });
+      
+      expect(screen.queryByText('Bluetooth Required')).not.toBeInTheDocument();
+      expect(screen.queryByText('Get iOSWebBLE (Free)')).not.toBeInTheDocument();
     });
   });
 
   describe('Extension not installed state', () => {
     beforeEach(() => {
       mockDetector.detect.mockResolvedValue(false);
-      mockDetector.getInstallationInstructions.mockReturnValue(
-        'To install WebBLE:\n1. Visit the extension store\n2. Click Install\n3. Restart your browser'
-      );
     });
 
-    it('should show installation required message', async () => {
+    it('should show Bluetooth Required title', async () => {
       render(<InstallationWizard />);
       
       await waitFor(() => {
-        expect(screen.getByText('WebBLE Extension Required')).toBeInTheDocument();
+        expect(screen.getByText('Bluetooth Required')).toBeInTheDocument();
       });
     });
 
-    it('should display installation instructions', async () => {
+    it('should show the install button', async () => {
       render(<InstallationWizard />);
       
       await waitFor(() => {
-        expect(screen.getByText(/To install WebBLE/)).toBeInTheDocument();
-        expect(screen.getByText(/Visit the extension store/)).toBeInTheDocument();
-        expect(screen.getByText(/Click Install/)).toBeInTheDocument();
-        expect(screen.getByText(/Restart your browser/)).toBeInTheDocument();
+        expect(screen.getByText('Get iOSWebBLE (Free)')).toBeInTheDocument();
       });
     });
 
-    it('should show install button', async () => {
+    it('should show the dismiss button', async () => {
       render(<InstallationWizard />);
       
       await waitFor(() => {
-        expect(screen.getByText('Install Extension')).toBeInTheDocument();
+        expect(screen.getByText('Not now')).toBeInTheDocument();
       });
     });
 
-    it('should call openExtensionStore when install button clicked', async () => {
+    it('should show FAQ sections', async () => {
       render(<InstallationWizard />);
       
       await waitFor(() => {
-        const button = screen.getByText('Install Extension');
+        expect(screen.getByText('How does this work?')).toBeInTheDocument();
+        expect(screen.getByText('Privacy: No data collected')).toBeInTheDocument();
+      });
+    });
+
+    it('should show meta info (rating, price)', async () => {
+      render(<InstallationWizard />);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Free')).toBeInTheDocument();
+        expect(screen.getByText('4.8')).toBeInTheDocument();
+        expect(screen.getByText('★★★★★')).toBeInTheDocument();
+      });
+    });
+
+    it('should navigate to App Store when install button is clicked', async () => {
+      render(<InstallationWizard />);
+      
+      await waitFor(() => {
+        const button = screen.getByText('Get iOSWebBLE (Free)');
         fireEvent.click(button);
-        expect(mockDetector.openExtensionStore).toHaveBeenCalled();
       });
+
+      expect(window.location.href).toBe('https://apps.apple.com/app/ioswebble/id0000000000');
+    });
+
+    it('should use custom appStoreUrl when provided', async () => {
+      const customUrl = 'https://apps.apple.com/app/custom/id1234567890';
+      render(<InstallationWizard appStoreUrl={customUrl} />);
+      
+      await waitFor(() => {
+        const button = screen.getByText('Get iOSWebBLE (Free)');
+        fireEvent.click(button);
+      });
+
+      expect(window.location.href).toBe(customUrl);
     });
 
     it('should not call onComplete when extension is not installed', async () => {
@@ -122,49 +166,62 @@ describe('InstallationWizard', () => {
       render(<InstallationWizard onComplete={onComplete} />);
       
       await waitFor(() => {
-        expect(screen.getByText('WebBLE Extension Required')).toBeInTheDocument();
+        expect(screen.getByText('Bluetooth Required')).toBeInTheDocument();
       });
       
       expect(onComplete).not.toHaveBeenCalled();
     });
+
+    it('should dismiss when Not now is clicked', async () => {
+      const { container } = render(<InstallationWizard />);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Not now')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Not now'));
+      
+      // Component should render null after dismiss
+      expect(container.innerHTML).toBe('');
+    });
+
+    it('should save dismiss timestamp to localStorage', async () => {
+      render(<InstallationWizard />);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Not now')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Not now'));
+      
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'ioswebble_dismiss_until',
+        expect.any(String)
+      );
+    });
   });
 
   describe('Props handling', () => {
-    it('should apply custom className to all states', async () => {
+    it('should apply custom className', async () => {
+      mockDetector.detect.mockResolvedValue(false);
       const className = 'custom-wizard';
       
-      // Test checking state
-      let resolveDetect: ((value: boolean) => void) | null = null;
-      mockDetector.detect.mockImplementation(() => new Promise((resolve) => {
-        resolveDetect = resolve;
-      }));
-      
-      const { rerender, unmount } = render(<InstallationWizard className={className} />);
-      expect(screen.getByText('Checking for WebBLE extension...')).toBeInTheDocument();
-      
-      // Complete the detection for installed state
-      act(() => {
-        resolveDetect?.(true);
-      });
+      const { container } = render(<InstallationWizard className={className} />);
       
       await waitFor(() => {
-        expect(screen.getByText('✓ WebBLE extension is installed')).toBeInTheDocument();
-        const element = screen.getByText('✓ WebBLE extension is installed').closest('div');
-        expect(element).toHaveClass(className);
+        expect(screen.getByText('Bluetooth Required')).toBeInTheDocument();
       });
-      
-      unmount();
-      
-      // Test not installed state with a fresh component
+
+      expect(container.querySelector(`.${className}`)).toBeInTheDocument();
+    });
+
+    it('should use operatorName in description text', async () => {
       mockDetector.detect.mockResolvedValue(false);
-      mockDetector.getInstallationInstructions.mockReturnValue('Instructions');
       
-      render(<InstallationWizard className={className} />);
+      render(<InstallationWizard operatorName="MyApp" />);
       
       await waitFor(() => {
-        expect(screen.getByText('WebBLE Extension Required')).toBeInTheDocument();
-        const element = screen.getByText('WebBLE Extension Required').closest('div');
-        expect(element).toHaveClass(className);
+        expect(screen.getByText(/MyApp/)).toBeInTheDocument();
       });
     });
 
@@ -175,9 +232,15 @@ describe('InstallationWizard', () => {
       expect(() => {
         render(<InstallationWizard />);
       }).not.toThrow();
+    });
+
+    it('should handle undefined className', async () => {
+      mockDetector.detect.mockResolvedValue(false);
+      
+      render(<InstallationWizard className={undefined} />);
       
       await waitFor(() => {
-        expect(screen.getByText('✓ WebBLE extension is installed')).toBeInTheDocument();
+        expect(screen.getByText('Bluetooth Required')).toBeInTheDocument();
       });
     });
   });
@@ -186,56 +249,32 @@ describe('InstallationWizard', () => {
     it('should handle detection errors gracefully', async () => {
       mockDetector.detect.mockRejectedValue(new Error('Detection failed'));
       
-      // Component should handle error internally
+      // Component should handle error internally — shows not-installed state
       render(<InstallationWizard />);
       
       await waitFor(() => {
-        // Should default to not installed state on error
-        expect(screen.queryByText('Checking for WebBLE extension...')).not.toBeInTheDocument();
+        expect(screen.getByText('Bluetooth Required')).toBeInTheDocument();
       });
     });
+  });
 
-    it('should handle empty installation instructions', async () => {
+  describe('Extension ready event', () => {
+    it('should call onComplete when extension:ready event fires', async () => {
       mockDetector.detect.mockResolvedValue(false);
-      mockDetector.getInstallationInstructions.mockReturnValue('');
+      const onComplete = jest.fn();
       
-      render(<InstallationWizard />);
+      render(<InstallationWizard onComplete={onComplete} />);
       
       await waitFor(() => {
-        expect(screen.getByText('WebBLE Extension Required')).toBeInTheDocument();
-        // Should still render the div even if instructions are empty
-        const instructionsDiv = screen.getByText('WebBLE Extension Required').nextElementSibling;
-        expect(instructionsDiv).toBeInTheDocument();
+        expect(screen.getByText('Bluetooth Required')).toBeInTheDocument();
       });
-    });
 
-    it('should handle null installation instructions', async () => {
-      mockDetector.detect.mockResolvedValue(false);
-      mockDetector.getInstallationInstructions.mockReturnValue(null);
-      
-      render(<InstallationWizard />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('WebBLE Extension Required')).toBeInTheDocument();
-        // Component should handle null gracefully
-        expect(screen.getByText('Install Extension')).toBeInTheDocument();
+      // Simulate extension becoming ready
+      act(() => {
+        window.dispatchEvent(new Event('webble:extension:ready'));
       });
-    });
 
-    it('should handle openExtensionStore errors', async () => {
-      mockDetector.detect.mockResolvedValue(false);
-      mockDetector.getInstallationInstructions.mockReturnValue('Instructions');
-      mockDetector.openExtensionStore.mockImplementation(() => {
-        throw new Error('Failed to open');
-      });
-      
-      render(<InstallationWizard />);
-      
-      await waitFor(() => {
-        const button = screen.getByText('Install Extension');
-        // Should not throw when clicking even if openExtensionStore fails
-        expect(() => fireEvent.click(button)).not.toThrow();
-      });
+      expect(onComplete).toHaveBeenCalled();
     });
   });
 
@@ -246,7 +285,7 @@ describe('InstallationWizard', () => {
       const { rerender } = render(<InstallationWizard />);
       
       await waitFor(() => {
-        expect(screen.getByText('WebBLE Extension Required')).toBeInTheDocument();
+        expect(screen.getByText('Bluetooth Required')).toBeInTheDocument();
       });
       
       expect(mockDetector.detect).toHaveBeenCalledTimes(1);
@@ -254,35 +293,9 @@ describe('InstallationWizard', () => {
       // Re-render with same props
       rerender(<InstallationWizard />);
       
-      // Should not detect again
+      // detect is called per mount via useEffect, but rerender doesn't remount
+      // The constructor is called each render (not ideal, but matches current impl)
       expect(mockDetector.detect).toHaveBeenCalledTimes(1);
-    });
-
-    it('should create new detector instance on each mount', () => {
-      render(<InstallationWizard />);
-      expect(MockExtensionDetector).toHaveBeenCalledTimes(1);
-      
-      // Unmount and remount
-      const { unmount } = render(<InstallationWizard />);
-      unmount();
-      
-      render(<InstallationWizard />);
-      expect(MockExtensionDetector).toHaveBeenCalledTimes(3); // Initial + second render + third render
-    });
-  });
-
-  describe('Styling', () => {
-    it('should apply whitespace preservation for instructions', async () => {
-      mockDetector.detect.mockResolvedValue(false);
-      mockDetector.getInstallationInstructions.mockReturnValue('Line 1\nLine 2\nLine 3');
-      
-      render(<InstallationWizard />);
-      
-      await waitFor(() => {
-        const instructionsText = screen.getByText(/Line 1[\s\S]*Line 2[\s\S]*Line 3/);
-        // The style is applied to this div directly
-        expect(instructionsText).toHaveStyle({ whiteSpace: 'pre-line' });
-      });
     });
   });
 
@@ -295,17 +308,19 @@ describe('InstallationWizard', () => {
       
       mockDetector.detect.mockReturnValue(detectionPromise);
       
-      render(<InstallationWizard />);
+      const { container } = render(<InstallationWizard />);
       
-      // Should show checking state
-      expect(screen.getByText('Checking for WebBLE extension...')).toBeInTheDocument();
+      // Should render null while checking
+      expect(container.innerHTML).toBe('');
       
-      // Resolve detection
-      resolveDetection!(true);
+      // Resolve detection as not installed
+      await act(async () => {
+        resolveDetection!(false);
+      });
       
-      // Should show installed state
+      // Should show not-installed state
       await waitFor(() => {
-        expect(screen.getByText('✓ WebBLE extension is installed')).toBeInTheDocument();
+        expect(screen.getByText('Bluetooth Required')).toBeInTheDocument();
       });
     });
 
@@ -316,45 +331,6 @@ describe('InstallationWizard', () => {
       
       // Should not throw when unmounting during detection
       expect(() => unmount()).not.toThrow();
-    });
-  });
-
-  describe('Edge cases', () => {
-    it('should handle undefined className', async () => {
-      mockDetector.detect.mockResolvedValue(true);
-      
-      render(<InstallationWizard className={undefined} />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('✓ WebBLE extension is installed')).toBeInTheDocument();
-      });
-    });
-
-    it('should handle special characters in instructions', async () => {
-      mockDetector.detect.mockResolvedValue(false);
-      mockDetector.getInstallationInstructions.mockReturnValue(
-        '<script>alert("xss")</script>\n& Special chars < > " \''
-      );
-      
-      render(<InstallationWizard />);
-      
-      await waitFor(() => {
-        // React should escape special characters automatically
-        const instructionsText = screen.getByText(/<script>alert/);
-        expect(instructionsText).toBeInTheDocument();
-      });
-    });
-
-    it('should handle very long installation instructions', async () => {
-      mockDetector.detect.mockResolvedValue(false);
-      const longInstructions = 'Step '.repeat(1000) + 'End';
-      mockDetector.getInstallationInstructions.mockReturnValue(longInstructions);
-      
-      render(<InstallationWizard />);
-      
-      await waitFor(() => {
-        expect(screen.getByText(/Step.*End/)).toBeInTheDocument();
-      });
     });
   });
 });
