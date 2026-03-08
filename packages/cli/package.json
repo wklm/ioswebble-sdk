@@ -1,6 +1,6 @@
 {
   "name": "@wklm/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI for iOSWebBLE — init, check, scaffold BLE profiles for web apps",
   "bin": {
     "ioswebble": "./dist/index.js"
@@ -20,6 +20,7 @@
     "bluetooth",
     "ble",
     "web-bluetooth",
+    "webbluetooth",
     "cli",
     "webble",
     "gatt",
@@ -27,8 +28,9 @@
     "ai",
     "agent",
     "polyfill",
-    "navigator.bluetooth",
-    "cross-browser"
+    "cross-browser",
+    "safari-bluetooth",
+    "navigator-bluetooth"
   ],
   "author": "wklm",
   "repository": {
@@ -45,7 +47,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@wklm/detect": "^0.1.0"
+    "@wklm/detect": "^0.1.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

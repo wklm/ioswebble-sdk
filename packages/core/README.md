@@ -1,6 +1,9 @@
-# @wklm/core
+# @wklm/core — Web Bluetooth Polyfill for Safari iOS
 
-Web Bluetooth SDK -- scan, connect, read/write BLE devices from web apps (iOS Safari).
+> **The Web Bluetooth API (`navigator.bluetooth`) is not available in Safari.**
+> This SDK fixes that. One import and your BLE web app works on iPhone.
+>
+> On Chrome, Edge, and other browsers with native Web Bluetooth support, the SDK uses the native API directly — zero overhead.
 
 ## Install
 
@@ -8,9 +11,27 @@ Web Bluetooth SDK -- scan, connect, read/write BLE devices from web apps (iOS Sa
 npm install @wklm/core
 ```
 
+```typescript
+import '@wklm/core/auto';
+// navigator.bluetooth now works everywhere — Safari iOS, Chrome, Edge.
+```
+
+Or use the explicit API for full control:
+
+```typescript
+import { WebBLE } from '@wklm/core';
+
+const ble = new WebBLE();
+const device = await ble.requestDevice({
+  filters: [{ services: ['heart_rate'] }],
+});
+await device.connect();
+const value = await device.read('heart_rate', 'heart_rate_measurement');
+```
+
 ## Selective imports & tree-shaking
 
-Zero dependencies. `sideEffects: false` enables tree-shaking -- only what you import ships to the browser.
+Zero dependencies. `sideEffects: false` enables tree-shaking — only what you import ships to the browser.
 
 ```typescript
 // Full SDK (~4KB gzipped)

@@ -1,6 +1,6 @@
 {
   "name": "@wklm/detect",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Detect WebBLE Safari extension on iOS. Auto-show install banner when extension not found",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -29,7 +29,7 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build && npm run typecheck"
   },
-  "keywords": ["ios", "safari", "bluetooth", "ble", "web-bluetooth", "webble", "extension", "detect", "install-banner", "ai", "agent", "mcp", "polyfill", "navigator.bluetooth", "cross-browser"],
+  "keywords": ["ios", "safari", "bluetooth", "ble", "web-bluetooth", "webbluetooth", "webble", "extension", "detect", "install-banner", "ai", "agent", "mcp", "polyfill", "cross-browser", "safari-bluetooth", "navigator-bluetooth"],
   "author": "wklm",
   "license": "MIT",
   "repository": {

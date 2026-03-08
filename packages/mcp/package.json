@@ -1,6 +1,6 @@
 {
   "name": "@wklm/mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for AI coding agents — scaffold BLE web apps, look up UUIDs, get code examples",
   "main": "dist/index.js",
   "bin": {
@@ -24,6 +24,7 @@
     "ai",
     "agent",
     "web-bluetooth",
+    "webbluetooth",
     "webble",
     "gatt",
     "model-context-protocol",
@@ -31,7 +32,10 @@
     "cursor",
     "copilot",
     "polyfill",
-    "navigator.bluetooth"
+    "cross-browser",
+    "web-bluetooth-polyfill",
+    "safari-bluetooth",
+    "navigator-bluetooth"
   ],
   "author": "wklm",
   "repository": {
@@ -48,7 +52,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@wklm/detect": "^0.1.0",
+    "@wklm/detect": "^0.1.1",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.22.0"
   },

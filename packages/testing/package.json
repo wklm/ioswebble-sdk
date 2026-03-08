@@ -1,6 +1,6 @@
 {
   "name": "@wklm/testing",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0-beta.2",
   "description": "Mock Bluetooth API for testing @wklm apps — stateful devices, fake advertising, notification pump",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -22,8 +22,9 @@
     "prepublishOnly": "npm run build && npm run typecheck"
   },
   "keywords": [
-    "bluetooth", "ble", "web-bluetooth", "webble", "testing", "mock",
-    "jest", "vitest", "safari", "ios", "gatt", "polyfill", "navigator.bluetooth"
+    "bluetooth", "ble", "web-bluetooth", "webbluetooth", "webble", "testing", "mock",
+    "jest", "vitest", "safari", "ios", "gatt", "polyfill", "navigator-bluetooth",
+    "web-bluetooth-polyfill", "safari-bluetooth"
   ],
   "author": "wklm",
   "license": "MIT",
