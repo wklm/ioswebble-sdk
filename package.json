@@ -13,7 +13,7 @@
     "packages/testing"
   ],
   "scripts": {
-    "build:packages": "npm run build -w packages/core && npm run build -w packages/profiles && npm run build -w packages/detect && npm run build -w packages/react-sdk && npm run build -w packages/testing && npm run build -w packages/cli && npm run build -w packages/mcp",
+    "build:packages": "npm run build -w packages/detect && npm run build -w packages/core && npm run build -w packages/profiles && npm run build -w packages/react-sdk && npm run build -w packages/testing && npm run build -w packages/cli && npm run build -w packages/mcp",
     "test:packages": "npm test -w packages/core -w packages/profiles -w packages/react-sdk -w packages/testing -w packages/detect -w packages/cli -w packages/mcp -w packages/skill --if-present",
     "typecheck:packages": "npm run typecheck --workspaces --if-present",
     "publish:packages": "npm run build:packages && npm publish --tag beta -w packages/core && npm publish --tag beta -w packages/profiles && npm publish --tag beta -w packages/react-sdk && npm publish --tag beta -w packages/testing && npm publish -w packages/detect && npm publish -w packages/mcp && npm publish -w packages/cli && npm publish -w packages/skill",
