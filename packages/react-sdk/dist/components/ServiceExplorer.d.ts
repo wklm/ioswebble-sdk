@@ -1,6 +1,6 @@
 import React from 'react';
 interface ServiceExplorerProps {
-    deviceId?: string;
+    device?: BluetoothDevice | null;
     className?: string;
     autoConnect?: boolean;
     onCharacteristicSelect?: (characteristicId: string) => void;
@@ -9,6 +9,6 @@ interface ServiceExplorerProps {
 /**
  * ServiceExplorer - GATT hierarchy viewer component
  */
-export declare function ServiceExplorer({ deviceId, className, autoConnect, onCharacteristicSelect, expandedByDefault }: ServiceExplorerProps): React.JSX.Element;
+export declare function ServiceExplorer({ device: inputDevice, className, autoConnect, onCharacteristicSelect, expandedByDefault }: ServiceExplorerProps): React.JSX.Element;
 export {};
 //# sourceMappingURL=ServiceExplorer.d.ts.map

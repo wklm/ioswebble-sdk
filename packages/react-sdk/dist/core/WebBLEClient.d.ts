@@ -2,6 +2,7 @@
  * WebBLEClient - Core client wrapper for Web Bluetooth API
  * Provides a unified interface for all Bluetooth operations
  */
+import type { RequestDeviceOptions } from '../types';
 interface WebBLEConfig {
     autoConnect?: boolean;
     cacheTimeout?: number;

@@ -26,8 +26,8 @@ export interface UseCharacteristicReturn {
  */
 export function useCharacteristic(
   characteristic?: BluetoothRemoteGATTCharacteristic | null,
-  service?: BluetoothRemoteGATTService | null,
-  device?: BluetoothDevice | null
+  _service?: BluetoothRemoteGATTService | null,
+  _device?: BluetoothDevice | null
 ): UseCharacteristicReturn {
   const [value, setValue] = useState<DataView | null>(null);
   const [error, setError] = useState<Error | null>(null);

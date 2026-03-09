@@ -115,7 +115,7 @@ export function formatValue(value: any, uuid: string): ArrayBuffer {
         return value;
       }
       if (value instanceof Uint8Array) {
-        return value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
+        return value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer;
       }
       if (typeof value === 'string') {
         // Parse hex string

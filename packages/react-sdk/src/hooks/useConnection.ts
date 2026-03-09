@@ -68,6 +68,7 @@ export function useConnection(deviceId?: string): UseConnectionReturn {
         cleanupRef.current?.();
       };
     }
+    return undefined;
   }, [deviceId, webble, autoReconnect]);
 
   const connect = useCallback(async (): Promise<void> => {

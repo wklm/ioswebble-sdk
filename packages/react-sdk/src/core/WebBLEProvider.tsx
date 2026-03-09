@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react';
 import { WebBLEClient } from './WebBLEClient';
 import { ExtensionDetector } from './ExtensionDetector';
+import type { RequestDeviceOptions } from '../types';
 
 function reportBLEEvent(apiKey: string | undefined, event: string) {
   if (!apiKey) return;

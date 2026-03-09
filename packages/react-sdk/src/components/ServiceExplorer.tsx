@@ -2,10 +2,9 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useDevice } from '../hooks/useDevice';
 import { useCharacteristic } from '../hooks/useCharacteristic';
 import { getServiceName, getCharacteristicName } from '../utils/bluetooth-utils';
-import type { GATTServiceInfo, CharacteristicProperties } from '../types';
 
 interface ServiceExplorerProps {
-  deviceId?: string;
+  device?: BluetoothDevice | null;
   className?: string;
   autoConnect?: boolean;
   onCharacteristicSelect?: (characteristicId: string) => void;
@@ -48,7 +47,7 @@ function CharacteristicItem({ characteristic, service, onSelect }: Characteristi
     if (isNotifying) {
       await unsubscribe();
     } else {
-      await subscribe((event: any) => {
+      await subscribe((_event: any) => {
         // Notification handler is managed by the hook
       });
     }
@@ -202,25 +201,21 @@ function ServiceItem({ service, isExpanded, onToggle, onCharacteristicSelect }: 
 /**
  * ServiceExplorer - GATT hierarchy viewer component
  */
-export function ServiceExplorer({ 
-  deviceId, 
+export function ServiceExplorer({
+  device: inputDevice,
   className,
   autoConnect = false,
   onCharacteristicSelect,
   expandedByDefault = false
 }: ServiceExplorerProps) {
-  const { device, services, connect, disconnect, connectionState, error } = useDevice(deviceId);
+  const { device, services, connect, disconnect, isConnected, isConnecting, error } = useDevice(inputDevice ?? null);
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
-
-  // Derive connection status from connectionState
-  const isConnected = connectionState === 'connected';
-  const isConnecting = connectionState === 'connecting';
 
   useEffect(() => {
     if (autoConnect && !isConnected && !isConnecting && device) {
       connect();
     }
-  }, [autoConnect, connectionState, connect, device]);
+  }, [autoConnect, isConnected, isConnecting, connect, device]);
 
   useEffect(() => {
     if (expandedByDefault && services.length > 0) {
@@ -240,18 +235,12 @@ export function ServiceExplorer({
     });
   }, []);
 
-  if (!device && !deviceId) {
+  const connectionState = isConnected ? 'connected' : isConnecting ? 'connecting' : 'disconnected';
+
+  if (!device) {
     return (
       <div className={`service-explorer ${className || ''}`}>
         <div className="explorer-empty">No device selected</div>
-      </div>
-    );
-  }
-
-  if (!device && deviceId) {
-    return (
-      <div className={`service-explorer ${className || ''}`}>
-        <div className="explorer-error">Device not found</div>
       </div>
     );
   }

@@ -1,202 +1,9 @@
 import React, { ReactNode } from 'react';
 
-interface WebBLEConfig$2 {
-    autoConnect?: boolean;
-    cacheTimeout?: number;
-    retryAttempts?: number;
-    /** API key from ioswebble.com (wbl_xxxxx) — enables install prompt on iOS Safari */
-    apiKey?: string;
-    /** Operator/app name shown in the install prompt (e.g. "FitTracker") */
-    operatorName?: string;
-    /** App Store URL override (defaults to iOSWebBLE listing) */
-    appStoreUrl?: string;
-}
-interface WebBLEContextValue {
-    isAvailable: boolean;
-    isExtensionInstalled: boolean;
-    isLoading: boolean;
-    isScanning: boolean;
-    devices: BluetoothDevice[];
-    error: Error | null;
-    config?: WebBLEConfig$2;
-    /** @ios-web-bluetooth/core instance (available when @ios-web-bluetooth/core is installed) */
-    core: any | null;
-    requestDevice: (options?: RequestDeviceOptions) => Promise<BluetoothDevice | null>;
-    getDevices: () => Promise<BluetoothDevice[]>;
-    requestLEScan: (options?: BluetoothLEScanOptions) => Promise<BluetoothLEScan | null>;
-    stopScan: () => void;
-}
-interface WebBLEProviderProps {
-    children: ReactNode;
-    config?: WebBLEConfig$2;
-}
-/**
- * Context provider that initialises the WebBLE client and makes Bluetooth
- * state and methods available to all descendant components via
- * {@link useWebBLE} and the convenience hooks (`useBluetooth`, `useDevice`,
- * `useScan`, `useProfile`).
- *
- * Place this near the root of your application. It handles:
- * - Bluetooth availability detection
- * - Safari Web Extension detection (via `webble:extension:ready` event)
- * - Optional iOS install prompt (when `apiKey` is provided and `@ios-web-bluetooth/detect` is installed)
- * - Lazy-loading of `@ios-web-bluetooth/core` if available as a peer dependency
- *
- * @param props.children - React children to render inside the provider.
- * @param props.config - Optional configuration (auto-connect, retry, API key, etc.).
- *
- * @example
- * ```tsx
- * import { WebBLEProvider } from '@ios-web-bluetooth/react';
- *
- * function App() {
- *   return (
- *     <WebBLEProvider config={{ retryAttempts: 3 }}>
- *       <MyBluetoothApp />
- *     </WebBLEProvider>
- *   );
- * }
- * ```
- *
- * @example
- * ```tsx
- * // With iOS install prompt (requires @ios-web-bluetooth/detect peer dep)
- * <WebBLEProvider
- *   config={{
- *     apiKey: 'wbl_your_key',
- *     operatorName: 'FitTracker',
- *   }}
- * >
- *   <App />
- * </WebBLEProvider>
- * ```
- */
-declare function WebBLEProvider({ children, config }: WebBLEProviderProps): React.JSX.Element;
-/**
- * Hook to access the {@link WebBLEProvider} context directly.
- *
- * Returns the full context value including availability state, device list,
- * scanning state, and all Bluetooth methods. Throws if used outside a
- * {@link WebBLEProvider}.
- *
- * For most use cases, prefer the higher-level hooks:
- * - {@link useBluetooth} -- availability and device requesting
- * - {@link useDevice} -- single-device lifecycle
- * - {@link useScan} -- LE scanning
- * - {@link useProfile} -- profile binding
- *
- * @returns The full WebBLE context value.
- * @throws Error if called outside a {@link WebBLEProvider}.
- *
- * @example
- * ```tsx
- * import { useWebBLE } from '@ios-web-bluetooth/react';
- *
- * function StatusBar() {
- *   const { isAvailable, isExtensionInstalled, devices } = useWebBLE();
- *   return (
- *     <p>
- *       BLE: {isAvailable ? 'on' : 'off'} |
- *       Extension: {isExtensionInstalled ? 'yes' : 'no'} |
- *       Devices: {devices.length}
- *     </p>
- *   );
- * }
- * ```
- */
-declare function useWebBLE(): WebBLEContextValue;
-
-/**
- * WebBLEClient - Core client wrapper for Web Bluetooth API
- * Provides a unified interface for all Bluetooth operations
- */
-interface WebBLEConfig$1 {
-    autoConnect?: boolean;
-    cacheTimeout?: number;
-    retryAttempts?: number;
-    apiKey?: string;
-}
-declare class WebBLEClient {
-    private config;
-    private deviceCache;
-    private reconnectTimers;
-    constructor(config?: WebBLEConfig$1);
-    /**
-     * Request a Bluetooth device from the user
-     */
-    requestDevice(options?: RequestDeviceOptions): Promise<BluetoothDevice | null>;
-    /**
-     * Get list of previously paired devices
-     */
-    getDevices(): Promise<BluetoothDevice[]>;
-    /**
-     * Start scanning for BLE advertisements
-     */
-    requestLEScan(options?: BluetoothLEScanOptions): Promise<BluetoothLEScan | null>;
-    /**
-     * Connect to a device with retry logic
-     */
-    private connectWithRetry;
-    /**
-     * Schedule a reconnection attempt
-     */
-    private scheduleReconnect;
-    /**
-     * Delay helper for retry logic
-     */
-    private delay;
-    /**
-     * Handle advertisement received event
-     */
-    private handleAdvertisement;
-    /**
-     * Clean up resources
-     */
-    dispose(): void;
-}
-
-/**
- * ExtensionDetector - Automatically detects if the WebBLE Safari extension is installed
- */
-declare class ExtensionDetector {
-    private isDetected;
-    private detectionPromise;
-    private readonly DETECTION_TIMEOUT;
-    /**
-     * Check if the extension is installed.
-     * Checks the global marker and navigator.webble/__webble (set by the extension).
-     */
-    isInstalled(): boolean;
-    /**
-     * Detect extension with a timeout
-     */
-    detect(): Promise<boolean>;
-    /**
-     * Perform the actual detection
-     */
-    private performDetection;
-    /**
-     * Get installation instructions for iOS Safari
-     */
-    getInstallationInstructions(): string;
-    /**
-     * Open the extension store for installation
-     */
-    openExtensionStore(): void;
-    /**
-     * Check if the browser supports Web Bluetooth
-     */
-    isBrowserSupported(): boolean;
-    /**
-     * Get browser compatibility message
-     */
-    getBrowserCompatibilityMessage(): string | null;
-}
-
 /**
  * Type definitions for @ios-web-bluetooth/react SDK
  */
-interface WebBLEConfig {
+interface WebBLEConfig$2 {
     autoConnect?: boolean;
     cacheTimeout?: number;
     retryAttempts?: number;
@@ -280,7 +87,7 @@ interface UseBluetoothReturn {
     isAvailable: boolean;
     isExtensionInstalled: boolean;
     isSupported: boolean;
-    requestDevice: (options?: RequestDeviceOptions$1) => Promise<BluetoothDevice | null>;
+    requestDevice: (options?: RequestDeviceOptions) => Promise<BluetoothDevice | null>;
     getDevices: () => Promise<BluetoothDevice[]>;
     error: Error | null;
 }
@@ -326,12 +133,206 @@ interface ConnectionParameters {
     supervisionTimeout: number;
 }
 type ConnectionPriority = 'balanced' | 'high' | 'low-power';
-interface RequestDeviceOptions$1 {
+interface RequestDeviceOptions {
     filters?: BluetoothLEScanFilter[];
     exclusionFilters?: BluetoothLEScanFilter[];
     optionalServices?: BluetoothServiceUUID[];
     optionalManufacturerData?: number[];
     acceptAllDevices?: boolean;
+}
+
+interface WebBLEConfig$1 {
+    autoConnect?: boolean;
+    cacheTimeout?: number;
+    retryAttempts?: number;
+    /** API key from ioswebble.com (wbl_xxxxx) — enables install prompt on iOS Safari */
+    apiKey?: string;
+    /** Operator/app name shown in the install prompt (e.g. "FitTracker") */
+    operatorName?: string;
+    /** App Store URL override (defaults to iOSWebBLE listing) */
+    appStoreUrl?: string;
+}
+interface WebBLEContextValue {
+    isAvailable: boolean;
+    isExtensionInstalled: boolean;
+    isLoading: boolean;
+    isScanning: boolean;
+    devices: BluetoothDevice[];
+    error: Error | null;
+    config?: WebBLEConfig$1;
+    /** @ios-web-bluetooth/core instance (available when @ios-web-bluetooth/core is installed) */
+    core: any | null;
+    requestDevice: (options?: RequestDeviceOptions) => Promise<BluetoothDevice | null>;
+    getDevices: () => Promise<BluetoothDevice[]>;
+    requestLEScan: (options?: BluetoothLEScanOptions) => Promise<BluetoothLEScan | null>;
+    stopScan: () => void;
+}
+interface WebBLEProviderProps {
+    children: ReactNode;
+    config?: WebBLEConfig$1;
+}
+/**
+ * Context provider that initialises the WebBLE client and makes Bluetooth
+ * state and methods available to all descendant components via
+ * {@link useWebBLE} and the convenience hooks (`useBluetooth`, `useDevice`,
+ * `useScan`, `useProfile`).
+ *
+ * Place this near the root of your application. It handles:
+ * - Bluetooth availability detection
+ * - Safari Web Extension detection (via `webble:extension:ready` event)
+ * - Optional iOS install prompt (when `apiKey` is provided and `@ios-web-bluetooth/detect` is installed)
+ * - Lazy-loading of `@ios-web-bluetooth/core` if available as a peer dependency
+ *
+ * @param props.children - React children to render inside the provider.
+ * @param props.config - Optional configuration (auto-connect, retry, API key, etc.).
+ *
+ * @example
+ * ```tsx
+ * import { WebBLEProvider } from '@ios-web-bluetooth/react';
+ *
+ * function App() {
+ *   return (
+ *     <WebBLEProvider config={{ retryAttempts: 3 }}>
+ *       <MyBluetoothApp />
+ *     </WebBLEProvider>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // With iOS install prompt (requires @ios-web-bluetooth/detect peer dep)
+ * <WebBLEProvider
+ *   config={{
+ *     apiKey: 'wbl_your_key',
+ *     operatorName: 'FitTracker',
+ *   }}
+ * >
+ *   <App />
+ * </WebBLEProvider>
+ * ```
+ */
+declare function WebBLEProvider({ children, config }: WebBLEProviderProps): React.JSX.Element;
+/**
+ * Hook to access the {@link WebBLEProvider} context directly.
+ *
+ * Returns the full context value including availability state, device list,
+ * scanning state, and all Bluetooth methods. Throws if used outside a
+ * {@link WebBLEProvider}.
+ *
+ * For most use cases, prefer the higher-level hooks:
+ * - {@link useBluetooth} -- availability and device requesting
+ * - {@link useDevice} -- single-device lifecycle
+ * - {@link useScan} -- LE scanning
+ * - {@link useProfile} -- profile binding
+ *
+ * @returns The full WebBLE context value.
+ * @throws Error if called outside a {@link WebBLEProvider}.
+ *
+ * @example
+ * ```tsx
+ * import { useWebBLE } from '@ios-web-bluetooth/react';
+ *
+ * function StatusBar() {
+ *   const { isAvailable, isExtensionInstalled, devices } = useWebBLE();
+ *   return (
+ *     <p>
+ *       BLE: {isAvailable ? 'on' : 'off'} |
+ *       Extension: {isExtensionInstalled ? 'yes' : 'no'} |
+ *       Devices: {devices.length}
+ *     </p>
+ *   );
+ * }
+ * ```
+ */
+declare function useWebBLE(): WebBLEContextValue;
+
+/**
+ * WebBLEClient - Core client wrapper for Web Bluetooth API
+ * Provides a unified interface for all Bluetooth operations
+ */
+
+interface WebBLEConfig {
+    autoConnect?: boolean;
+    cacheTimeout?: number;
+    retryAttempts?: number;
+    apiKey?: string;
+}
+declare class WebBLEClient {
+    private config;
+    private deviceCache;
+    private reconnectTimers;
+    constructor(config?: WebBLEConfig);
+    /**
+     * Request a Bluetooth device from the user
+     */
+    requestDevice(options?: RequestDeviceOptions): Promise<BluetoothDevice | null>;
+    /**
+     * Get list of previously paired devices
+     */
+    getDevices(): Promise<BluetoothDevice[]>;
+    /**
+     * Start scanning for BLE advertisements
+     */
+    requestLEScan(options?: BluetoothLEScanOptions): Promise<BluetoothLEScan | null>;
+    /**
+     * Connect to a device with retry logic
+     */
+    private connectWithRetry;
+    /**
+     * Schedule a reconnection attempt
+     */
+    private scheduleReconnect;
+    /**
+     * Delay helper for retry logic
+     */
+    private delay;
+    /**
+     * Handle advertisement received event
+     */
+    private handleAdvertisement;
+    /**
+     * Clean up resources
+     */
+    dispose(): void;
+}
+
+/**
+ * ExtensionDetector - Automatically detects if the WebBLE Safari extension is installed
+ */
+declare class ExtensionDetector {
+    private isDetected;
+    private detectionPromise;
+    private readonly DETECTION_TIMEOUT;
+    /**
+     * Check if the extension is installed.
+     * Checks the global marker and navigator.webble/__webble (set by the extension).
+     */
+    isInstalled(): boolean;
+    /**
+     * Detect extension with a timeout
+     */
+    detect(): Promise<boolean>;
+    /**
+     * Perform the actual detection
+     */
+    private performDetection;
+    /**
+     * Get installation instructions for iOS Safari
+     */
+    getInstallationInstructions(): string;
+    /**
+     * Open the extension store for installation
+     */
+    openExtensionStore(): void;
+    /**
+     * Check if the browser supports Web Bluetooth
+     */
+    isBrowserSupported(): boolean;
+    /**
+     * Get browser compatibility message
+     */
+    getBrowserCompatibilityMessage(): string | null;
 }
 
 /**
@@ -463,7 +464,7 @@ interface UseCharacteristicReturn {
  * @param device - The parent BluetoothDevice
  * @returns Characteristic state and control methods
  */
-declare function useCharacteristic(characteristic?: BluetoothRemoteGATTCharacteristic | null, service?: BluetoothRemoteGATTService | null, device?: BluetoothDevice | null): UseCharacteristicReturn;
+declare function useCharacteristic(characteristic?: BluetoothRemoteGATTCharacteristic | null, _service?: BluetoothRemoteGATTService | null, _device?: BluetoothDevice | null): UseCharacteristicReturn;
 
 interface NotificationOptions {
     autoSubscribe?: boolean;
@@ -591,7 +592,7 @@ interface DeviceScannerProps {
 declare function DeviceScanner({ onDeviceSelected, filters, className, autoConnect, showRssi, sortByRssi, maxDevices, scanDuration }: DeviceScannerProps): React.JSX.Element;
 
 interface ServiceExplorerProps {
-    deviceId?: string;
+    device?: BluetoothDevice | null;
     className?: string;
     autoConnect?: boolean;
     onCharacteristicSelect?: (characteristicId: string) => void;
@@ -600,7 +601,7 @@ interface ServiceExplorerProps {
 /**
  * ServiceExplorer - GATT hierarchy viewer component
  */
-declare function ServiceExplorer({ deviceId, className, autoConnect, onCharacteristicSelect, expandedByDefault }: ServiceExplorerProps): React.JSX.Element;
+declare function ServiceExplorer({ device: inputDevice, className, autoConnect, onCharacteristicSelect, expandedByDefault }: ServiceExplorerProps): React.JSX.Element;
 
 interface ConnectionStatusProps {
     deviceId?: string;
@@ -664,4 +665,4 @@ declare const WebBLE: {
 };
 
 export { ConnectionStatus, DeviceScanner, ExtensionDetector, InstallationWizard, ServiceExplorer, WebBLE, WebBLEClient, WebBLEProvider, WebBLE as default, formatValue, getCharacteristicName, getServiceName, parseValue, useBluetooth, useCharacteristic, useConnection, useDevice, useNotifications, useProfile, useScan, useWebBLE };
-export type { BluetoothDeviceInfo, ConnectionState, GATTCharacteristicInfo, GATTServiceInfo, NotificationHandler, ScanState, WebBLEConfig };
+export type { BluetoothDeviceInfo, ConnectionState, GATTCharacteristicInfo, GATTServiceInfo, NotificationHandler, ScanState, WebBLEConfig$2 as WebBLEConfig };

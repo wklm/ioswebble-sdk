@@ -108,14 +108,18 @@ describe('ServiceExplorer', () => {
     mockUseDevice.mockReturnValue({
       device: mockDevice,
       services: [],
-      connectionState: 'disconnected',
+      isConnected: false,
+      isConnecting: false,
       connect: mockConnect,
       disconnect: mockDisconnect,
       error: null,
       forget: jest.fn(),
       watchAdvertisements: jest.fn(),
-      unwatchAdvertisements: jest.fn()
-    });
+      unwatchAdvertisements: jest.fn(),
+      isWatchingAdvertisements: false,
+      connectionPriority: null,
+      setConnectionPriority: jest.fn()
+    } as any);
 
     mockUseCharacteristic.mockImplementation((characteristic, service, device) => {
       return {
@@ -142,56 +146,64 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: null,
         services: [],
-        connectionState: 'disconnected',
+        isConnected: false,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
       render(<ServiceExplorer />);
       expect(screen.getByText('No device selected')).toBeInTheDocument();
     });
 
-    it('should show device not found when deviceId provided but device not found', () => {
+    it('should show no device selected when device is explicitly null', () => {
       mockUseDevice.mockReturnValue({
         device: null,
         services: [],
-        connectionState: 'disconnected',
+        isConnected: false,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="non-existent" />);
-      expect(screen.getByText('Device not found')).toBeInTheDocument();
+      render(<ServiceExplorer device={null} />);
+      expect(screen.getByText('No device selected')).toBeInTheDocument();
     });
 
     it('should render device info when device is found', () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       expect(screen.getByText('Test Device')).toBeInTheDocument();
       expect(screen.getByText('disconnected')).toBeInTheDocument();
     });
 
     it('should apply custom className', () => {
-      const { container } = render(<ServiceExplorer deviceId="test-device-1" className="custom-explorer" />);
+      const { container } = render(<ServiceExplorer device={mockDevice as any} className="custom-explorer" />);
       expect(container.querySelector('.service-explorer.custom-explorer')).toBeInTheDocument();
     });
   });
 
   describe('Connection management', () => {
     it('should show connect button when disconnected', () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       expect(screen.getByText('Connect to Device')).toBeInTheDocument();
     });
 
     it('should call connect when connect button clicked', () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByText('Connect to Device'));
       expect(mockConnect).toHaveBeenCalled();
     });
@@ -200,16 +212,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: mockServices,
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       expect(screen.getByText('Disconnect')).toBeInTheDocument();
     });
 
@@ -217,16 +233,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: mockServices,
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByText('Disconnect'));
       expect(mockDisconnect).toHaveBeenCalled();
     });
@@ -235,16 +255,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: [],
-        connectionState: 'connecting',
+        isConnected: false,
+        isConnecting: true,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       expect(screen.getByText('Connecting...')).toBeInTheDocument();
     });
 
@@ -252,16 +276,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: [],
-        connectionState: 'disconnected',
+        isConnected: false,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" autoConnect={true} />);
+      render(<ServiceExplorer device={mockDevice as any} autoConnect={true} />);
       expect(mockConnect).toHaveBeenCalled();
     });
   });
@@ -271,31 +299,35 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: mockServices,
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
     });
 
     it('should display services when connected', () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       expect(screen.getByText('Found 2 service(s)')).toBeInTheDocument();
       expect(screen.getByText('Heart Rate')).toBeInTheDocument();
       expect(screen.getByText('Battery Service')).toBeInTheDocument();
     });
 
     it('should show service type (Primary/Secondary)', () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       const primaryElements = screen.getAllByText('Primary');
       expect(primaryElements).toHaveLength(2);
     });
 
     it('should toggle service expansion on click', async () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       
       const heartRateButton = screen.getByLabelText('Expand Heart Rate');
       fireEvent.click(heartRateButton);
@@ -308,7 +340,7 @@ describe('ServiceExplorer', () => {
     });
 
     it('should expand all services when expandedByDefault is true', async () => {
-      render(<ServiceExplorer deviceId="test-device-1" expandedByDefault={true} />);
+      render(<ServiceExplorer device={mockDevice as any} expandedByDefault={true} />);
       
       await waitFor(() => {
         expect(screen.getByText('Heart Rate Measurement')).toBeInTheDocument();
@@ -321,16 +353,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: [],
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       expect(screen.getByText('Discovering services...')).toBeInTheDocument();
     });
   });
@@ -340,18 +376,22 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: mockServices,
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
     });
 
     it('should display characteristic properties', async () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       
       // Expand Heart Rate service
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
@@ -371,7 +411,7 @@ describe('ServiceExplorer', () => {
 
     it('should call onCharacteristicSelect when characteristic is clicked', async () => {
       const onSelect = jest.fn();
-      render(<ServiceExplorer deviceId="test-device-1" onCharacteristicSelect={onSelect} />);
+      render(<ServiceExplorer device={mockDevice as any} onCharacteristicSelect={onSelect} />);
       
       // Expand Heart Rate service
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
@@ -393,18 +433,22 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: mockServices,
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
     });
 
     it('should show read button for readable characteristics', async () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -414,7 +458,7 @@ describe('ServiceExplorer', () => {
     });
 
     it('should call read when read button is clicked', async () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       
       // Wait for services to render
       await waitFor(() => {
@@ -464,7 +508,7 @@ describe('ServiceExplorer', () => {
         error: null
       }));
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -483,7 +527,7 @@ describe('ServiceExplorer', () => {
     });
 
     it('should show write controls for writable characteristics', async () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -494,7 +538,7 @@ describe('ServiceExplorer', () => {
     });
 
     it('should call write with encoded data when write button is clicked', async () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -517,7 +561,7 @@ describe('ServiceExplorer', () => {
     });
 
     it('should show notification controls for notifiable characteristics', async () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -526,7 +570,7 @@ describe('ServiceExplorer', () => {
     });
 
     it('should toggle notifications when notify button is clicked', async () => {
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -557,7 +601,7 @@ describe('ServiceExplorer', () => {
         error: null
       }));
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -583,7 +627,7 @@ describe('ServiceExplorer', () => {
         error: null
       }));
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -603,16 +647,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: [],
-        connectionState: 'disconnected',
+        isConnected: false,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       expect(screen.getByRole('alert')).toHaveTextContent('Connection failed');
     });
 
@@ -638,16 +686,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: mockServices,
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       // Wait for characteristic to be rendered
@@ -661,7 +713,7 @@ describe('ServiceExplorer', () => {
 
   describe('Empty states', () => {
     it('should show message when disconnected without autoConnect', () => {
-      render(<ServiceExplorer deviceId="test-device-1" autoConnect={false} />);
+      render(<ServiceExplorer device={mockDevice as any} autoConnect={false} />);
       expect(screen.getByText('Connect to the device to explore its services and characteristics.')).toBeInTheDocument();
     });
 
@@ -686,16 +738,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: mockServices,
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -726,16 +782,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: [unknownService],
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       expect(screen.getByText('custom-service-uuid')).toBeInTheDocument();
       expect(screen.getByText('Secondary')).toBeInTheDocument();
     });
@@ -765,16 +825,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: [serviceWithUnknownChar],
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -790,16 +854,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: deviceWithoutName,
         services: [],
-        connectionState: 'disconnected',
+        isConnected: false,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-2" />);
+      render(<ServiceExplorer device={deviceWithoutName as any} />);
       expect(screen.getByText('Unknown Device')).toBeInTheDocument();
     });
   });
@@ -809,16 +877,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: mockServices,
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       
       // Expand Heart Rate service
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
@@ -846,16 +918,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: mockServices,
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -899,16 +975,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: mockServices,
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -930,16 +1010,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: mockServices,
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand Heart Rate'));
       
       await waitFor(() => {
@@ -986,16 +1070,20 @@ describe('ServiceExplorer', () => {
       mockUseDevice.mockReturnValue({
         device: mockDevice,
         services: [serviceWithAllProps],
-        connectionState: 'connected',
+        isConnected: true,
+        isConnecting: false,
         connect: mockConnect,
         disconnect: mockDisconnect,
         error: null,
         forget: jest.fn(),
         watchAdvertisements: jest.fn(),
-        unwatchAdvertisements: jest.fn()
-      });
+        unwatchAdvertisements: jest.fn(),
+        isWatchingAdvertisements: false,
+        connectionPriority: null,
+        setConnectionPriority: jest.fn()
+      } as any);
 
-      render(<ServiceExplorer deviceId="test-device-1" />);
+      render(<ServiceExplorer device={mockDevice as any} />);
       fireEvent.click(screen.getByLabelText('Expand test-service'));
       
       // Wait for the characteristics to load

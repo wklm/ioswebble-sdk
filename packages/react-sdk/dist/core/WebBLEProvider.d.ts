@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import type { RequestDeviceOptions } from '../types';
 interface WebBLEConfig {
     autoConnect?: boolean;
     cacheTimeout?: number;

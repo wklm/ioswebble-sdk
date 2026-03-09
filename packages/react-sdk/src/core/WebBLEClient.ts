@@ -2,6 +2,7 @@
  * WebBLEClient - Core client wrapper for Web Bluetooth API
  * Provides a unified interface for all Bluetooth operations
  */
+import type { RequestDeviceOptions } from '../types';
 
 interface WebBLEConfig {
   autoConnect?: boolean;
@@ -35,7 +36,8 @@ export class WebBLEClient {
         throw new Error('Web Bluetooth API is not available');
       }
 
-      const device = await navigator.bluetooth.requestDevice(options || { acceptAllDevices: true });
+      const nativeOptions = options || { acceptAllDevices: true as const };
+      const device = await navigator.bluetooth.requestDevice(nativeOptions as globalThis.RequestDeviceOptions);
       
       if (device) {
         this.deviceCache.set(device.id, device);

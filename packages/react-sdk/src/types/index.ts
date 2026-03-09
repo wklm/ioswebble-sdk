@@ -133,11 +133,18 @@ export interface UseBluetoothReturn {
 
 export interface UseDeviceReturn {
   device: BluetoothDevice | null;
-  connectionState: ConnectionState;
+  isConnected: boolean;
+  isConnecting: boolean;
   connect: (options?: ConnectionOptions) => Promise<void>;
-  disconnect: () => Promise<void>;
-  services: GATTServiceInfo[];
+  disconnect: () => void;
+  services: BluetoothRemoteGATTService[];
   error: Error | null;
+  watchAdvertisements: () => Promise<void>;
+  unwatchAdvertisements: () => void;
+  isWatchingAdvertisements: boolean;
+  forget: () => Promise<void>;
+  connectionPriority: 'low' | 'balanced' | 'high' | null;
+  setConnectionPriority: (priority: 'low' | 'balanced' | 'high') => Promise<void>;
 }
 
 export interface UseCharacteristicReturn {
