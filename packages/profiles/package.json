@@ -54,9 +54,9 @@
     "@ios-web-bluetooth/core": ">=2.0.0-beta.2"
   },
   "devDependencies": {
-    "@types/jest": "^29",
+    "@types/jest": "^30",
     "@ios-web-bluetooth/core": ">=2.0.0-beta.2",
-    "jest": "^29",
+    "jest": "^30",
     "jest-environment-jsdom": "^30",
     "ts-jest": "^29",
     "tsup": "^8.0.0",
