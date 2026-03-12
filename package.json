@@ -20,6 +20,7 @@
     "publish:dry": "npm run build:packages && npm publish --dry-run --tag beta -w packages/core && npm publish --dry-run --tag beta -w packages/profiles && npm publish --dry-run --tag beta -w packages/react-sdk && npm publish --dry-run --tag beta -w packages/testing && npm publish --dry-run -w packages/detect && npm publish --dry-run -w packages/mcp && npm publish --dry-run -w packages/cli && npm publish --dry-run -w packages/skill"
   },
   "devDependencies": {
+    "@rollup/plugin-terser": "^1.0.0",
     "@types/chrome": "^0.1.37",
     "@types/jest": "^30",
     "@types/web-bluetooth": "^0.0.21",
@@ -32,6 +33,7 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
+    "minimatch": "^9.0.9",
     "uuid": "^13.0.0"
   }
 }
