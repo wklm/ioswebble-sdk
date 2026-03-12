@@ -54,7 +54,7 @@
   "dependencies": {
     "@ios-web-bluetooth/detect": "^0.1.1",
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "zod": "^3.22.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

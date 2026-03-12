@@ -47,7 +47,6 @@ const server = new McpServer({
 // --- Tools ---
 
 // Tool 1: Initialize integration in a project
-// @ts-expect-error TS2589: MCP SDK Zod generics cause deep type instantiation
 server.registerTool(
   'ioswebble_init',
   {
@@ -135,7 +134,6 @@ server.registerTool(
 );
 
 // Tool 4: Scaffold a custom BLE profile
-// @ts-expect-error TS2589: MCP SDK Zod generics cause deep type instantiation
 server.registerTool(
   'ioswebble_scaffold_profile',
   {
@@ -169,7 +167,6 @@ server.registerTool(
 );
 
 // Tool 5: Get complete code examples
-// @ts-expect-error TS2589: MCP SDK Zod generics cause deep type instantiation
 server.registerTool(
   'ioswebble_get_example',
   {
@@ -233,7 +230,6 @@ server.registerTool(
 );
 
 // Tool 7: Documentation lookup
-// @ts-expect-error TS2589: MCP SDK Zod generics cause deep type instantiation
 server.registerTool(
   'ioswebble_docs',
   {
