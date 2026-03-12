@@ -267,12 +267,11 @@ describe('useNotifications Hook', () => {
         { wrapper }
       );
       
-      // Wait for auto-subscription to complete
+      // Wait for auto-subscription to complete and state to update
       await waitFor(() => {
         expect(mockCharacteristic.startNotifications).toHaveBeenCalled();
+        expect(result.current.isSubscribed).toBe(true);
       });
-      
-      expect(result.current.isSubscribed).toBe(true);
     });
 
     it('should not auto-subscribe when autoSubscribe is false', async () => {
