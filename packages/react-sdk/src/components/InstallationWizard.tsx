@@ -12,6 +12,12 @@ interface InstallationWizardProps {
 
 const DEFAULT_APP_STORE_URL = 'https://apps.apple.com/app/ioswebble/id0000000000';
 
+export const navigationController = {
+  navigateToUrl(url: string) {
+    window.location.href = url;
+  }
+};
+
 /**
  * InstallationWizard - iOS-native style extension installation prompt.
  *
@@ -66,7 +72,7 @@ export function InstallationWizard({
         `webble://return?url=${encodeURIComponent(window.location.href)}`
       );
     } catch { /* noop */ }
-    window.location.href = appStoreUrl;
+    navigationController.navigateToUrl(appStoreUrl);
   }, [appStoreUrl]);
 
   const handleDismiss = useCallback(() => {

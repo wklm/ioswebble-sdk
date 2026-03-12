@@ -1,8 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { InstallationWizard } from '../../src/components/InstallationWizard';
+import * as InstallationWizardModule from '../../src/components/InstallationWizard';
 import { ExtensionDetector } from '../../src/core/ExtensionDetector';
+
+const { InstallationWizard } = InstallationWizardModule;
 
 // Mock ExtensionDetector
 jest.mock('../../src/core/ExtensionDetector');
@@ -138,6 +140,10 @@ describe('InstallationWizard', () => {
     });
 
     it('should navigate to App Store when install button is clicked', async () => {
+      const navigateSpy = jest
+        .spyOn(InstallationWizardModule.navigationController, 'navigateToUrl')
+        .mockImplementation(() => {});
+
       render(<InstallationWizard />);
       
       await waitFor(() => {
@@ -145,10 +151,14 @@ describe('InstallationWizard', () => {
         fireEvent.click(button);
       });
 
-      expect(window.location.href).toBe('https://apps.apple.com/app/ioswebble/id0000000000');
+      expect(navigateSpy).toHaveBeenCalledWith('https://apps.apple.com/app/ioswebble/id0000000000');
     });
 
     it('should use custom appStoreUrl when provided', async () => {
+      const navigateSpy = jest
+        .spyOn(InstallationWizardModule.navigationController, 'navigateToUrl')
+        .mockImplementation(() => {});
+
       const customUrl = 'https://apps.apple.com/app/custom/id1234567890';
       render(<InstallationWizard appStoreUrl={customUrl} />);
       
@@ -157,7 +167,7 @@ describe('InstallationWizard', () => {
         fireEvent.click(button);
       });
 
-      expect(window.location.href).toBe(customUrl);
+      expect(navigateSpy).toHaveBeenCalledWith(customUrl);
     });
 
     it('should not call onComplete when extension is not installed', async () => {

@@ -2,16 +2,28 @@ import { ExtensionDetector } from '../../src/core/ExtensionDetector';
 
 describe('ExtensionDetector', () => {
   let detector: ExtensionDetector;
-  let originalNavigator: any;
-  let originalWindow: any;
   let addEventListenerSpy: jest.SpyInstance;
   let removeEventListenerSpy: jest.SpyInstance;
   let openSpy: jest.SpyInstance;
 
   beforeEach(() => {
     detector = new ExtensionDetector();
-    originalNavigator = global.navigator;
-    originalWindow = global.window;
+    delete (global.window as any).__webble__;
+    Object.defineProperty(global.navigator, 'bluetooth', {
+      value: undefined,
+      writable: true,
+      configurable: true
+    });
+    Object.defineProperty(global.navigator, 'webble', {
+      value: undefined,
+      writable: true,
+      configurable: true
+    });
+    Object.defineProperty(global.window, 'isSecureContext', {
+      value: true,
+      writable: true,
+      configurable: true
+    });
     
     // Setup spies
     addEventListenerSpy = jest.spyOn(window, 'addEventListener');
@@ -26,21 +38,17 @@ describe('ExtensionDetector', () => {
     jest.clearAllMocks();
     jest.clearAllTimers();
     jest.useRealTimers();
-    // Restore window first (may have been set to undefined)
-    Object.defineProperty(global, 'window', {
-      value: originalWindow,
+    delete (global.window as any).__webble__;
+    Object.defineProperty(global.navigator, 'bluetooth', {
+      value: undefined,
       writable: true,
       configurable: true
     });
-    Object.defineProperty(global, 'navigator', {
-      value: originalNavigator,
+    Object.defineProperty(global.navigator, 'webble', {
+      value: undefined,
       writable: true,
       configurable: true
     });
-    // Clean up __webble__ marker after window is restored
-    if (typeof global.window !== 'undefined') {
-      delete (global.window as any).__webble__;
-    }
   });
 
   describe('isInstalled', () => {
@@ -89,13 +97,7 @@ describe('ExtensionDetector', () => {
       expect(detector.isInstalled()).toBe(true);
     });
 
-    it('should handle undefined navigator', () => {
-      Object.defineProperty(global, 'navigator', {
-        value: undefined,
-        writable: true,
-        configurable: true
-      });
-
+    it('should handle missing navigator bluetooth/webble markers', () => {
       expect(detector.isInstalled()).toBe(false);
     });
   });
@@ -156,7 +158,7 @@ describe('ExtensionDetector', () => {
       const promise1 = detector.detect();
       const promise2 = detector.detect();
       
-      expect(promise1).toStrictEqual(promise2); // Should be the same promise
+      expect(promise1).toBe(promise2); // Should be the same in-flight promise
       
       jest.advanceTimersByTime(3000);
       
@@ -167,16 +169,9 @@ describe('ExtensionDetector', () => {
       expect(addEventListenerSpy).toHaveBeenCalledTimes(1); // Only one detection
     });
 
-    it('should handle undefined window', async () => {
-      Object.defineProperty(global, 'window', {
-        value: undefined,
-        writable: true,
-        configurable: true
-      });
-
+    it('should return false when markers remain unavailable through timeout', async () => {
       const detectPromise = detector.detect();
       jest.advanceTimersByTime(3000);
-      
       const result = await detectPromise;
       expect(result).toBe(false);
     });
@@ -321,14 +316,8 @@ describe('ExtensionDetector', () => {
     });
 
     it('should return false for insecure context', () => {
-      // Create a new window-like object with isSecureContext
-      const mockWindow = {
-        ...global.window,
-        isSecureContext: false
-      };
-      
-      Object.defineProperty(global, 'window', {
-        value: mockWindow,
+      Object.defineProperty(global.window, 'isSecureContext', {
+        value: false,
         writable: true,
         configurable: true
       });
@@ -337,14 +326,8 @@ describe('ExtensionDetector', () => {
     });
 
     it('should return true for Safari', () => {
-      // Create a new window-like object with isSecureContext
-      const mockWindow = {
-        ...global.window,
-        isSecureContext: true
-      };
-      
-      Object.defineProperty(global, 'window', {
-        value: mockWindow,
+      Object.defineProperty(global.window, 'isSecureContext', {
+        value: true,
         writable: true,
         configurable: true
       });
@@ -359,14 +342,8 @@ describe('ExtensionDetector', () => {
     });
 
     it('should return true for Chrome with bluetooth API', () => {
-      // Create a new window-like object with isSecureContext
-      const mockWindow = {
-        ...global.window,
-        isSecureContext: true
-      };
-      
-      Object.defineProperty(global, 'window', {
-        value: mockWindow,
+      Object.defineProperty(global.window, 'isSecureContext', {
+        value: true,
         writable: true,
         configurable: true
       });
@@ -387,14 +364,8 @@ describe('ExtensionDetector', () => {
     });
 
     it('should return false for non-Safari browser without bluetooth API', () => {
-      // Create a new window-like object with isSecureContext
-      const mockWindow = {
-        ...global.window,
-        isSecureContext: true
-      };
-      
-      Object.defineProperty(global, 'window', {
-        value: mockWindow,
+      Object.defineProperty(global.window, 'isSecureContext', {
+        value: true,
         writable: true,
         configurable: true
       });
@@ -436,14 +407,8 @@ describe('ExtensionDetector', () => {
     });
 
     it('should return insecure context message', () => {
-      // Create a new window-like object with isSecureContext
-      const mockWindow = {
-        ...global.window,
-        isSecureContext: false
-      };
-      
-      Object.defineProperty(global, 'window', {
-        value: mockWindow,
+      Object.defineProperty(global.window, 'isSecureContext', {
+        value: false,
         writable: true,
         configurable: true
       });
@@ -454,14 +419,8 @@ describe('ExtensionDetector', () => {
     });
 
     it('should return Safari extension message when not installed', () => {
-      // Create a new window-like object with isSecureContext
-      const mockWindow = {
-        ...global.window,
-        isSecureContext: true
-      };
-      
-      Object.defineProperty(global, 'window', {
-        value: mockWindow,
+      Object.defineProperty(global.window, 'isSecureContext', {
+        value: true,
         writable: true,
         configurable: true
       });
@@ -480,14 +439,8 @@ describe('ExtensionDetector', () => {
     });
 
     it('should return null for Safari with extension installed', () => {
-      // Create a new window-like object with isSecureContext
-      const mockWindow = {
-        ...global.window,
-        isSecureContext: true
-      };
-      
-      Object.defineProperty(global, 'window', {
-        value: mockWindow,
+      Object.defineProperty(global.window, 'isSecureContext', {
+        value: true,
         writable: true,
         configurable: true
       });
@@ -513,14 +466,8 @@ describe('ExtensionDetector', () => {
     });
 
     it('should return unsupported browser message', () => {
-      // Create a new window-like object with isSecureContext
-      const mockWindow = {
-        ...global.window,
-        isSecureContext: true
-      };
-      
-      Object.defineProperty(global, 'window', {
-        value: mockWindow,
+      Object.defineProperty(global.window, 'isSecureContext', {
+        value: true,
         writable: true,
         configurable: true
       });
@@ -539,14 +486,8 @@ describe('ExtensionDetector', () => {
     });
 
     it('should return null for supported browser with bluetooth API', () => {
-      // Create a new window-like object with isSecureContext
-      const mockWindow = {
-        ...global.window,
-        isSecureContext: true
-      };
-      
-      Object.defineProperty(global, 'window', {
-        value: mockWindow,
+      Object.defineProperty(global.window, 'isSecureContext', {
+        value: true,
         writable: true,
         configurable: true
       });

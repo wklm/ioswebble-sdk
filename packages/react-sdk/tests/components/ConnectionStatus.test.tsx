@@ -31,7 +31,7 @@ describe('ConnectionStatus', () => {
       
       expect(screen.getByText('connected')).toBeInTheDocument();
       const indicator = container.querySelector('span');
-      expect(indicator).toHaveStyle({ backgroundColor: 'green' });
+      expect(indicator).toHaveStyle({ backgroundColor: 'rgb(0, 128, 0)' });
     });
 
     it('should display connecting state with orange indicator', () => {
@@ -50,7 +50,7 @@ describe('ConnectionStatus', () => {
       
       expect(screen.getByText('connecting')).toBeInTheDocument();
       const indicator = container.querySelector('span');
-      expect(indicator).toHaveStyle({ backgroundColor: 'orange' });
+      expect(indicator).toHaveStyle({ backgroundColor: 'rgb(255, 165, 0)' });
     });
 
     it('should display disconnecting state with orange indicator', () => {
@@ -69,7 +69,7 @@ describe('ConnectionStatus', () => {
       
       expect(screen.getByText('disconnecting')).toBeInTheDocument();
       const indicator = container.querySelector('span');
-      expect(indicator).toHaveStyle({ backgroundColor: 'orange' });
+      expect(indicator).toHaveStyle({ backgroundColor: 'rgb(255, 165, 0)' });
     });
 
     it('should display disconnected state with red indicator', () => {
@@ -88,7 +88,7 @@ describe('ConnectionStatus', () => {
       
       expect(screen.getByText('disconnected')).toBeInTheDocument();
       const indicator = container.querySelector('span');
-      expect(indicator).toHaveStyle({ backgroundColor: 'red' });
+      expect(indicator).toHaveStyle({ backgroundColor: 'rgb(255, 0, 0)' });
     });
 
     it('should display unknown state with gray indicator', () => {
@@ -107,7 +107,7 @@ describe('ConnectionStatus', () => {
       
       expect(screen.getByText('unknown')).toBeInTheDocument();
       const indicator = container.querySelector('span');
-      expect(indicator).toHaveStyle({ backgroundColor: 'gray' });
+      expect(indicator).toHaveStyle({ backgroundColor: 'rgb(128, 128, 128)' });
     });
   });
 
@@ -338,7 +338,7 @@ describe('ConnectionStatus', () => {
       const { container } = render(<ConnectionStatus />);
       
       const indicator = container.querySelector('span');
-      expect(indicator).toHaveStyle({ backgroundColor: 'gray' });
+      expect(indicator).toHaveStyle({ backgroundColor: 'rgb(128, 128, 128)' });
     });
 
     it('should handle undefined connectionState', () => {
@@ -356,7 +356,7 @@ describe('ConnectionStatus', () => {
       const { container } = render(<ConnectionStatus />);
       
       const indicator = container.querySelector('span');
-      expect(indicator).toHaveStyle({ backgroundColor: 'gray' });
+      expect(indicator).toHaveStyle({ backgroundColor: 'rgb(128, 128, 128)' });
     });
 
     it('should handle extreme RSSI values', () => {

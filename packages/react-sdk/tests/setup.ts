@@ -116,22 +116,11 @@ global.console = {
   debug: jest.fn()
 };
 
-// Mock window methods
-Object.defineProperty(window, 'location', {
-  value: {
-    ...window.location,
-    protocol: 'https:',
-    hostname: 'localhost',
-    port: '3000',
-    href: 'https://localhost:3000'
-  },
-  writable: true
-});
-
 // Mark as secure context for Web Bluetooth
 Object.defineProperty(window, 'isSecureContext', {
   value: true,
-  writable: true
+  writable: true,
+  configurable: true
 });
 
 // Reset mocks before each test

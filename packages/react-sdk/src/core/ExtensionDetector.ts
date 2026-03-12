@@ -33,20 +33,19 @@ export class ExtensionDetector {
   /**
    * Detect extension with a timeout
    */
-  async detect(): Promise<boolean> {
+  detect(): Promise<boolean> {
     if (this.isDetected) {
-      return true;
+      return Promise.resolve(true);
     }
 
     if (this.detectionPromise) {
       return this.detectionPromise;
     }
 
-    this.detectionPromise = this.performDetection();
-    const result = await this.detectionPromise;
-    this.detectionPromise = null;
-
-    return result;
+    this.detectionPromise = this.performDetection().finally(() => {
+      this.detectionPromise = null;
+    });
+    return this.detectionPromise;
   }
 
   /**

@@ -7,6 +7,9 @@ interface InstallationWizardProps {
     operatorName?: string;
     className?: string;
 }
+export declare const navigationController: {
+    navigateToUrl(url: string): void;
+};
 /**
  * InstallationWizard - iOS-native style extension installation prompt.
  *
