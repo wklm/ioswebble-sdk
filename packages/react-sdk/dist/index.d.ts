@@ -305,8 +305,17 @@ declare class ExtensionDetector {
     private detectionPromise;
     private readonly DETECTION_TIMEOUT;
     /**
+     * Determine whether the given user agent represents Safari (excluding
+     * iOS in-app/alternate browsers such as Chrome iOS, Firefox iOS, Edge iOS,
+     * and Opera iOS).
+     *
+     * This keeps Safari detection logic consistent between isBrowserSupported()
+     * and getBrowserCompatibilityMessage().
+     */
+    private isSafariUserAgent;
+    /**
      * Check if the extension is installed.
-     * Checks the global marker and navigator.webble/__webble (set by the extension).
+     * Checks the global marker and navigator.webble / navigator.bluetooth markers set by the extension.
      */
     isInstalled(): boolean;
     /**

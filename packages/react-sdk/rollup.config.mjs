@@ -17,12 +17,12 @@ export default [
       {
         file: packageJson.module,
         format: 'esm',
-        sourcemap: true
+        sourcemap: false
       },
       {
         file: packageJson.main,
         format: 'cjs',
-        sourcemap: true,
+        sourcemap: false,
         exports: 'named'
       }
     ],
@@ -49,7 +49,7 @@ export default [
         react: 'React',
         'react-dom': 'ReactDOM'
       },
-      sourcemap: true,
+      sourcemap: false,
       exports: 'named'
     },
     plugins: [

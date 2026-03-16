@@ -6,4 +6,3 @@ import type { UseConnectionReturn } from '../types';
  * @returns Connection state and control methods
  */
 export declare function useConnection(deviceId?: string): UseConnectionReturn;
-//# sourceMappingURL=useConnection.d.ts.map

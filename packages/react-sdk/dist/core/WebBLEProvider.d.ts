@@ -106,4 +106,3 @@ export declare function WebBLEProvider({ children, config }: WebBLEProviderProps
  */
 export declare function useWebBLE(): WebBLEContextValue;
 export {};
-//# sourceMappingURL=WebBLEProvider.d.ts.map

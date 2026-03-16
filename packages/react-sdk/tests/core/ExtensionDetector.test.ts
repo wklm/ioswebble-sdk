@@ -5,10 +5,28 @@ describe('ExtensionDetector', () => {
   let addEventListenerSpy: jest.SpyInstance;
   let removeEventListenerSpy: jest.SpyInstance;
   let openSpy: jest.SpyInstance;
+  const IOS_ALTERNATE_BROWSER_USER_AGENTS: Array<[string, string]> = [
+    [
+      'Chrome iOS (CriOS)',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/123.0.0.0 Mobile/15E148 Safari/604.1'
+    ],
+    [
+      'Firefox iOS (FxiOS)',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/126.0 Mobile/15E148 Safari/605.1.15'
+    ],
+    [
+      'Edge iOS (EdgiOS)',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/126.0 Mobile/15E148 Safari/605.1.15'
+    ],
+    [
+      'Opera iOS (OPiOS)',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) OPiOS/4.5.3.123456 Mobile/15E148 Safari/9537.53'
+    ]
+  ];
 
   beforeEach(() => {
     detector = new ExtensionDetector();
-    delete (global.window as any).__webble__;
+    delete (global.window as any).__webble;
     Object.defineProperty(global.navigator, 'bluetooth', {
       value: undefined,
       writable: true,
@@ -38,7 +56,7 @@ describe('ExtensionDetector', () => {
     jest.clearAllMocks();
     jest.clearAllTimers();
     jest.useRealTimers();
-    delete (global.window as any).__webble__;
+    delete (global.window as any).__webble;
     Object.defineProperty(global.navigator, 'bluetooth', {
       value: undefined,
       writable: true,
@@ -52,14 +70,14 @@ describe('ExtensionDetector', () => {
   });
 
   describe('isInstalled', () => {
-    it('should return true when window.__webble__ is set', () => {
-      (global.window as any).__webble__ = true;
+    it('should return true when window.__webble is set with status installed', () => {
+      (global.window as any).__webble = { status: 'installed' };
 
       expect(detector.isInstalled()).toBe(true);
     });
 
-    it('should return true when navigator.bluetooth.__webble is set', () => {
-      Object.defineProperty(global.navigator, 'bluetooth', {
+    it('should return true when navigator.webble.__webble is set', () => {
+      Object.defineProperty(global.navigator, 'webble', {
         value: { __webble: true },
         writable: true,
         configurable: true
@@ -71,12 +89,14 @@ describe('ExtensionDetector', () => {
     it('should return false when no __webble markers exist', () => {
       // @ts-ignore
       delete global.navigator.bluetooth;
+      // @ts-ignore
+      delete global.navigator.webble;
       
       expect(detector.isInstalled()).toBe(false);
     });
 
-    it('should return false when navigator.bluetooth exists but has no __webble marker', () => {
-      Object.defineProperty(global.navigator, 'bluetooth', {
+    it('should return false when navigator.webble exists but has no __webble marker', () => {
+      Object.defineProperty(global.navigator, 'webble', {
         value: {},
         writable: true,
         configurable: true
@@ -86,15 +106,21 @@ describe('ExtensionDetector', () => {
     });
 
     it('should cache the detection result', () => {
-      (global.window as any).__webble__ = true;
+      (global.window as any).__webble = { status: 'installed' };
 
       expect(detector.isInstalled()).toBe(true);
-      
+
       // Remove the marker
-      delete (global.window as any).__webble__;
-      
+      delete (global.window as any).__webble;
+
       // Should still return true due to caching
       expect(detector.isInstalled()).toBe(true);
+    });
+
+    it('should return false for non-installed window marker status', () => {
+      (global.window as any).__webble = { status: 'detecting' };
+
+      expect(detector.isInstalled()).toBe(false);
     });
 
     it('should handle missing navigator bluetooth/webble markers', () => {
@@ -104,7 +130,7 @@ describe('ExtensionDetector', () => {
 
   describe('detect', () => {
     it('should resolve immediately if already detected', async () => {
-      (global.window as any).__webble__ = true;
+      (global.window as any).__webble = { status: 'installed' };
 
       // First detection sets the flag
       detector.isInstalled();
@@ -182,8 +208,8 @@ describe('ExtensionDetector', () => {
 
       const detectPromise = detector.detect();
       
-      // Simulate extension setting the __webble__ marker
-      (global.window as any).__webble__ = true;
+      // Simulate extension setting the __webble marker
+      (global.window as any).__webble = { status: 'installed' };
       
       // Timeout check calls isInstalled again
       jest.advanceTimersByTime(3000);
@@ -381,6 +407,28 @@ describe('ExtensionDetector', () => {
 
       expect(detector.isBrowserSupported()).toBe(false);
     });
+
+    it.each(IOS_ALTERNATE_BROWSER_USER_AGENTS)(
+      'should not treat %s as Safari when bluetooth API is unavailable',
+      (_, userAgent) => {
+        Object.defineProperty(global.window, 'isSecureContext', {
+          value: true,
+          writable: true,
+          configurable: true
+        });
+
+        Object.defineProperty(global.navigator, 'userAgent', {
+          value: userAgent,
+          writable: true,
+          configurable: true
+        });
+
+        // @ts-ignore
+        delete global.navigator.bluetooth;
+
+        expect(detector.isBrowserSupported()).toBe(false);
+      }
+    );
   });
 
   describe('getBrowserCompatibilityMessage', () => {
@@ -452,7 +500,7 @@ describe('ExtensionDetector', () => {
       });
       
       // Set __webble marker so isInstalled() returns true
-      Object.defineProperty(global.navigator, 'bluetooth', {
+      Object.defineProperty(global.navigator, 'webble', {
         value: { __webble: true },
         writable: true,
         configurable: true
@@ -507,6 +555,30 @@ describe('ExtensionDetector', () => {
       const message = detector.getBrowserCompatibilityMessage();
       expect(message).toBeNull();
     });
+
+    it.each(IOS_ALTERNATE_BROWSER_USER_AGENTS)(
+      'should return unsupported message for %s without bluetooth API',
+      (_, userAgent) => {
+        Object.defineProperty(global.window, 'isSecureContext', {
+          value: true,
+          writable: true,
+          configurable: true
+        });
+
+        Object.defineProperty(global.navigator, 'userAgent', {
+          value: userAgent,
+          writable: true,
+          configurable: true
+        });
+
+        // @ts-ignore
+        delete global.navigator.bluetooth;
+
+        const message = detector.getBrowserCompatibilityMessage();
+        expect(message).toContain('browser does not support Web Bluetooth');
+        expect(message).not.toContain('Safari requires the WebBLE extension');
+      }
+    );
   });
 
   describe('Edge cases', () => {
@@ -514,7 +586,7 @@ describe('ExtensionDetector', () => {
       // @ts-ignore
       delete global.navigator.bluetooth;
 
-      const promises = [];
+      const promises: Array<Promise<boolean>> = [];
       for (let i = 0; i < 10; i++) {
         promises.push(detector.detect());
       }

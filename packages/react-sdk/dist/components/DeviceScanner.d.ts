@@ -15,4 +15,3 @@ interface DeviceScannerProps {
  */
 export declare function DeviceScanner({ onDeviceSelected, filters, className, autoConnect, showRssi, sortByRssi, maxDevices, scanDuration }: DeviceScannerProps): React.JSX.Element;
 export {};
-//# sourceMappingURL=DeviceScanner.d.ts.map

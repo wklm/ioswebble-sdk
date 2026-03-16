@@ -8,11 +8,34 @@ export class ExtensionDetector {
   private readonly DETECTION_TIMEOUT = 3000;
 
   /**
+   * Determine whether the given user agent represents Safari (excluding
+   * iOS in-app/alternate browsers such as Chrome iOS, Firefox iOS, Edge iOS,
+   * and Opera iOS).
+   *
+   * This keeps Safari detection logic consistent between isBrowserSupported()
+   * and getBrowserCompatibilityMessage().
+   */
+  private isSafariUserAgent(userAgent: string): boolean {
+    const ua = userAgent.toLowerCase();
+
+    // Known iOS alternate browser markers that should NOT be treated as Safari.
+    const isAlternateIosBrowser =
+      ua.includes('crios') || // Chrome on iOS
+      ua.includes('fxios') || // Firefox on iOS
+      ua.includes('edgios') || // Edge on iOS
+      ua.includes('opios'); // Opera on iOS
+
+    return ua.includes('safari') && !ua.includes('chrome') && !isAlternateIosBrowser;
+  }
+
+  /**
    * Check if the extension is installed.
-   * Checks the global marker and navigator.webble/__webble (set by the extension).
+   * Checks the global marker and navigator.webble / navigator.bluetooth markers set by the extension.
    */
   isInstalled(): boolean {
-    if (typeof window !== 'undefined' && (window as any).__webble__) {
+    // Bug E1 fix: extension sets window.__webble (not window.__webble__).
+    // Check for the status field to confirm it's the real extension object.
+    if (typeof window !== 'undefined' && (window as any).__webble?.status === 'installed') {
       this.isDetected = true;
       return true;
     }
@@ -20,7 +43,7 @@ export class ExtensionDetector {
     if (typeof navigator !== 'undefined') {
       if (
         ((navigator as any).webble && (navigator as any).webble.__webble) ||
-        (navigator.bluetooth && (navigator.bluetooth as any).__webble)
+        ((navigator as any).bluetooth && (navigator as any).bluetooth.__webble)
       ) {
         this.isDetected = true;
         return true;
@@ -107,6 +130,8 @@ export class ExtensionDetector {
    * Open the extension store for installation
    */
   openExtensionStore() {
+    // Bug E2 fix: guard against SSR where navigator is unavailable.
+    if (typeof navigator === 'undefined') return;
     const userAgent = navigator.userAgent.toLowerCase();
 
     const appStoreUrl = 'https://apps.apple.com/app/ioswebble/id0000000000';
@@ -131,9 +156,11 @@ export class ExtensionDetector {
       return false;
     }
 
-    // Check for Safari
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isSafari = userAgent.includes('safari') && !userAgent.includes('chrome');
+    // Bug E4 fix: Chrome on iOS uses 'CriOS' in its UA string, not 'chrome'.
+    // Extension only works in Safari; exclude iOS in-app/alternate browsers
+    // (e.g., CriOS, FxiOS, EdgiOS, OPiOS) to avoid false positives.
+    const userAgent = navigator.userAgent;
+    const isSafari = this.isSafariUserAgent(userAgent);
 
     if (isSafari) {
       // Safari needs our extension
@@ -153,12 +180,16 @@ export class ExtensionDetector {
       return 'Window object not available';
     }
 
-    if (!window?.isSecureContext) {
+    // Bug E3 fix: normalize isSecureContext check to match isBrowserSupported().
+    // Use the same "property exists AND is false" guard so both methods agree.
+    if ('isSecureContext' in window && !window.isSecureContext) {
       return 'Web Bluetooth requires a secure context (HTTPS or localhost)';
     }
 
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isSafari = userAgent.includes('safari') && !userAgent.includes('chrome');
+    // Bug E4 fix: use the same Safari detection (including CriOS/OPiOS and other
+    // iOS alternate-browser exclusions) as isBrowserSupported().
+    const userAgent = navigator.userAgent;
+    const isSafari = this.isSafariUserAgent(userAgent);
 
     if (isSafari && !this.isInstalled()) {
       return 'Safari requires the WebBLE extension for Bluetooth support';

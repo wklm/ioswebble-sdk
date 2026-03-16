@@ -11,4 +11,3 @@ interface ServiceExplorerProps {
  */
 export declare function ServiceExplorer({ device: inputDevice, className, autoConnect, onCharacteristicSelect, expandedByDefault }: ServiceExplorerProps): React.JSX.Element;
 export {};
-//# sourceMappingURL=ServiceExplorer.d.ts.map

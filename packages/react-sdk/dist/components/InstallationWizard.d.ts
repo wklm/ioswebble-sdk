@@ -18,4 +18,3 @@ export declare const navigationController: {
  */
 export declare function InstallationWizard({ onComplete, appStoreUrl, operatorName, className, }: InstallationWizardProps): React.JSX.Element | null;
 export {};
-//# sourceMappingURL=InstallationWizard.d.ts.map

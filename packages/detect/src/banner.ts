@@ -31,6 +31,7 @@ export interface BannerOptions {
 const DEFAULT_APP_STORE_URL = 'https://apps.apple.com/app/ioswebble/id0000000000';
 const DISMISS_KEY = 'ioswebble_dismiss_until';
 const RETURN_KEY = 'ioswebble_return';
+const RETURN_LINK_HOST = 'link.ioswebble.com';
 
 function isDismissed(): boolean {
   try {
@@ -51,19 +52,21 @@ function setDismissed(days: number): void {
 }
 
 function saveReturnContext(): void {
+  const returnPageURL = new URL(window.location.href);
+  const returnLink = new URL(`https://${RETURN_LINK_HOST}/return`);
+  returnLink.searchParams.set('url', returnPageURL.toString());
+
   try {
     localStorage.setItem(
       RETURN_KEY,
-      JSON.stringify({ url: window.location.href, timestamp: Date.now() })
+      JSON.stringify({ url: returnPageURL.toString(), returnLink: returnLink.toString(), timestamp: Date.now() })
     );
     navigator.storage?.persist?.();
   } catch {
     /* noop */
   }
   try {
-    navigator.clipboard?.writeText(
-      `webble://return?url=${encodeURIComponent(window.location.href)}`
-    );
+    navigator.clipboard?.writeText(returnLink.toString());
   } catch {
     /* noop */
   }

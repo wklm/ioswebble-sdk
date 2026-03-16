@@ -43,4 +43,3 @@ export declare function useProfile<T extends {
     connect: () => Promise<void>;
     error: Error | null;
 };
-//# sourceMappingURL=useProfile.d.ts.map

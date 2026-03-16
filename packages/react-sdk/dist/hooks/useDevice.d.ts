@@ -63,4 +63,3 @@ export interface UseDeviceReturn {
  * ```
  */
 export declare function useDevice(device: BluetoothDevice | null): UseDeviceReturn;
-//# sourceMappingURL=useDevice.d.ts.map

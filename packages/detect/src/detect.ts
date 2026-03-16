@@ -16,21 +16,26 @@ export function isIOSSafari(): boolean {
 
 export function isExtensionInstalled(): Promise<boolean> {
   return new Promise((resolve) => {
+    const hasWindowMarker = (): boolean =>
+      typeof window !== 'undefined' && (window as any).__webble?.status === 'installed';
+
+    const hasNavigatorMarker = (): boolean => {
+      if (typeof navigator === 'undefined') {
+        return false;
+      }
+      return Boolean((navigator as any).webble && (navigator as any).webble.__webble);
+    };
+
     // Method 1: Check for the global marker set by injected-full.ts
-    if (typeof window !== 'undefined' && (window as any).__webble__) {
+    if (hasWindowMarker()) {
       resolve(true);
       return;
     }
 
-    // Method 2: Check if navigator.webble or navigator.bluetooth was injected by iOSWebBLE
-    if (typeof navigator !== 'undefined') {
-      if (
-        ((navigator as any).webble && (navigator as any).webble.__webble) ||
-        (navigator.bluetooth && (navigator.bluetooth as any).__webble)
-      ) {
-        resolve(true);
-        return;
-      }
+    // Method 2: Check if navigator.webble was injected by iOSWebBLE
+    if (hasNavigatorMarker()) {
+      resolve(true);
+      return;
     }
 
     // Method 3: Wait briefly for injection to complete
@@ -38,12 +43,7 @@ export function isExtensionInstalled(): Promise<boolean> {
     let checks = 0;
     const interval = setInterval(() => {
       checks++;
-      if (
-        (typeof window !== 'undefined' && (window as any).__webble__) ||
-        (typeof navigator !== 'undefined' &&
-          (((navigator as any).webble && (navigator as any).webble.__webble) ||
-           (navigator.bluetooth && (navigator.bluetooth as any).__webble)))
-      ) {
+      if (hasWindowMarker() || hasNavigatorMarker()) {
         clearInterval(interval);
         resolve(true);
       }

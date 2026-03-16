@@ -39,4 +39,3 @@ import type { UseBluetoothReturn } from '../types';
  * ```
  */
 export declare function useBluetooth(): UseBluetoothReturn;
-//# sourceMappingURL=useBluetooth.d.ts.map

@@ -42,4 +42,3 @@ export declare function formatBytes(bytes: number): string;
  * Debounce function for event handlers
  */
 export declare function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void;
-//# sourceMappingURL=bluetooth-utils.d.ts.map

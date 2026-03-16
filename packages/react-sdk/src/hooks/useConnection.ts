@@ -17,7 +17,7 @@ export function useConnection(deviceId?: string): UseConnectionReturn {
   const deviceRef = useRef<BluetoothDevice | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const connectRef = useRef<() => Promise<void>>();
+  const connectRef = useRef<(() => Promise<void>) | null>(null);
 
   // Get device from context
   useEffect(() => {

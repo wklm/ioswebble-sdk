@@ -22,4 +22,3 @@ export interface UseCharacteristicReturn {
  * @returns Characteristic state and control methods
  */
 export declare function useCharacteristic(characteristic?: BluetoothRemoteGATTCharacteristic | null, _service?: BluetoothRemoteGATTService | null, _device?: BluetoothDevice | null): UseCharacteristicReturn;
-//# sourceMappingURL=useCharacteristic.d.ts.map

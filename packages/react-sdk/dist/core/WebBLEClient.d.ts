@@ -48,4 +48,3 @@ export declare class WebBLEClient {
     dispose(): void;
 }
 export {};
-//# sourceMappingURL=WebBLEClient.d.ts.map

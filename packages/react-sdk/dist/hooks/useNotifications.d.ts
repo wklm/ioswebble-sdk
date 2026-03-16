@@ -11,4 +11,3 @@ export interface NotificationOptions {
  * @returns Notification state and control methods
  */
 export declare function useNotifications(characteristic?: BluetoothRemoteGATTCharacteristic | null, options?: NotificationOptions): UseNotificationsReturn;
-//# sourceMappingURL=useNotifications.d.ts.map

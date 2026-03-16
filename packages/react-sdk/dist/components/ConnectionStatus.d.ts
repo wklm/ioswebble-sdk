@@ -8,4 +8,3 @@ interface ConnectionStatusProps {
  */
 export declare function ConnectionStatus({ deviceId, className }: ConnectionStatusProps): React.JSX.Element;
 export {};
-//# sourceMappingURL=ConnectionStatus.d.ts.map

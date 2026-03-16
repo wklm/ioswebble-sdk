@@ -41,4 +41,3 @@ import type { UseScanReturn } from '../types';
  * ```
  */
 export declare function useScan(): UseScanReturn;
-//# sourceMappingURL=useScan.d.ts.map

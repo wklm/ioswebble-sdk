@@ -179,4 +179,3 @@ export interface RequestDeviceOptions {
 }
 export type ValueParser<T = any> = (value: DataView) => T;
 export type ValueFormatter<T = any> = (value: T) => BufferSource;
-//# sourceMappingURL=index.d.ts.map
