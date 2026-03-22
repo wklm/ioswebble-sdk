@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * @ios-web-bluetooth/mcp — MCP Server for iOSWebBLE
+ * @ios-web-bluetooth/mcp — MCP Server for WebBLE
  *
- * Exposes 9 tools + 6 resources for AI agents to manage iOSWebBLE integration:
+ * Exposes 9 tools + 6 resources for AI agents to manage WebBLE integration:
  *
  * Tools:
- * - ioswebble_init: Add iOSWebBLE to a web project
+ * - ioswebble_init: Add WebBLE to a web project
  * - ioswebble_check: Verify integration is correct
  * - ioswebble_add: Install a package + generate boilerplate
  * - ioswebble_scaffold_profile: Generate a typed custom BLE profile

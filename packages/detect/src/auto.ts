@@ -1,5 +1,5 @@
 /**
- * Auto-initialization for iOSWebBLE.
+ * Auto-initialization for WebBLE.
  *
  * Import this module to automatically detect and handle the extension:
  *   import '@ios-web-bluetooth/detect/auto'

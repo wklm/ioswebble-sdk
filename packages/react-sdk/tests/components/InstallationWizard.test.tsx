@@ -87,7 +87,7 @@ describe('InstallationWizard', () => {
       });
       
       expect(screen.queryByText('Bluetooth Required')).not.toBeInTheDocument();
-      expect(screen.queryByText('Get iOSWebBLE (Free)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Get WebBLE (Free)')).not.toBeInTheDocument();
     });
   });
 
@@ -108,7 +108,7 @@ describe('InstallationWizard', () => {
       render(<InstallationWizard />);
       
       await waitFor(() => {
-        expect(screen.getByText('Get iOSWebBLE (Free)')).toBeInTheDocument();
+        expect(screen.getByText('Get WebBLE (Free)')).toBeInTheDocument();
       });
     });
 
@@ -147,7 +147,7 @@ describe('InstallationWizard', () => {
       render(<InstallationWizard />);
       
       await waitFor(() => {
-        const button = screen.getByText('Get iOSWebBLE (Free)');
+        const button = screen.getByText('Get WebBLE (Free)');
         fireEvent.click(button);
       });
 
@@ -163,7 +163,7 @@ describe('InstallationWizard', () => {
       render(<InstallationWizard appStoreUrl={customUrl} />);
       
       await waitFor(() => {
-        const button = screen.getByText('Get iOSWebBLE (Free)');
+        const button = screen.getByText('Get WebBLE (Free)');
         fireEvent.click(button);
       });
 

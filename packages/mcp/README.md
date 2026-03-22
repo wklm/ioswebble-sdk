@@ -27,8 +27,8 @@ npx -y @ios-web-bluetooth/mcp
 
 | Tool | Description |
 |------|-------------|
-| `ioswebble_init` | Add iOSWebBLE to a web project. Auto-detects framework (Next.js, React, Vue, Nuxt, HTML) and adds detection snippet. Accepts `projectPath`, optional `apiKey` and `framework`. |
-| `ioswebble_check` | Verify iOSWebBLE is correctly integrated. Accepts `projectPath`. |
+| `ioswebble_init` | Add WebBLE to a web project. Auto-detects framework (Next.js, React, Vue, Nuxt, HTML) and adds detection snippet. Accepts `projectPath`, optional `apiKey` and `framework`. |
+| `ioswebble_check` | Verify WebBLE is correctly integrated. Accepts `projectPath`. |
 
 ## Resources
 

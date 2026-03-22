@@ -118,10 +118,10 @@ export class ExtensionDetector {
    */
   getInstallationInstructions(): string {
     return `To use Bluetooth on Safari for iOS:
-1. Install the iOSWebBLE extension from the App Store
+1. Install the WebBLE extension from the App Store
 2. In Safari, tap aA in the address bar
-3. Tap "Manage Extensions" and enable iOSWebBLE
-4. Tap aA again, tap the iOSWebBLE icon
+3. Tap "Manage Extensions" and enable WebBLE
+4. Tap aA again, tap the WebBLE icon
 5. Choose "Always Allow" then "Always Allow on Every Website"
 6. Refresh this page`;
   }

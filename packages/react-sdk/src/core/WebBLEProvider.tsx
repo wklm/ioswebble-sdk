@@ -16,7 +16,7 @@ interface WebBLEConfig {
   apiKey?: string;
   /** Operator/app name shown in the install prompt (e.g. "FitTracker") */
   operatorName?: string;
-  /** App Store URL override (defaults to iOSWebBLE listing) */
+  /** App Store URL override (defaults to WebBLE listing) */
   appStoreUrl?: string;
 }
 

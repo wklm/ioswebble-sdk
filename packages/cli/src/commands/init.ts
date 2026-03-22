@@ -1,6 +1,6 @@
 /**
  * `npx ioswebble init` command
- * Auto-detects framework and adds iOSWebBLE detection snippet
+ * Auto-detects framework and adds WebBLE detection snippet
  */
 
 import * as fs from 'fs';
@@ -113,7 +113,7 @@ export async function init(args: string[]): Promise<void> {
       fs.writeFileSync(filePath, content);
       console.log(`Added detection snippet to ${detection.entryFile}`);
     } else {
-      console.log('iOSWebBLE already detected in entry file, skipping.');
+      console.log('WebBLE already detected in entry file, skipping.');
     }
   } else if (detection.entryFile) {
     const filePath = path.join(projectPath, detection.entryFile);
@@ -123,7 +123,7 @@ export async function init(args: string[]): Promise<void> {
       fs.writeFileSync(filePath, content);
       console.log(`Added detection import to ${detection.entryFile}`);
     } else {
-      console.log('iOSWebBLE already detected in entry file, skipping.');
+      console.log('WebBLE already detected in entry file, skipping.');
     }
   }
 

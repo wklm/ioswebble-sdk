@@ -9,7 +9,7 @@ Web Bluetooth SDK for iOS Safari. Scan, connect, and talk to BLE devices from an
 | [`@ios-web-bluetooth/core`](packages/core) | BLE scanning, connecting, GATT read/write/subscribe | ~4KB gzip |
 | [`@ios-web-bluetooth/detect`](packages/detect) | iOS extension detection + install banner | ~2KB gzip |
 | [`@ios-web-bluetooth/profiles`](packages/profiles) | Typed BLE profiles (heart rate, battery, etc.) | Optional |
-| [`@ios-web-bluetooth/react-sdk`](packages/react-sdk) | React hooks (`useDevice`, `useCharacteristic`) | Optional |
+| [`@ios-web-bluetooth/react`](packages/react-sdk) | React hooks (`useDevice`, `useCharacteristic`) | Optional |
 | [`@ios-web-bluetooth/cli`](packages/cli) | CLI tooling | Optional |
 | [`@ios-web-bluetooth/mcp`](packages/mcp) | MCP server for AI coding agents | Optional |
 
@@ -92,8 +92,16 @@ Full SDK reference for LLM context: <https://ioswebble.com/llms-full.txt>
 
 Each package has its own README with full API reference:
 
+- [SDK wiki](https://github.com/wklm/ioswebble-sdk/wiki) -- curated getting-started guides, troubleshooting, and background sync usage
 - [`@ios-web-bluetooth/core` README](packages/core/README.md) -- scanning, connecting, GATT operations, error codes
 - [`@ios-web-bluetooth/detect` README](packages/detect/README.md) -- extension detection, install banners, React provider
+- [`@ios-web-bluetooth/react` README](packages/react-sdk/README.md) -- React hooks, provider setup, and UI components
+
+## Wiki
+
+- [Getting Started](https://github.com/wklm/ioswebble-sdk/wiki/Getting-Started)
+- [Background Sync](https://github.com/wklm/ioswebble-sdk/wiki/Background-Sync)
+- [Troubleshooting](https://github.com/wklm/ioswebble-sdk/wiki/Troubleshooting)
 
 ## License
 

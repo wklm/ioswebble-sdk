@@ -68,6 +68,7 @@ const CHARACTERISTICS: Record<string, number> = {
   heart_rate_measurement: 0x2A37,
   body_sensor_location: 0x2A38,
   heart_rate_control_point: 0x2A39,
+  temperature: 0x2A6E,
 };
 
 function hexToUUID(hex: number): string {

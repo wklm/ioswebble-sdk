@@ -1,7 +1,7 @@
 /**
  * @ios-web-bluetooth/detect
  *
- * Detects iOS Safari, checks if the iOSWebBLE extension is installed,
+ * Detects iOS Safari, checks if the WebBLE extension is installed,
  * and shows an install banner if not. No-op on all other platforms.
  *
  * Your existing Web Bluetooth code works unchanged — this package only
@@ -39,7 +39,7 @@ export interface IOSWebBLEOptions {
 }
 
 /**
- * Initialize iOSWebBLE detection.
+ * Initialize WebBLE detection.
  *
  * On iOS Safari: checks if the extension is installed, dispatches events,
  * and optionally shows an install banner.

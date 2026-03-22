@@ -1,7 +1,7 @@
 {
   "name": "@ios-web-bluetooth/cli",
   "version": "0.1.1",
-  "description": "CLI for iOSWebBLE — init, check, scaffold BLE profiles for web apps",
+  "description": "CLI for WebBLE — init, check, scaffold BLE profiles for web apps",
   "bin": {
     "ioswebble": "./dist/index.js"
   },

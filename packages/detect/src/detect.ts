@@ -1,5 +1,5 @@
 /**
- * Platform detection utilities for iOSWebBLE
+ * Platform detection utilities for WebBLE
  */
 
 export function isIOSSafari(): boolean {
@@ -32,7 +32,7 @@ export function isExtensionInstalled(): Promise<boolean> {
       return;
     }
 
-    // Method 2: Check if navigator.webble was injected by iOSWebBLE
+    // Method 2: Check if navigator.webble was injected by WebBLE
     if (hasNavigatorMarker()) {
       resolve(true);
       return;

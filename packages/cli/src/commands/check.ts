@@ -1,6 +1,6 @@
 /**
  * `npx ioswebble check` command
- * Verifies that iOSWebBLE is correctly integrated in the project
+ * Verifies that WebBLE is correctly integrated in the project
  */
 
 import * as fs from 'fs';
@@ -47,7 +47,7 @@ export async function check(_args: string[]): Promise<void> {
   const projectPath = process.cwd();
   const issues: string[] = [];
 
-  console.log('Checking iOSWebBLE integration...\n');
+  console.log('Checking WebBLE integration...\n');
 
   // 1. Check if @ios-web-bluetooth/detect is in dependencies
   const pkgPath = path.join(projectPath, 'package.json');
@@ -75,15 +75,15 @@ export async function check(_args: string[]): Promise<void> {
     /@ioswebble\/detect|ioswebble\.com\/detect|IOSWebBLEProvider|initIOSWebBLE/
   );
   if (!hasInit) {
-    issues.push('No iOSWebBLE initialization found in source files');
+    issues.push('No WebBLE initialization found in source files');
   } else {
-    console.log('  [pass] iOSWebBLE initialization found in source files');
+    console.log('  [pass] WebBLE initialization found in source files');
   }
 
   console.log();
 
   if (issues.length === 0) {
-    console.log('All checks passed. iOSWebBLE integration detected. Ready.');
+    console.log('All checks passed. WebBLE integration detected. Ready.');
   } else {
     console.log(`Found ${issues.length} issue(s):`);
     issues.forEach((i) => console.log(`  [fail] ${i}`));

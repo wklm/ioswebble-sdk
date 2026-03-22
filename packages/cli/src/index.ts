@@ -3,7 +3,7 @@
 /**
  * @ios-web-bluetooth/cli
  *
- * CLI tool for integrating iOSWebBLE into web projects.
+ * CLI tool for integrating WebBLE into web projects.
  * Usage: npx ioswebble <command> [options]
  */
 
@@ -15,13 +15,13 @@ const command = args[0];
 
 function printHelp() {
   console.log(`
-  iOSWebBLE CLI - Add iOS Safari Bluetooth support to any web app
+  WebBLE CLI - Add iOS Safari Bluetooth support to any web app
 
   Usage: npx ioswebble <command> [options]
 
   Commands:
     init              Auto-detect framework and add detection snippet
-    check             Verify iOSWebBLE integration is correct
+    check             Verify WebBLE integration is correct
 
   Options:
     --help, -h        Show this help message

@@ -220,9 +220,9 @@ describe('ExtensionDetector', () => {
   });
 
   describe('getInstallationInstructions', () => {
-    it('should return iOSWebBLE installation instructions', () => {
+    it('should return WebBLE installation instructions', () => {
       const instructions = detector.getInstallationInstructions();
-      expect(instructions).toContain('iOSWebBLE');
+      expect(instructions).toContain('WebBLE');
       expect(instructions).toContain('aA in the address bar');
       expect(instructions).toContain('App Store');
     });

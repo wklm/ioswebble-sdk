@@ -1,6 +1,6 @@
 # @ios-web-bluetooth/skill
 
-Agent skill file for iOSWebBLE integration. Contains a `SKILL.md` that AI coding agents (Claude Code, Cursor, Copilot) can discover and use to add iOS Safari Bluetooth support to any web project.
+Agent skill file for WebBLE integration. Contains a `SKILL.md` that AI coding agents (Claude Code, Cursor, Copilot) can discover and use to add iOS Safari Bluetooth support to any web project.
 
 ## What is SKILL.md?
 

@@ -1,7 +1,7 @@
 /**
  * ioswebble_check tool implementation
  *
- * Verifies iOSWebBLE integration by checking for:
+ * Verifies WebBLE integration by checking for:
  * - @ios-web-bluetooth/detect in dependencies and source
  * - @ios-web-bluetooth/core in dependencies and source
  * - @ios-web-bluetooth/profiles in dependencies and source
@@ -68,9 +68,9 @@ export async function checkTool(projectPath: string): Promise<ToolResult> {
   // 2. @ios-web-bluetooth/detect usage check
   const hasDetectInit = grepProject(projectPath, /@ioswebble\/detect|ioswebble\.com\/detect|IOSWebBLEProvider|initIOSWebBLE/);
   if (hasDetectInit) {
-    checks.push('[PASS] iOSWebBLE detection/initialization found in source files');
+    checks.push('[PASS] WebBLE detection/initialization found in source files');
   } else {
-    issues.push('[FAIL] No iOSWebBLE detection found. Use ioswebble_init or ioswebble_add to add it.');
+    issues.push('[FAIL] No WebBLE detection found. Use ioswebble_init or ioswebble_add to add it.');
   }
 
   // 3. @ios-web-bluetooth/core package check
@@ -128,7 +128,7 @@ export async function checkTool(projectPath: string): Promise<ToolResult> {
 
   if (issues.length === 0) {
     return {
-      content: [{ type: 'text', text: `All required checks passed (${checks.length} passed, ${info.length} info).\n\n${result}\n\niOSWebBLE integration detected. Ready for production.` }],
+      content: [{ type: 'text', text: `All required checks passed (${checks.length} passed, ${info.length} info).\n\n${result}\n\nWebBLE integration detected. Ready for production.` }],
     };
   }
 

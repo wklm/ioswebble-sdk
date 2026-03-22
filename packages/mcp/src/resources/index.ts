@@ -1,5 +1,5 @@
 /**
- * MCP Resources for iOSWebBLE
+ * MCP Resources for WebBLE
  *
  * Exposes static documentation, profiles, UUIDs, and error references
  * as MCP resources that agents can read.
@@ -11,13 +11,13 @@ export function registerResources(server: McpServer): void {
   // Resource 1: Quick Start Guide
   server.resource(
     'ioswebble://docs/quickstart',
-    'iOSWebBLE quick start guide — 3-step setup',
+    'WebBLE quick start guide — 3-step setup',
     async () => ({
       contents: [
         {
           uri: 'ioswebble://docs/quickstart',
           mimeType: 'text/markdown',
-          text: `# iOSWebBLE Quick Start
+          text: `# WebBLE Quick Start
 
 ## Step 1: Install
 \`\`\`bash
@@ -77,7 +77,7 @@ No-op on Chrome/Android where Web Bluetooth is native.
         {
           uri: 'ioswebble://docs/api',
           mimeType: 'text/markdown',
-          text: `# iOSWebBLE API Reference
+          text: `# WebBLE API Reference
 
 ## @ios-web-bluetooth/core
 
@@ -477,13 +477,13 @@ export function IOSWebBLEProvider(props: { apiKey: string; children: React.React
   // Resource 7: Changelog
   server.resource(
     'ioswebble://changelog',
-    'iOSWebBLE version history',
+    'WebBLE version history',
     async () => ({
       contents: [
         {
           uri: 'ioswebble://changelog',
           mimeType: 'text/markdown',
-          text: `# iOSWebBLE Changelog
+          text: `# WebBLE Changelog
 
 ## 1.0.0-beta.1 (March 2026)
 

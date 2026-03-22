@@ -103,7 +103,7 @@ export function InstallationWizard({
         </div>
 
         <div style={bodyStyle}>
-          To connect to your device, {esc(displayName)} needs the iOSWebBLE Safari extension.
+          To connect to your device, {esc(displayName)} needs the WebBLE Safari extension.
         </div>
 
         <div style={metaStyle}>
@@ -116,13 +116,13 @@ export function InstallationWizard({
         </div>
 
         <button style={buttonStyle} onClick={handleInstall}>
-          Get iOSWebBLE (Free)
+          Get WebBLE (Free)
         </button>
 
         <details style={detailsStyle}>
           <summary style={summaryStyle}>How does this work?</summary>
           <p style={detailsTextStyle}>
-            iOSWebBLE is a free Safari extension that enables Bluetooth communication
+            WebBLE is a free Safari extension that enables Bluetooth communication
             between this website and your device. After a quick one-time setup, Bluetooth
             will work seamlessly in Safari.
           </p>
@@ -131,7 +131,7 @@ export function InstallationWizard({
         <details style={detailsStyle}>
           <summary style={summaryStyle}>Privacy: No data collected</summary>
           <p style={detailsTextStyle}>
-            iOSWebBLE processes all Bluetooth data locally on your device. No browsing data,
+            WebBLE processes all Bluetooth data locally on your device. No browsing data,
             device data, or personal information is ever collected or transmitted.
           </p>
         </details>

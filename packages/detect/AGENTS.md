@@ -1,7 +1,7 @@
 # @ios-web-bluetooth/detect — Agent Instructions
 
 ## What this package does
-Detects iOS Safari, checks if the iOSWebBLE extension is installed,
+Detects iOS Safari, checks if the WebBLE extension is installed,
 and shows an install banner if not. No-op on all other platforms.
 
 > **Note**: For BLE operations, use `@ios-web-bluetooth/core` (not this package).

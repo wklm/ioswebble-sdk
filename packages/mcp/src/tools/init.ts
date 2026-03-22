@@ -110,7 +110,7 @@ export async function initTool(
     const content = fs.readFileSync(filePath, 'utf-8');
 
     if (content.includes('ioswebble') || content.includes('IOSWebBLE')) {
-      lines.push(`iOSWebBLE already integrated in ${entryFile}. No changes needed.`);
+      lines.push(`WebBLE already integrated in ${entryFile}. No changes needed.`);
     } else if (resolvedFramework === 'html') {
       const updated = content.replace('</body>', `  ${snippet}\n</body>`);
       fs.writeFileSync(filePath, updated);

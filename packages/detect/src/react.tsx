@@ -1,5 +1,5 @@
 /**
- * React component for iOSWebBLE detection.
+ * React component for WebBLE detection.
  *
  * Usage:
  *   import { IOSWebBLEProvider } from '@ios-web-bluetooth/detect/react'

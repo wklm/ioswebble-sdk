@@ -1,6 +1,6 @@
 # @ios-web-bluetooth/cli
 
-CLI tool for integrating iOSWebBLE into web projects. Auto-detects your framework and adds the detection snippet.
+CLI tool for integrating WebBLE into web projects. Auto-detects your framework and adds the detection snippet.
 
 ## Usage
 
@@ -20,7 +20,7 @@ npx ioswebble check
 | Command | Description |
 |---------|-------------|
 | `init` | Detect framework (Next.js, React, Vue, Nuxt, HTML, etc.) and inject the `@ios-web-bluetooth/detect` snippet into your entry file |
-| `check` | Verify that iOSWebBLE is correctly integrated in the current project |
+| `check` | Verify that WebBLE is correctly integrated in the current project |
 
 ## Options
 

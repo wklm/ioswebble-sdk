@@ -13,10 +13,10 @@ interface ToolResult {
 type Topic = 'quickstart' | 'api' | 'react' | 'profiles' | 'errors';
 
 const DOCS: Record<Topic, string> = {
-  quickstart: `# iOSWebBLE Quick Start
+  quickstart: `# WebBLE Quick Start
 
-## What is iOSWebBLE?
-iOSWebBLE brings the Web Bluetooth API to iOS Safari via a companion app + Safari Web Extension.
+## What is WebBLE?
+WebBLE brings the Web Bluetooth API to iOS Safari via a companion app + Safari Web Extension.
 Your existing Web Bluetooth code works unchanged. You only need to add a detection snippet for iOS.
 
 ## Step 1: Install packages
@@ -84,7 +84,7 @@ It is a no-op on Chrome/Android where Web Bluetooth is natively supported.
 - Works alongside native Web Bluetooth on Chrome/Android
 - Do NOT modify existing \`navigator.bluetooth\` calls`,
 
-  api: `# iOSWebBLE API Reference
+  api: `# WebBLE API Reference
 
 ## @ios-web-bluetooth/core
 
@@ -372,7 +372,7 @@ abstract class BaseProfile {
 }
 \`\`\``,
 
-  errors: `# iOSWebBLE Error Reference
+  errors: `# WebBLE Error Reference
 
 All errors are instances of \`WebBLEError\` from \`@ios-web-bluetooth/core\`.
 

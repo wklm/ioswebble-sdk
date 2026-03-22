@@ -342,7 +342,7 @@ function SmartLight({ deviceId }: { deviceId: string }) {
 
 | Browser | Support | Notes |
 |---------|---------|-------|
-| Safari 16+ | ✅ Full | Requires WebBLE Extension |
+| Safari 26+ | ✅ Full | Requires WebBLE Extension |
 | Chrome 56+ | ✅ Full | Native support |
 | Edge 79+ | ✅ Full | Native support |
 | Firefox | ⚠️ Partial | Behind flag |

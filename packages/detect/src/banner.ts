@@ -1,5 +1,5 @@
 /**
- * Install prompt UI for iOSWebBLE
+ * Install prompt UI for WebBLE
  *
  * Two modes:
  * 1. Bottom sheet (default) — iOS-native feel, shown on requestDevice() trigger
@@ -93,7 +93,7 @@ function esc(s: string): string {
 function showBottomSheet(options: BannerOptions): HTMLElement {
   const {
     operatorName = document.title || window.location.hostname,
-    buttonText = 'Get iOSWebBLE (Free)',
+    buttonText = 'Get WebBLE (Free)',
     appStoreUrl = DEFAULT_APP_STORE_URL,
     apiKey,
     dismissDays = 14,
@@ -148,11 +148,11 @@ function showBottomSheet(options: BannerOptions): HTMLElement {
     <div class="iwb-ic"><svg viewBox="0 0 24 24"><path d="M12 2L7 7l5 5-5 5 5 5V2zm0 6.83L10.83 7 12 5.83v2.34zm0 8.34L10.83 17 12 15.83v1.34zM17 7l-5 5 5 5-2.12 2.12L12 17l-2.88 2.12L7 17l5-5-5-5 2.12-2.12L12 7l2.88-2.12L17 7z"/></svg></div>
     <div class="iwb-tt">Bluetooth Required</div>
   </div>
-  <div class="iwb-bd">To connect to your device, ${esc(operatorName)} needs the iOSWebBLE Safari extension.</div>
+  <div class="iwb-bd">To connect to your device, ${esc(operatorName)} needs the WebBLE Safari extension.</div>
   <div class="iwb-mt"><span class="iwb-st">★★★★★</span><span>4.8</span><span>·</span><span>Free</span><span>·</span><span>Takes 1 minute</span></div>
   <button class="iwb-btn" id="iwb-install">${esc(buttonText)}</button>
-  <details class="iwb-det"><summary>How does this work?</summary><p>iOSWebBLE is a free Safari extension that enables Bluetooth communication between this website and your device. After a quick one-time setup, Bluetooth will work seamlessly in Safari.</p></details>
-  <details class="iwb-det"><summary>Privacy: No data collected</summary><p>iOSWebBLE processes all Bluetooth data locally on your device. No browsing data, device data, or personal information is ever collected or transmitted.</p></details>
+  <details class="iwb-det"><summary>How does this work?</summary><p>WebBLE is a free Safari extension that enables Bluetooth communication between this website and your device. After a quick one-time setup, Bluetooth will work seamlessly in Safari.</p></details>
+  <details class="iwb-det"><summary>Privacy: No data collected</summary><p>WebBLE processes all Bluetooth data locally on your device. No browsing data, device data, or personal information is ever collected or transmitted.</p></details>
   <button class="iwb-dis" id="iwb-dismiss">Not now</button>
 </div>
 </div>`;
@@ -182,7 +182,7 @@ function showBottomSheet(options: BannerOptions): HTMLElement {
 function showBarBanner(options: BannerOptions): HTMLElement {
   const {
     position = 'bottom',
-    text = 'Install the free iOSWebBLE extension to connect your Bluetooth device',
+    text = 'Install the free WebBLE extension to connect your Bluetooth device',
     buttonText = 'Install',
     style = {},
     appStoreUrl = DEFAULT_APP_STORE_URL,

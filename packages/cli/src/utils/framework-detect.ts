@@ -1,5 +1,5 @@
 /**
- * Framework auto-detection for iOSWebBLE CLI
+ * Framework auto-detection for WebBLE CLI
  */
 
 import * as fs from 'fs';

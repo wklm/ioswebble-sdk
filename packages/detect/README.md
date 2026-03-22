@@ -1,6 +1,6 @@
 # @ios-web-bluetooth/detect
 
-Detect the iOSWebBLE Safari extension on iOS. Auto-show an install banner when the extension is not found. No-op on all other platforms.
+Detect the WebBLE Safari extension on iOS. Auto-show an install banner when the extension is not found. No-op on all other platforms.
 
 ## Install
 
