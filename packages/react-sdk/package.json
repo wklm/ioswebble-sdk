@@ -65,7 +65,7 @@
     "jest-environment-jsdom": "^30.3.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "rollup": "^4.9.1",
+    "rollup": "^4.60.0",
     "rollup-plugin-dts": "^6.4.1",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "ts-jest": "^29.1.1",
