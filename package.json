@@ -33,7 +33,6 @@
     "webpack-cli": "^7.0.1"
   },
   "dependencies": {
-    "minimatch": "^9.0.9",
-    "uuid": "^13.0.0"
+    "minimatch": "^9.0.9"
   }
 }
