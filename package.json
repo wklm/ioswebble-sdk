@@ -27,7 +27,7 @@
     "jest": "^30",
     "jest-environment-jsdom": "^30",
     "ts-jest": "^29",
-    "ts-loader": "^9.5.4",
+    "ts-loader": "^9.5.7",
     "typescript": "^6.0.2",
     "webpack": "^5.105.4",
     "webpack-cli": "^7.0.2"
