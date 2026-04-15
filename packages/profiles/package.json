@@ -27,7 +27,7 @@
       "require": "./dist/device-info.js"
     }
   },
-  "files": ["dist", "README.md", "AGENTS.md"],
+  "files": ["dist", "README.md", "CHANGELOG.md", "AGENTS.md"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -50,16 +50,15 @@
   "publishConfig": {
     "access": "public"
   },
-  "peerDependencies": {
+  "dependencies": {
     "@ios-web-bluetooth/core": ">=2.0.0-beta.2"
   },
   "devDependencies": {
     "@types/jest": "^30",
-    "@ios-web-bluetooth/core": ">=2.0.0-beta.2",
     "jest": "^30",
     "jest-environment-jsdom": "^30",
     "ts-jest": "^29",
     "tsup": "^8.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   }
 }

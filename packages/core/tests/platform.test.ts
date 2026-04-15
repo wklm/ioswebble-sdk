@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import { detectPlatform, getBluetoothAPI } from '../src/platform';
 
 // Save original navigator

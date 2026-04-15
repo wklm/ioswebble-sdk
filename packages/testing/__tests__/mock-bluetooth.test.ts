@@ -233,7 +233,82 @@ describe('installMockBluetooth', () => {
   test('installs on navigator.bluetooth', () => {
     const mock = installMockBluetooth({ available: true });
     expect((navigator as any).bluetooth).toBe(mock);
+    mock.uninstall();
     mock.reset();
+  });
+
+  test('mock.install and uninstall restore navigator.bluetooth', () => {
+    const original = (navigator as any).bluetooth;
+    const mock = createMockBluetooth();
+
+    mock.install();
+    expect((navigator as any).bluetooth).toBe(mock);
+
+    mock.uninstall();
+    expect((navigator as any).bluetooth).toBe(original);
+  });
+});
+
+describe('Advertisement simulation', () => {
+  let mock: ReturnType<typeof createMockBluetooth>;
+
+  beforeEach(() => {
+    mock = createMockBluetooth();
+  });
+
+  afterEach(() => {
+    mock.reset();
+  });
+
+  test('requestLEScan receives matching advertisement events', async () => {
+    const matching = mock.addDevice(devices.heartRate('Polar H10'));
+    const other = mock.addDevice(devices.battery('Battery Pack'));
+    const events: Array<{ name: string | undefined | null; rssi: number | undefined }> = [];
+
+    mock.addEventListener('advertisementreceived', ((event: Event) => {
+      const adv = event as Event & {
+        device?: BluetoothDevice;
+        rssi?: number;
+      };
+      events.push({ name: adv.device?.name, rssi: adv.rssi });
+    }) as EventListener);
+
+    const scan = await mock.requestLEScan({
+      filters: [{ services: [BLE_UUIDS.services.HEART_RATE] }],
+      keepRepeatedDevices: true,
+    });
+
+    other.emitAdvertisement({ rssi: -80 });
+    matching.emitAdvertisement({ rssi: -44 });
+
+    expect(scan.keepRepeatedDevices).toBe(true);
+    expect(events).toEqual([{ name: 'Polar H10', rssi: -44 }]);
+
+    scan.stop();
+    expect((scan as any).active).toBe(false);
+  });
+
+  test('watchAdvertisements receives per-device advertisement events', async () => {
+    const device = mock.addDevice(devices.heartRate('Polar H10'));
+    const btDevice = device.asBluetoothDevice();
+    const seen: number[] = [];
+
+    btDevice.addEventListener('advertisementreceived', ((event: Event) => {
+      const adv = event as Event & { rssi?: number };
+      seen.push(adv.rssi ?? 0);
+    }) as EventListener);
+
+    await btDevice.watchAdvertisements();
+    expect((btDevice as any).watchingAdvertisements).toBe(true);
+
+    device.emitAdvertisement({ rssi: -51 });
+    device.emitAdvertisement({ rssi: -49 });
+    expect(seen).toEqual([-51, -49]);
+
+    await (btDevice as any).unwatchAdvertisements();
+    device.emitAdvertisement({ rssi: -47 });
+    expect((btDevice as any).watchingAdvertisements).toBe(false);
+    expect(seen).toEqual([-51, -49]);
   });
 });
 

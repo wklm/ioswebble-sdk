@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { WebBLEError } from '@ios-web-bluetooth/core';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
 
 /**
  * Hook that wraps a {@link BaseProfile} subclass from `@ios-web-bluetooth/profiles`.
@@ -10,15 +12,16 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  *
  * @typeParam T - The profile class type (must have `connect()` and `stop()`).
  * @param ProfileClass - The profile constructor (e.g. `HeartRateProfile`).
- * @param device - The BLE device to bind to, or `null` if not yet available.
+ * @param device - The WebBLEDevice to bind to, or `null` if not yet available.
  * @returns An object with the profile instance, a `connect` function, and error state.
  *
  * @example
  * ```tsx
  * import { useProfile } from '@ios-web-bluetooth/react';
  * import { HeartRateProfile } from '@ios-web-bluetooth/profiles';
+ * import type { WebBLEDevice } from '@ios-web-bluetooth/core';
  *
- * function HeartRateMonitor({ device }: { device: BluetoothDevice }) {
+ * function HeartRateMonitor({ device }: { device: WebBLEDevice }) {
  *   const { profile, connect, error } = useProfile(HeartRateProfile, device);
  *   const [bpm, setBpm] = useState<number | null>(null);
  *
@@ -38,11 +41,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  * ```
  */
 export function useProfile<T extends { connect(): Promise<void>; stop(): void }>(
-  ProfileClass: new (device: any) => T,
-  device: any | null,
-): { profile: T | null; connect: () => Promise<void>; error: Error | null } {
+  ProfileClass: new (device: WebBLEDevice) => T,
+  device: WebBLEDevice | null,
+): { profile: T | null; connect: () => Promise<void>; error: WebBLEError | null } {
   const [profile, setProfile] = useState<T | null>(null);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<WebBLEError | null>(null);
   const profileRef = useRef<T | null>(null);
 
   // Create profile instance when device changes
@@ -56,10 +59,12 @@ export function useProfile<T extends { connect(): Promise<void>; stop(): void }>
     const instance = new ProfileClass(device);
     profileRef.current = instance;
     setProfile(instance);
+    setError(null);
 
     return () => {
       instance.stop();
       profileRef.current = null;
+      setProfile(null);
     };
   }, [ProfileClass, device]);
 
@@ -69,7 +74,7 @@ export function useProfile<T extends { connect(): Promise<void>; stop(): void }>
       setError(null);
       await profileRef.current.connect();
     } catch (e) {
-      setError(e as Error);
+      setError(WebBLEError.from(e));
     }
   }, []);
 

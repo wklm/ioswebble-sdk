@@ -36,8 +36,20 @@ function hexToUUID(hex: number): string {
 }
 
 /**
- * Convert a 16-bit or 32-bit integer alias to a canonical 128-bit UUID.
- * Implements BluetoothUUID.canonicalUUID().
+ * Convert a 16-bit or 32-bit integer alias to a canonical 128-bit UUID string.
+ * Implements `BluetoothUUID.canonicalUUID()` from the Web Bluetooth spec.
+ *
+ * @param alias - 16-bit or 32-bit unsigned integer (0 to 0xFFFFFFFF).
+ * @returns Canonical lowercase 128-bit UUID string.
+ * @throws {TypeError} If the alias is not a valid unsigned 32-bit integer.
+ *
+ * @example
+ * ```typescript
+ * canonicalUUID(0x180D) // '0000180d-0000-1000-8000-00805f9b34fb'
+ * canonicalUUID(0x2A37) // '00002a37-0000-1000-8000-00805f9b34fb'
+ * ```
+ *
+ * @see {@link resolveUUID} for resolving names and hex strings
  */
 export function canonicalUUID(alias: number): string {
   if (!Number.isInteger(alias) || alias < 0 || alias > 0xFFFFFFFF) {
@@ -51,7 +63,18 @@ export function canonicalUUID(alias: number): string {
 
 /**
  * Resolve a service name or UUID alias to a canonical 128-bit UUID.
- * Implements BluetoothUUID.getService().
+ * Implements `BluetoothUUID.getService()` from the Web Bluetooth spec.
+ *
+ * @param name - Service name (e.g. `'heart_rate'`), 16-bit integer, or UUID string.
+ * @returns Canonical 128-bit UUID string.
+ *
+ * @example
+ * ```typescript
+ * getService('heart_rate') // '0000180d-0000-1000-8000-00805f9b34fb'
+ * getService(0x180D)       // '0000180d-0000-1000-8000-00805f9b34fb'
+ * ```
+ *
+ * @see {@link resolveUUID}
  */
 export function getService(name: string | number): string {
   if (typeof name === 'number') return canonicalUUID(name);
@@ -61,7 +84,18 @@ export function getService(name: string | number): string {
 
 /**
  * Resolve a characteristic name or UUID alias to a canonical 128-bit UUID.
- * Implements BluetoothUUID.getCharacteristic().
+ * Implements `BluetoothUUID.getCharacteristic()` from the Web Bluetooth spec.
+ *
+ * @param name - Characteristic name (e.g. `'heart_rate_measurement'`), 16-bit integer, or UUID string.
+ * @returns Canonical 128-bit UUID string.
+ *
+ * @example
+ * ```typescript
+ * getCharacteristic('battery_level') // '00002a19-0000-1000-8000-00805f9b34fb'
+ * getCharacteristic(0x2A37)          // '00002a37-0000-1000-8000-00805f9b34fb'
+ * ```
+ *
+ * @see {@link resolveUUID}
  */
 export function getCharacteristic(name: string | number): string {
   if (typeof name === 'number') return canonicalUUID(name);
@@ -71,7 +105,20 @@ export function getCharacteristic(name: string | number): string {
 
 /**
  * Resolve a descriptor name or UUID alias to a canonical 128-bit UUID.
- * Implements BluetoothUUID.getDescriptor().
+ * Implements `BluetoothUUID.getDescriptor()` from the Web Bluetooth spec.
+ * Supports GATT descriptor names (e.g. `'gatt_client_characteristic_configuration'`)
+ * in addition to all formats supported by {@link resolveUUID}.
+ *
+ * @param name - Descriptor name, 16-bit integer, or UUID string.
+ * @returns Canonical 128-bit UUID string.
+ *
+ * @example
+ * ```typescript
+ * getDescriptor('gatt_client_characteristic_configuration') // '00002902-...'
+ * getDescriptor(0x2902)                                     // '00002902-...'
+ * ```
+ *
+ * @see {@link resolveUUID}
  */
 export function getDescriptor(name: string | number): string {
   if (typeof name === 'number') return canonicalUUID(name);

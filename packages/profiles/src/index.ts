@@ -1,4 +1,4 @@
-export { BaseProfile, defineProfile } from './base';
+export { BaseProfile, defineProfile, parseRawBytes } from './base';
 export { HeartRateProfile, parseHeartRate } from './heart-rate';
 export type { HeartRateData } from './heart-rate';
 export { BatteryProfile } from './battery';

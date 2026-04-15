@@ -3,102 +3,100 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { WebBLEProvider } from '../../src/core/WebBLEProvider';
 import { useDevice } from '../../src/hooks/useDevice';
 
+/**
+ * Factory for creating mock WebBLEDevice objects that match the interface
+ * expected by useDevice: connect(), disconnect(), getPrimaryServices(),
+ * watchAdvertisements(), forget(), on(), off(), subscribe(), raw, id, name, connected.
+ */
+function createMockDevice(overrides: Record<string, any> = {}) {
+  const device: Record<string, any> = {
+    id: 'test-device-id',
+    name: 'Test Device',
+    raw: {
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      gatt: {
+        connected: false,
+        requestConnectionPriority: jest.fn().mockResolvedValue(undefined),
+      },
+    },
+    connected: false,
+    connect: jest.fn().mockImplementation(async () => {
+      device.connected = true;
+    }),
+    disconnect: jest.fn().mockImplementation(() => {
+      device.connected = false;
+    }),
+    getPrimaryServices: jest.fn().mockResolvedValue([]),
+    on: jest.fn().mockReturnValue(jest.fn()),
+    off: jest.fn(),
+    ...overrides,
+  };
+  return device;
+}
+
 describe('useDevice Hook', () => {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <WebBLEProvider>{children}</WebBLEProvider>
   );
 
-  let mockDevice: any;
-  let mockGattServer: any;
+  let mockDevice: ReturnType<typeof createMockDevice>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    // Create mock GATT server
-    mockGattServer = {
-      connected: false,
-      connect: jest.fn().mockResolvedValue(undefined),
-      disconnect: jest.fn(),
-      getPrimaryService: jest.fn(),
-      getPrimaryServices: jest.fn().mockResolvedValue([])
-    };
-    
-    // Create mock device
-    mockDevice = new (global as any).BluetoothDevice();
-    mockDevice.id = 'test-device-id';
-    mockDevice.name = 'Test Device';
-    mockDevice.gatt = mockGattServer;
-    mockDevice.watchAdvertisements = jest.fn().mockResolvedValue(undefined);
-    mockDevice.unwatchAdvertisements = jest.fn();
-    mockDevice.forget = jest.fn().mockResolvedValue(undefined);
-    mockDevice.addEventListener = jest.fn();
-    mockDevice.removeEventListener = jest.fn();
+    mockDevice = createMockDevice();
   });
 
   describe('Device connection', () => {
     it('should connect to a device', async () => {
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
+      const { result } = renderHook(() => useDevice(mockDevice as any), { wrapper });
+
       expect(result.current.isConnected).toBe(false);
       expect(result.current.isConnecting).toBe(false);
-      
+
       await act(async () => {
         await result.current.connect();
       });
-      
-      expect(mockGattServer.connect).toHaveBeenCalled();
+
+      expect(mockDevice.connect).toHaveBeenCalled();
       expect(result.current.isConnected).toBe(true);
       expect(result.current.isConnecting).toBe(false);
     });
 
     it('should disconnect from a device', async () => {
-      mockGattServer.connected = true;
-      
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
+      const { result } = renderHook(() => useDevice(mockDevice as any), { wrapper });
+
       // First connect
       await act(async () => {
         await result.current.connect();
       });
-      
+
       expect(result.current.isConnected).toBe(true);
-      
+
       // Then disconnect
       act(() => {
         result.current.disconnect();
       });
-      
-      expect(mockGattServer.disconnect).toHaveBeenCalled();
+
+      expect(mockDevice.disconnect).toHaveBeenCalled();
       expect(result.current.isConnected).toBe(false);
     });
 
     it('should handle connection errors', async () => {
       const error = new Error('Connection failed');
-      mockGattServer.connect.mockRejectedValue(error);
-      
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
+      mockDevice.connect.mockRejectedValue(error);
+
+      const { result } = renderHook(() => useDevice(mockDevice as any), { wrapper });
+
       await act(async () => {
         await result.current.connect();
       });
-      
-      expect(result.current.error).toBe(error);
+
+      expect(result.current.error).toBeInstanceOf(Error);
+      expect(result.current.error?.message).toBe(error.message);
       expect(result.current.isConnected).toBe(false);
     });
 
-    it('should set connection priority', async () => {
-      const requestConnectionPriority = jest.fn().mockResolvedValue(undefined);
-      mockDevice.gatt.requestConnectionPriority = requestConnectionPriority;
-      
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
-      await act(async () => {
-        await result.current.setConnectionPriority('high');
-      });
-      
-      expect(requestConnectionPriority).toHaveBeenCalledWith('high');
-      expect(result.current.connectionPriority).toBe('high');
-    });
   });
 
   describe('Service discovery', () => {
@@ -107,15 +105,15 @@ describe('useDevice Hook', () => {
         { uuid: 'service-1', isPrimary: true },
         { uuid: 'service-2', isPrimary: true }
       ];
-      mockGattServer.getPrimaryServices.mockResolvedValue(mockServices);
-      
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
+      mockDevice.getPrimaryServices.mockResolvedValue(mockServices);
+
+      const { result } = renderHook(() => useDevice(mockDevice as any), { wrapper });
+
       // Connect first
       await act(async () => {
         await result.current.connect();
       });
-      
+
       // Services should be fetched automatically after connection
       await waitFor(() => {
         expect(result.current.services).toEqual(mockServices);
@@ -124,120 +122,67 @@ describe('useDevice Hook', () => {
 
     it('should handle service discovery errors', async () => {
       const error = new Error('Service discovery failed');
-      mockGattServer.getPrimaryServices.mockRejectedValue(error);
-      
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
+      mockDevice.getPrimaryServices.mockRejectedValue(error);
+
+      const { result } = renderHook(() => useDevice(mockDevice as any), { wrapper });
+
       await act(async () => {
         await result.current.connect();
       });
-      
+
       await waitFor(() => {
-        expect(result.current.error).toBe(error);
+        expect(result.current.error).toBeInstanceOf(Error);
+        expect(result.current.error?.message).toBe(error.message);
         expect(result.current.services).toEqual([]);
       });
     });
   });
 
-  describe('Advertisement watching', () => {
-    it('should watch advertisements', async () => {
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
-      await act(async () => {
-        await result.current.watchAdvertisements();
-      });
-      
-      expect(mockDevice.watchAdvertisements).toHaveBeenCalled();
-      expect(result.current.isWatchingAdvertisements).toBe(true);
-    });
-
-    it('should stop watching advertisements', async () => {
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
-      // Start watching
-      await act(async () => {
-        await result.current.watchAdvertisements();
-      });
-      
-      expect(result.current.isWatchingAdvertisements).toBe(true);
-      
-      // Stop watching
-      act(() => {
-        result.current.unwatchAdvertisements();
-      });
-      
-      // unwatchAdvertisements is not yet part of the Web Bluetooth spec
-      // The function just updates state for now
-      expect(result.current.isWatchingAdvertisements).toBe(false);
-    });
-  });
-
-  describe('Device management', () => {
-    it('should forget a device', async () => {
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
-      await act(async () => {
-        await result.current.forget();
-      });
-      
-      expect(mockDevice.forget).toHaveBeenCalled();
-    });
-
-    it('should handle forget errors gracefully', async () => {
-      const error = new Error('Forget failed');
-      mockDevice.forget.mockRejectedValue(error);
-      
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
-      await act(async () => {
-        await result.current.forget();
-      });
-      
-      expect(result.current.error).toBe(error);
-    });
-  });
-
   describe('Event handling', () => {
     it('should handle disconnect events', async () => {
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
+      // Capture the disconnect callback passed to device.on('disconnected', fn)
+      let disconnectCallback: (() => void) | null = null;
+      mockDevice.on.mockImplementation((event: string, fn: () => void) => {
+        if (event === 'disconnected') disconnectCallback = fn;
+        return jest.fn(); // unsub fn
+      });
+
+      const { result } = renderHook(() => useDevice(mockDevice as any), { wrapper });
+
       // Connect first
       await act(async () => {
         await result.current.connect();
       });
-      
+
       expect(result.current.isConnected).toBe(true);
-      
+
       // Simulate disconnect event
-      const disconnectHandler = mockDevice.addEventListener.mock.calls.find(
-        call => call[0] === 'gattserverdisconnected'
-      )?.[1];
-      
-      if (disconnectHandler) {
+      if (disconnectCallback) {
         act(() => {
-          disconnectHandler();
+          disconnectCallback!();
         });
       }
-      
+
       expect(result.current.isConnected).toBe(false);
     });
 
     it('should clean up event listeners on unmount', () => {
-      const { unmount } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
+      const unsubFn = jest.fn();
+      mockDevice.on.mockReturnValue(unsubFn);
+
+      const { unmount } = renderHook(() => useDevice(mockDevice as any), { wrapper });
+
       unmount();
-      
-      expect(mockDevice.removeEventListener).toHaveBeenCalledWith(
-        'gattserverdisconnected',
-        expect.any(Function)
-      );
+
+      // The useEffect cleanup calls the unsub function returned by device.on()
+      expect(unsubFn).toHaveBeenCalled();
     });
   });
 
   describe('Hook return values', () => {
     it('should return all expected properties', () => {
-      const { result } = renderHook(() => useDevice(mockDevice), { wrapper });
-      
+      const { result } = renderHook(() => useDevice(mockDevice as any), { wrapper });
+
       expect(result.current).toHaveProperty('device');
       expect(result.current).toHaveProperty('isConnected');
       expect(result.current).toHaveProperty('isConnecting');
@@ -245,17 +190,15 @@ describe('useDevice Hook', () => {
       expect(result.current).toHaveProperty('error');
       expect(result.current).toHaveProperty('connect');
       expect(result.current).toHaveProperty('disconnect');
-      expect(result.current).toHaveProperty('watchAdvertisements');
-      expect(result.current).toHaveProperty('unwatchAdvertisements');
-      expect(result.current).toHaveProperty('isWatchingAdvertisements');
-      expect(result.current).toHaveProperty('forget');
-      expect(result.current).toHaveProperty('connectionPriority');
-      expect(result.current).toHaveProperty('setConnectionPriority');
+      expect(result.current).toHaveProperty('connectionState');
+      expect(result.current).toHaveProperty('autoReconnect');
+      expect(result.current).toHaveProperty('setAutoReconnect');
+      expect(result.current).toHaveProperty('reconnectAttempt');
     });
 
     it('should handle null device gracefully', () => {
       const { result } = renderHook(() => useDevice(null), { wrapper });
-      
+
       expect(result.current.device).toBeNull();
       expect(result.current.isConnected).toBe(false);
       expect(result.current.services).toEqual([]);

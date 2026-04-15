@@ -1,5 +1,5 @@
 import type { WebBLEDevice } from '@ios-web-bluetooth/core';
-import { BaseProfile } from './base';
+import { BaseProfile, parseRawBytes } from './base';
 
 /**
  * Parsed heart rate measurement data from the Heart Rate Measurement
@@ -134,3 +134,5 @@ export function parseHeartRate(dv: DataView): HeartRateData {
 
   return { bpm, contact, energyExpended, rrIntervals };
 }
+
+export { parseRawBytes };

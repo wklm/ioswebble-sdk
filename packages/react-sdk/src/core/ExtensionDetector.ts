@@ -2,10 +2,34 @@
  * ExtensionDetector - Automatically detects if the WebBLE Safari extension is installed
  */
 
+export type ExtensionInstallState = 'not-installed' | 'installed-inactive' | 'active';
+
+const DEFAULT_SETUP_URL = 'https://ioswebble.com/setup.html';
+const DEFAULT_APP_STORE_SEARCH_URL = 'https://apps.apple.com/search?term=WebBLE&mt=8';
+
 export class ExtensionDetector {
-  private isDetected: boolean = false;
-  private detectionPromise: Promise<boolean> | null = null;
+  private detectionPromise: Promise<ExtensionInstallState> | null = null;
   private readonly DETECTION_TIMEOUT = 3000;
+
+  private readInstallState(): ExtensionInstallState {
+    if (typeof navigator !== 'undefined' && (navigator as any).webble?.__webble === true) {
+      return 'active';
+    }
+
+    if (typeof document !== 'undefined' && document.documentElement.dataset.webbleExtension === 'true') {
+      return 'active';
+    }
+
+    if (typeof window !== 'undefined' && (window as any).__webble?.status === 'installed') {
+      return 'installed-inactive';
+    }
+
+    if (typeof document !== 'undefined' && document.documentElement.dataset.webbleInstalled === 'true') {
+      return 'installed-inactive';
+    }
+
+    return 'not-installed';
+  }
 
   /**
    * Determine whether the given user agent represents Safari (excluding
@@ -30,35 +54,27 @@ export class ExtensionDetector {
 
   /**
    * Check if the extension is installed.
-   * Checks the global marker and navigator.webble / navigator.bluetooth markers set by the extension.
+   * Checks the global marker and navigator.webble runtime marker set by the extension.
    */
   isInstalled(): boolean {
-    // Bug E1 fix: extension sets window.__webble (not window.__webble__).
-    // Check for the status field to confirm it's the real extension object.
-    if (typeof window !== 'undefined' && (window as any).__webble?.status === 'installed') {
-      this.isDetected = true;
-      return true;
-    }
+    return this.getInstallState() !== 'not-installed';
+  }
 
-    if (typeof navigator !== 'undefined') {
-      if (
-        ((navigator as any).webble && (navigator as any).webble.__webble) ||
-        ((navigator as any).bluetooth && (navigator as any).bluetooth.__webble)
-      ) {
-        this.isDetected = true;
-        return true;
-      }
-    }
-
-    return this.isDetected;
+  getInstallState(): ExtensionInstallState {
+    return this.readInstallState();
   }
 
   /**
    * Detect extension with a timeout
    */
   detect(): Promise<boolean> {
-    if (this.isDetected) {
-      return Promise.resolve(true);
+    return this.detectInstallState().then((state) => state !== 'not-installed');
+  }
+
+  detectInstallState(): Promise<ExtensionInstallState> {
+    const currentState = this.readInstallState();
+    if (currentState === 'active') {
+      return Promise.resolve(currentState);
     }
 
     if (this.detectionPromise) {
@@ -74,17 +90,18 @@ export class ExtensionDetector {
   /**
    * Perform the actual detection
    */
-  private async performDetection(): Promise<boolean> {
+  private async performDetection(): Promise<ExtensionInstallState> {
     return new Promise((resolve) => {
       // Check if already available
-      if (this.isInstalled()) {
-        resolve(true);
+      const initialState = this.readInstallState();
+      if (initialState !== 'not-installed') {
+        resolve(initialState);
         return;
       }
 
       // Check if window is available
       if (typeof window === 'undefined') {
-        resolve(false);
+        resolve('not-installed');
         return;
       }
 
@@ -94,9 +111,8 @@ export class ExtensionDetector {
       const handleExtensionReady = () => {
         if (!resolved) {
           resolved = true;
-          this.isDetected = true;
           window.removeEventListener('webble:extension:ready', handleExtensionReady);
-          resolve(true);
+          resolve('active');
         }
       };
 
@@ -107,7 +123,7 @@ export class ExtensionDetector {
         if (!resolved) {
           resolved = true;
           window.removeEventListener('webble:extension:ready', handleExtensionReady);
-          resolve(this.isInstalled());
+          resolve(this.readInstallState());
         }
       }, this.DETECTION_TIMEOUT);
     });
@@ -134,11 +150,10 @@ export class ExtensionDetector {
     if (typeof navigator === 'undefined') return;
     const userAgent = navigator.userAgent.toLowerCase();
 
-    const appStoreUrl = 'https://apps.apple.com/app/ioswebble/id0000000000';
     if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
-      window.open(appStoreUrl, '_blank');
+      window.open(DEFAULT_APP_STORE_SEARCH_URL, '_blank');
     } else {
-      window.open('https://ioswebble.com', '_blank');
+      window.open(DEFAULT_SETUP_URL, '_blank');
     }
   }
 
@@ -191,7 +206,7 @@ export class ExtensionDetector {
     const userAgent = navigator.userAgent;
     const isSafari = this.isSafariUserAgent(userAgent);
 
-    if (isSafari && !this.isInstalled()) {
+    if (isSafari && this.getInstallState() !== 'active') {
       return 'Safari requires the WebBLE extension for Bluetooth support';
     }
 

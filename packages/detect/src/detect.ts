@@ -14,27 +14,49 @@ export function isIOSSafari(): boolean {
   return isIOS && isSafari;
 }
 
-export function isExtensionInstalled(): Promise<boolean> {
+export type ExtensionInstallState = 'not-installed' | 'installed-inactive' | 'active';
+
+function hasWindowMarker(): boolean {
+  return typeof window !== 'undefined' && (window as any).__webble?.status === 'installed';
+}
+
+function hasNavigatorMarker(): boolean {
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+  return Boolean((navigator as any).webble && (navigator as any).webble.__webble);
+}
+
+function hasInstallMarker(): boolean {
+  return typeof document !== 'undefined' && document.documentElement.dataset.webbleInstalled === 'true';
+}
+
+function hasActiveMarker(): boolean {
+  return typeof document !== 'undefined' && document.documentElement.dataset.webbleExtension === 'true';
+}
+
+function resolveInstallState(): ExtensionInstallState {
+  if (hasNavigatorMarker() || hasActiveMarker()) {
+    return 'active';
+  }
+  if (hasWindowMarker() || hasInstallMarker()) {
+    return 'installed-inactive';
+  }
+  return 'not-installed';
+}
+
+export async function getExtensionInstallState(): Promise<ExtensionInstallState> {
+  // Fast-path: if @ios-web-bluetooth/core is installed, use its platform detection
+  try {
+    const { detectPlatform } = await import('@ios-web-bluetooth/core');
+    if (detectPlatform() === 'safari-extension') return 'active';
+  } catch { /* core not installed — fall through */ }
+
   return new Promise((resolve) => {
-    const hasWindowMarker = (): boolean =>
-      typeof window !== 'undefined' && (window as any).__webble?.status === 'installed';
-
-    const hasNavigatorMarker = (): boolean => {
-      if (typeof navigator === 'undefined') {
-        return false;
-      }
-      return Boolean((navigator as any).webble && (navigator as any).webble.__webble);
-    };
-
     // Method 1: Check for the global marker set by injected-full.ts
-    if (hasWindowMarker()) {
-      resolve(true);
-      return;
-    }
-
-    // Method 2: Check if navigator.webble was injected by WebBLE
-    if (hasNavigatorMarker()) {
-      resolve(true);
+    const immediateState = resolveInstallState();
+    if (immediateState !== 'not-installed') {
+      resolve(immediateState);
       return;
     }
 
@@ -43,15 +65,20 @@ export function isExtensionInstalled(): Promise<boolean> {
     let checks = 0;
     const interval = setInterval(() => {
       checks++;
-      if (hasWindowMarker() || hasNavigatorMarker()) {
+      const state = resolveInstallState();
+      if (state !== 'not-installed') {
         clearInterval(interval);
-        resolve(true);
+        resolve(state);
       }
       if (checks > 20) {
         // 2 seconds max wait
         clearInterval(interval);
-        resolve(false);
+        resolve('not-installed');
       }
     }, 100);
   });
+}
+
+export async function isExtensionInstalled(): Promise<boolean> {
+  return (await getExtensionInstallState()) !== 'not-installed';
 }

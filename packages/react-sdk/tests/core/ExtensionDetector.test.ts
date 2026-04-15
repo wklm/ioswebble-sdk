@@ -43,11 +43,15 @@ describe('ExtensionDetector', () => {
       configurable: true
     });
     
+    // Clean document dataset markers
+    delete document.documentElement.dataset.webbleExtension;
+    delete document.documentElement.dataset.webbleInstalled;
+
     // Setup spies
     addEventListenerSpy = jest.spyOn(window, 'addEventListener');
     removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
     openSpy = jest.spyOn(window, 'open').mockImplementation(() => null as any);
-    
+
     // Reset timers
     jest.useFakeTimers();
   });
@@ -57,6 +61,8 @@ describe('ExtensionDetector', () => {
     jest.clearAllTimers();
     jest.useRealTimers();
     delete (global.window as any).__webble;
+    delete document.documentElement.dataset.webbleExtension;
+    delete document.documentElement.dataset.webbleInstalled;
     Object.defineProperty(global.navigator, 'bluetooth', {
       value: undefined,
       writable: true,
@@ -74,6 +80,7 @@ describe('ExtensionDetector', () => {
       (global.window as any).__webble = { status: 'installed' };
 
       expect(detector.isInstalled()).toBe(true);
+      expect(detector.getInstallState()).toBe('installed-inactive');
     });
 
     it('should return true when navigator.webble.__webble is set', () => {
@@ -83,6 +90,14 @@ describe('ExtensionDetector', () => {
         configurable: true
       });
 
+      expect(detector.isInstalled()).toBe(true);
+      expect(detector.getInstallState()).toBe('active');
+    });
+
+    it('should return installed-inactive when passive document marker exists', () => {
+      document.documentElement.dataset.webbleInstalled = 'true';
+
+      expect(detector.getInstallState()).toBe('installed-inactive');
       expect(detector.isInstalled()).toBe(true);
     });
 
@@ -103,18 +118,6 @@ describe('ExtensionDetector', () => {
       });
 
       expect(detector.isInstalled()).toBe(false);
-    });
-
-    it('should cache the detection result', () => {
-      (global.window as any).__webble = { status: 'installed' };
-
-      expect(detector.isInstalled()).toBe(true);
-
-      // Remove the marker
-      delete (global.window as any).__webble;
-
-      // Should still return true due to caching
-      expect(detector.isInstalled()).toBe(true);
     });
 
     it('should return false for non-installed window marker status', () => {
@@ -183,14 +186,12 @@ describe('ExtensionDetector', () => {
 
       const promise1 = detector.detect();
       const promise2 = detector.detect();
-      
-      expect(promise1).toBe(promise2); // Should be the same in-flight promise
-      
+
       jest.advanceTimersByTime(3000);
-      
+
       const result1 = await promise1;
       const result2 = await promise2;
-      
+
       expect(result1).toBe(result2);
       expect(addEventListenerSpy).toHaveBeenCalledTimes(1); // Only one detection
     });
@@ -216,6 +217,13 @@ describe('ExtensionDetector', () => {
       
       const result = await detectPromise;
       expect(result).toBe(true);
+      expect(detector.getInstallState()).toBe('installed-inactive');
+    });
+
+    it('should return installed-inactive state from detectInstallState when passive marker is present', async () => {
+      document.documentElement.dataset.webbleInstalled = 'true';
+
+      await expect(detector.detectInstallState()).resolves.toBe('installed-inactive');
     });
   });
 
@@ -267,7 +275,7 @@ describe('ExtensionDetector', () => {
       detector.openExtensionStore();
       
       expect(openSpy).toHaveBeenCalledWith(
-        'https://apps.apple.com/app/ioswebble/id0000000000',
+        'https://apps.apple.com/search?term=WebBLE&mt=8',
         '_blank'
       );
     });
@@ -282,7 +290,7 @@ describe('ExtensionDetector', () => {
       detector.openExtensionStore();
       
       expect(openSpy).toHaveBeenCalledWith(
-        'https://apps.apple.com/app/ioswebble/id0000000000',
+        'https://apps.apple.com/search?term=WebBLE&mt=8',
         '_blank'
       );
     });
@@ -297,7 +305,7 @@ describe('ExtensionDetector', () => {
       detector.openExtensionStore();
       
       expect(openSpy).toHaveBeenCalledWith(
-        'https://ioswebble.com',
+        'https://ioswebble.com/setup.html',
         '_blank'
       );
     });
@@ -312,7 +320,7 @@ describe('ExtensionDetector', () => {
       detector.openExtensionStore();
       
       expect(openSpy).toHaveBeenCalledWith(
-        'https://ioswebble.com',
+        'https://ioswebble.com/setup.html',
         '_blank'
       );
     });

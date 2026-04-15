@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals';
 import { WebBLEError } from '../src/errors';
 
 describe('WebBLEError', () => {
@@ -7,6 +8,13 @@ describe('WebBLEError', () => {
     expect(err.suggestion).toBe('Check that the browser supports Web Bluetooth and the device has Bluetooth enabled.');
     expect(err.name).toBe('WebBLEError');
     expect(err.message).toBe(err.suggestion);
+    expect(err.isRetriable).toBe(false);
+  });
+
+  it('sets retriable metadata for transient codes', () => {
+    expect(new WebBLEError('TIMEOUT').isRetriable).toBe(true);
+    expect(new WebBLEError('WRITE_INCOMPLETE').isRetriable).toBe(true);
+    expect(new WebBLEError('PERMISSION_DENIED').isRetriable).toBe(false);
   });
 
   it('uses custom message instead of default suggestion for message', () => {
@@ -61,5 +69,19 @@ describe('WebBLEError.from', () => {
   it('uses provided fallback code', () => {
     const err = WebBLEError.from(new Error('oops'), 'TIMEOUT');
     expect(err.code).toBe('TIMEOUT');
+  });
+
+  it('prefers DOMException name over message heuristics', () => {
+    const domError = new DOMException('No Devices were found', 'SecurityError');
+    const err = WebBLEError.from(domError);
+
+    expect(err.code).toBe('PERMISSION_DENIED');
+  });
+
+  it('preserves retryAfterMs metadata for disconnect-like errors', () => {
+    const err = WebBLEError.from(new DOMException('GATT Server is disconnected', 'NetworkError'));
+
+    expect(err.code).toBe('DEVICE_DISCONNECTED');
+    expect(err.retryAfterMs).toBe(1000);
   });
 });

@@ -1,16 +1,17 @@
 import React from 'react';
-import { useConnection } from '../hooks/useConnection';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
+import { useDevice } from '../hooks/useDevice';
 
 interface ConnectionStatusProps {
-  deviceId?: string;
+  device?: WebBLEDevice | null;
   className?: string;
 }
 
 /**
  * ConnectionStatus - Connection status indicator component
  */
-export function ConnectionStatus({ deviceId, className }: ConnectionStatusProps) {
-  const { connectionState, rssi } = useConnection(deviceId);
+export function ConnectionStatus({ device = null, className }: ConnectionStatusProps) {
+  const { connectionState } = useDevice(device);
 
   const getStatusColor = () => {
     switch (connectionState) {
@@ -23,17 +24,22 @@ export function ConnectionStatus({ deviceId, className }: ConnectionStatusProps)
   };
 
   return (
-    <div className={className} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <span 
-        style={{ 
-          width: '10px', 
-          height: '10px', 
-          borderRadius: '50%', 
-          backgroundColor: getStatusColor() 
+    <div
+      className={className}
+      data-webble-status=""
+      data-webble-state={connectionState}
+      style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+    >
+      <span
+        data-webble-status-indicator=""
+        style={{
+          width: '10px',
+          height: '10px',
+          borderRadius: '50%',
+          backgroundColor: getStatusColor()
         }}
       />
-      <span>{connectionState}</span>
-      {rssi !== null && rssi !== undefined && <span>({rssi} dBm)</span>}
+      <span data-webble-status-label="">{connectionState}</span>
     </div>
   );
 }

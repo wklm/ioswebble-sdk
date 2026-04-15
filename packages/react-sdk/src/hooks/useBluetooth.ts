@@ -1,5 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useWebBLE } from '../core/WebBLEProvider';
+import { WebBLEError } from '@ios-web-bluetooth/core';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
 import type { UseBluetoothReturn, RequestDeviceOptions } from '../types';
 
 /**
@@ -43,26 +45,19 @@ import type { UseBluetoothReturn, RequestDeviceOptions } from '../types';
  */
 export function useBluetooth(): UseBluetoothReturn {
   const context = useWebBLE();
-  
-  // Check if browser supports Web Bluetooth (natively or via extension)
-  const isSupported = useMemo(() => {
-    // Check for secure context
-    if (typeof window !== 'undefined' && !window.isSecureContext) {
-      return false;
-    }
-    
-    // Check for Bluetooth API or extension
-    return !!(navigator?.bluetooth || context.isExtensionInstalled);
-  }, [context.isExtensionInstalled]);
+  const ble = context.core as UseBluetoothReturn['ble'];
+
+  const isSupported = useMemo(() => ble.isSupported, [ble]);
+  const backgroundSync = useMemo(() => ble.backgroundSync, [ble]);
+  const peripheral = useMemo(() => ble.peripheral, [ble]);
 
   // Wrapper for requestDevice with simplified error handling
-  const requestDevice = useCallback(async (options?: RequestDeviceOptions) => {
+  const requestDevice = useCallback(async (options: RequestDeviceOptions = { acceptAllDevices: true }): Promise<WebBLEDevice | null> => {
     try {
-      const device = await context.requestDevice(options);
-      return device;
+      return await context.requestDevice(options);
     } catch (error) {
-      // Don't set error for user cancellation
-      if ((error as Error).name === 'NotFoundError') {
+      const candidate = WebBLEError.from(error);
+      if (candidate.code === 'USER_CANCELLED') {
         return null;
       }
       throw error;
@@ -70,14 +65,16 @@ export function useBluetooth(): UseBluetoothReturn {
   }, [context]);
 
   // Wrapper for getDevices
-  const getDevices = useCallback(async () => {
-    return await context.getDevices();
-  }, [context]);
+  const getDevices = useCallback(async () => context.getDevices(), [context]);
 
   return {
     isAvailable: context.isAvailable,
     isExtensionInstalled: context.isExtensionInstalled,
+    extensionInstallState: context.extensionInstallState,
     isSupported,
+    ble,
+    backgroundSync,
+    peripheral,
     requestDevice,
     getDevices,
     error: context.error

@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "ignoreDeprecations": "6.0",
+    "rootDir": ".",
+    "types": ["web-bluetooth", "jest", "node"]
+  },
+  "include": ["src/**/*", "tests/**/*"]
+}

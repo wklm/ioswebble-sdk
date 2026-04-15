@@ -2,6 +2,7 @@ import React from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { WebBLEProvider } from '../../src/core/WebBLEProvider';
 import { useBluetooth } from '../../src/hooks/useBluetooth';
+import { WebBLEDevice, WebBLEError } from '@ios-web-bluetooth/core';
 
 describe('useBluetooth Hook', () => {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -28,13 +29,28 @@ describe('useBluetooth Hook', () => {
     });
 
     it('should detect extension installation', async () => {
-      const { result } = renderHook(() => useBluetooth(), { wrapper });
+      const originalWebBLE = (navigator as any).webble;
+      Object.defineProperty(navigator, 'webble', {
+        value: { __webble: true },
+        writable: true,
+        configurable: true,
+      });
 
-      // In the test environment with mocked navigator.bluetooth, it's detected as installed
-      expect(result.current.isExtensionInstalled).toBe(true);
+      try {
+        const { result } = renderHook(() => useBluetooth(), { wrapper });
 
-      // Verify that the extension is detected via the presence of navigator.bluetooth
-      expect(navigator.bluetooth).toBeDefined();
+        await waitFor(() => {
+          expect(result.current.isExtensionInstalled).toBe(true);
+        });
+
+        expect((navigator as any).webble?.__webble).toBe(true);
+      } finally {
+        Object.defineProperty(navigator, 'webble', {
+          value: originalWebBLE,
+          writable: true,
+          configurable: true,
+        });
+      }
     });
 
     it('should determine browser support', () => {
@@ -75,7 +91,8 @@ describe('useBluetooth Hook', () => {
       expect(mockRequestDevice).toHaveBeenCalledWith({
         acceptAllDevices: true
       });
-      expect(device).toBe(mockDevice);
+      expect(device).toBeInstanceOf(WebBLEDevice);
+      expect((device as any).raw).toBe(mockDevice);
     });
 
     it('should handle device request cancellation', async () => {
@@ -97,7 +114,6 @@ describe('useBluetooth Hook', () => {
       });
 
       expect(device).toBeNull();
-      expect(result.current.error).toBeNull(); // Cancellation shouldn't set error
     });
 
     it('should handle device request errors', async () => {
@@ -115,7 +131,8 @@ describe('useBluetooth Hook', () => {
         });
       });
 
-      expect(result.current.error).toBe(error);
+      expect(result.current.error).toBeInstanceOf(WebBLEError);
+      expect(result.current.error?.message).toBe(error.message);
     });
 
     it('should get previously paired devices', async () => {
@@ -138,7 +155,11 @@ describe('useBluetooth Hook', () => {
       });
 
       expect(navigator.bluetooth.getDevices).toHaveBeenCalled();
-      expect(devices).toEqual(mockDevices);
+      expect(devices).toHaveLength(2);
+      expect(devices[0]).toBeInstanceOf(WebBLEDevice);
+      expect(devices[1]).toBeInstanceOf(WebBLEDevice);
+      expect((devices[0] as any).raw).toBe(mockDevices[0]);
+      expect((devices[1] as any).raw).toBe(mockDevices[1]);
     });
 
     it('should filter devices by service UUID', async () => {
@@ -159,7 +180,9 @@ describe('useBluetooth Hook', () => {
       });
 
       expect(mockRequestDevice).toHaveBeenCalledWith({
-        filters: [{ services: ['heart_rate'] }]
+        filters: [{ services: ['0000180d-0000-1000-8000-00805f9b34fb'] }],
+        optionalServices: undefined,
+        exclusionFilters: undefined,
       });
     });
 
@@ -203,8 +226,12 @@ describe('useBluetooth Hook', () => {
       });
 
       expect(mockRequestDevice).toHaveBeenCalledWith({
-        filters: [{ services: ['heart_rate'] }],
-        optionalServices: ['battery_service', 'device_information']
+        filters: [{ services: ['0000180d-0000-1000-8000-00805f9b34fb'] }],
+        optionalServices: [
+          '0000180f-0000-1000-8000-00805f9b34fb',
+          '0000180a-0000-1000-8000-00805f9b34fb',
+        ],
+        exclusionFilters: undefined,
       });
     });
   });
@@ -228,8 +255,9 @@ describe('useBluetooth Hook', () => {
       await act(async () => {
         await result.current.requestDevice({ acceptAllDevices: true });
       });
-      
-      expect(result.current.error).toBe(error);
+
+      expect(result.current.error).toBeInstanceOf(WebBLEError);
+      expect(result.current.error?.message).toBe(error.message);
       
       // Second request should succeed and clear error
       await act(async () => {

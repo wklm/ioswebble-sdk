@@ -5,6 +5,7 @@
  * - MockBluetooth: drop-in replacement for navigator.bluetooth
  * - MockBleDevice: stateful device with GATT services/characteristics
  * - MockCharacteristic: value simulation and notification pump
+ * - Advertisement simulation for requestLEScan/watchAdvertisements tests
  *
  * Usage:
  *   import { createMockBluetooth, installMockBluetooth } from '@ios-web-bluetooth/testing'
@@ -18,6 +19,8 @@
  *   // Add test devices
  *   const device = mock.addDevice({
  *     name: 'HR Sensor',
+ *     failConnectAttempts: 1,
+ *     writeLimits: { withResponse: 20, mtu: 23 },
  *     serviceUUIDs: ['0000180d-0000-1000-8000-00805f9b34fb'],
  *     services: [{
  *       uuid: '0000180d-0000-1000-8000-00805f9b34fb',
@@ -33,6 +36,9 @@
  *   const char = device.gatt.getService('0000180d-...')?.getChar('00002a37-...')
  *   char?.emitNotification(new Uint8Array([0x00, 80]))
  *
+ *   // Emit advertisements for scan/beacon-style tests
+ *   device.emitAdvertisement({ rssi: -42 })
+ *
  *   // Reset between tests
  *   mock.reset()
  */
@@ -42,6 +48,7 @@ export {
   createMockBluetooth,
   installMockBluetooth,
   type MockBluetoothOptions,
+  type MockAdvertisementOptions,
 } from './mocks/bluetooth';
 
 export {

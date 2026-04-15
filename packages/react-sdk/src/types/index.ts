@@ -1,68 +1,56 @@
 /**
  * Type definitions for @ios-web-bluetooth/react SDK
+ *
+ * Device types use WebBLEDevice from @ios-web-bluetooth/core.
+ * RequestDeviceOptions is re-exported from core (not duplicated here).
  */
+import type {
+  BackgroundConnectionOptions as CoreBackgroundConnectionOptions,
+  BackgroundRegistration as CoreBackgroundRegistration,
+  BeaconScanningOptions as CoreBeaconScanningOptions,
+  CharacteristicNotificationOptions as CoreCharacteristicNotificationOptions,
+  NotificationPermissionState as CoreNotificationPermissionState,
+  NotificationTemplate as CoreNotificationTemplate,
+  RequestDeviceOptions as CoreRequestDeviceOptions,
+  WebBLE as WebBLECore,
+  WebBLEBackgroundSync,
+  WebBLEDevice,
+  WebBLEError as WebBLEErrorType,
+  WebBLEPeripheral,
+} from '@ios-web-bluetooth/core';
 
-// Configuration types
+// Re-export RequestDeviceOptions from core -- single source of truth
+export type { RequestDeviceOptions } from '@ios-web-bluetooth/core';
+// AIDEV-NOTE: Alias used in interfaces below to avoid shadowing by the global
+// RequestDeviceOptions that @types/web-bluetooth declares.
+type RequestDeviceOptions = CoreRequestDeviceOptions;
+
+// Re-export error from core -- replaces compat-error.ts
+export { WebBLEError } from '@ios-web-bluetooth/core';
+
+// Configuration types — single source of truth for SDK configuration
 export interface WebBLEConfig {
-  autoConnect?: boolean;
-  cacheTimeout?: number;
-  retryAttempts?: number;
-  enableLogging?: boolean;
-  scanTimeout?: number;
-  /** API key from ioswebble.com (wbl_xxxxx) — enables install prompt on iOS Safari */
+  /** API key from ioswebble.com (wbl_xxxxx) -- enables install prompt on iOS Safari */
   apiKey?: string;
   /** Operator/app name shown in the install prompt (e.g. "FitTracker") */
   operatorName?: string;
+  /** Preferred onboarding URL override (defaults to WebBLE setup flow) */
+  startOnboardingUrl?: string;
   /** App Store URL override (defaults to WebBLE listing) */
   appStoreUrl?: string;
 }
 
-// Device types
-export interface BluetoothDeviceInfo {
-  id: string;
-  name?: string;
-  connected: boolean;
-  rssi?: number;
-  txPower?: number;
-  manufacturerData?: Map<number, DataView>;
-  serviceData?: Map<string, DataView>;
-  uuids?: string[];
-  gatt?: BluetoothRemoteGATTServer;
-}
-
-// GATT types
-export interface GATTServiceInfo {
-  uuid: string;
-  isPrimary: boolean;
-  device: BluetoothDeviceInfo;
-  characteristics?: GATTCharacteristicInfo[];
-}
-
-export interface GATTCharacteristicInfo {
-  uuid: string;
-  properties: CharacteristicProperties;
-  value?: DataView;
-  service: GATTServiceInfo;
-  descriptors?: GATTDescriptorInfo[];
-}
-
-export interface GATTDescriptorInfo {
-  uuid: string;
-  value?: DataView;
-  characteristic: GATTCharacteristicInfo;
-}
-
-export interface CharacteristicProperties {
-  broadcast: boolean;
-  read: boolean;
-  writeWithoutResponse: boolean;
-  write: boolean;
-  notify: boolean;
-  indicate: boolean;
-  authenticatedSignedWrites: boolean;
-  reliableWrite: boolean;
-  writableAuxiliaries: boolean;
-}
+export type {
+  BackgroundConnectionOptions,
+  BackgroundRegistration,
+  BackgroundRegistrationType,
+  BeaconScanningOptions,
+  CharacteristicNotificationOptions,
+  NotificationPermissionState,
+  NotificationTemplate,
+  WebBLEBackgroundSync,
+  WebBLEPeripheral,
+} from '@ios-web-bluetooth/core';
 
 // Connection types
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'disconnecting';
@@ -71,39 +59,23 @@ export interface ConnectionOptions {
   autoReconnect?: boolean;
   reconnectAttempts?: number;
   reconnectDelay?: number;
+  reconnectBackoffMultiplier?: number;
+  onReconnectAttempt?: (attempt: number, delayMs: number) => void;
+  onReconnectSuccess?: (attempt: number) => void;
+  onReconnectFailure?: (error: Error, attempt: number, willRetry: boolean) => void;
 }
 
 // Scan types
 export type ScanState = 'idle' | 'scanning' | 'stopped';
 
 export interface ScanOptions {
+  timeout?: number;
   filters?: BluetoothLEScanFilter[];
   keepRepeatedDevices?: boolean;
   acceptAllAdvertisements?: boolean;
-  timeout?: number;
 }
 
-export interface BluetoothLEScanFilter {
-  services?: BluetoothServiceUUID[];
-  name?: string;
-  namePrefix?: string;
-  manufacturerData?: ManufacturerDataFilter[];
-  serviceData?: ServiceDataFilter[];
-}
-
-export interface ManufacturerDataFilter {
-  companyIdentifier: number;
-  dataPrefix?: BufferSource;
-  mask?: BufferSource;
-}
-
-export interface ServiceDataFilter {
-  service: BluetoothServiceUUID;
-  dataPrefix?: BufferSource;
-  mask?: BufferSource;
-}
-
-export type BluetoothServiceUUID = number | string;
+export type BluetoothLEScanFilter = NonNullable<RequestDeviceOptions['filters']>[number];
 
 // Event types
 export type NotificationHandler = (value: DataView) => void;
@@ -117,45 +89,46 @@ export interface BluetoothAdvertisingEvent {
   txPower: number;
 }
 
-// Error types — re-exported from @ios-web-bluetooth/core for compatibility
-// Users who don't install @ios-web-bluetooth/core get this lightweight version
-export { WebBLEError } from './compat-error';
-
-// Hook return types
+// Hook return types -- all device references use WebBLEDevice
 export interface UseBluetoothReturn {
   isAvailable: boolean;
   isExtensionInstalled: boolean;
+  extensionInstallState: 'not-installed' | 'installed-inactive' | 'active';
   isSupported: boolean;
-  requestDevice: (options?: RequestDeviceOptions) => Promise<BluetoothDevice | null>;
-  getDevices: () => Promise<BluetoothDevice[]>;
-  error: Error | null;
+  ble: WebBLECore;
+  backgroundSync: WebBLEBackgroundSync;
+  peripheral: WebBLEPeripheral;
+  requestDevice: (options?: RequestDeviceOptions) => Promise<WebBLEDevice | null>;
+  getDevices: () => Promise<WebBLEDevice[]>;
+  error: WebBLEErrorType | null;
 }
 
 export interface UseDeviceReturn {
-  device: BluetoothDevice | null;
+  device: WebBLEDevice | null;
+  connectionState: ConnectionState;
   isConnected: boolean;
   isConnecting: boolean;
-  connect: (options?: ConnectionOptions) => Promise<void>;
+  connect: () => Promise<void>;
   disconnect: () => void;
   services: BluetoothRemoteGATTService[];
-  error: Error | null;
-  watchAdvertisements: () => Promise<void>;
-  unwatchAdvertisements: () => void;
-  isWatchingAdvertisements: boolean;
-  forget: () => Promise<void>;
-  connectionPriority: 'low' | 'balanced' | 'high' | null;
-  setConnectionPriority: (priority: 'low' | 'balanced' | 'high') => Promise<void>;
+  error: WebBLEErrorType | null;
+  autoReconnect: boolean;
+  setAutoReconnect: (value: boolean) => void;
+  reconnectAttempt: number;
 }
 
 export interface UseCharacteristicReturn {
-  characteristic: BluetoothRemoteGATTCharacteristic | null;
+  device: WebBLEDevice | null;
+  serviceUUID: string | null;
+  characteristicUUID: string | null;
   value: DataView | null;
-  properties: CharacteristicProperties | null;
   read: () => Promise<DataView | null>;
   write: (value: BufferSource) => Promise<void>;
+  writeWithoutResponse: (value: BufferSource) => Promise<void>;
   subscribe: (handler: NotificationHandler) => Promise<void>;
   unsubscribe: () => Promise<void>;
-  error: Error | null;
+  isNotifying: boolean;
+  error: WebBLEErrorType | null;
 }
 
 export interface UseNotificationsReturn {
@@ -165,7 +138,7 @@ export interface UseNotificationsReturn {
   subscribe: () => Promise<void>;
   unsubscribe: () => Promise<void>;
   clear: () => void;
-  error: Error | null;
+  error: WebBLEErrorType | null;
 }
 
 export interface NotificationEntry {
@@ -175,46 +148,63 @@ export interface NotificationEntry {
 
 export interface UseScanReturn {
   scanState: ScanState;
-  devices: BluetoothDevice[];
+  devices: WebBLEDevice[];
   start: (options?: ScanOptions) => Promise<void>;
   stop: () => void;
   clear: () => void;
-  error: Error | null;
-  setError?: (error: Error | null) => void;
+  error: WebBLEErrorType | null;
 }
 
-export interface UseConnectionReturn {
-  connectionState: ConnectionState;
-  rssi: number | null;
-  connect: () => Promise<void>;
-  disconnect: () => Promise<void>;
-  getConnectionParameters: () => Promise<ConnectionParameters | null>;
-  requestConnectionPriority: (priority: ConnectionPriority) => Promise<void>;
-  error: Error | null;
-  setConnectionState?: (state: ConnectionState) => void;
-  setAutoReconnect?: (value: boolean) => void;
-  startRssiMonitoring?: () => Promise<void>;
-  stopRssiMonitoring?: () => void;
-  autoReconnect?: boolean;
+export interface UseBackgroundSyncOptions {
+  autoFetch?: boolean;
 }
 
-export interface ConnectionParameters {
-  connectionInterval: number;
-  slaveLatency: number;
-  supervisionTimeout: number;
+export interface UseBackgroundSyncReturn {
+  permissionState: CoreNotificationPermissionState | null;
+  registrations: CoreBackgroundRegistration[];
+  isLoading: boolean;
+  error: WebBLEErrorType | null;
+  isSupported: boolean;
+  requestPermission: () => Promise<CoreNotificationPermissionState | null>;
+  requestBackgroundConnection: (options: CoreBackgroundConnectionOptions) => Promise<CoreBackgroundRegistration | null>;
+  registerCharacteristicNotifications: (options: CoreCharacteristicNotificationOptions) => Promise<CoreBackgroundRegistration | null>;
+  registerBeaconScanning: (options: CoreBeaconScanningOptions) => Promise<CoreBackgroundRegistration | null>;
+  list: () => Promise<CoreBackgroundRegistration[]>;
+  unregister: (registrationId: string) => Promise<void>;
+  update: (registrationId: string, template: Partial<CoreNotificationTemplate>) => Promise<void>;
+  clearError: () => void;
 }
 
 export type ConnectionPriority = 'balanced' | 'high' | 'low-power';
 
-// Request types
-export interface RequestDeviceOptions {
+// useConnection types
+// AIDEV-NOTE: ConnectionStatus is distinct from ConnectionState — it adds 'idle'
+// and 'requesting' states that exist only in the useConnection composition layer.
+export type ConnectionStatus = 'idle' | 'requesting' | 'connecting' | 'connected' | 'disconnected';
+
+export interface AutoReconnectOptions {
+  maxAttempts?: number;
+  initialDelay?: number;
+  backoffMultiplier?: number;
+}
+
+export interface UseConnectionOptions {
   filters?: BluetoothLEScanFilter[];
-  exclusionFilters?: BluetoothLEScanFilter[];
-  optionalServices?: BluetoothServiceUUID[];
-  optionalManufacturerData?: number[];
+  optionalServices?: string[];
   acceptAllDevices?: boolean;
+  autoReconnect?: boolean | AutoReconnectOptions;
+}
+
+export interface UseConnectionReturn {
+  device: WebBLEDevice | null;
+  status: ConnectionStatus;
+  isConnected: boolean;
+  connect: () => Promise<void>;
+  disconnect: () => void;
+  services: BluetoothRemoteGATTService[];
+  error: WebBLEErrorType | null;
 }
 
 // Utility types
-export type ValueParser<T = any> = (value: DataView) => T;
-export type ValueFormatter<T = any> = (value: T) => BufferSource;
+export type ValueParser<T = unknown> = (value: DataView) => T;
+export type ValueFormatter<T = unknown> = (value: T) => BufferSource;

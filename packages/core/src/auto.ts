@@ -40,6 +40,10 @@ function patchPermissionsAPI(state: PermissionState): void {
 function applyPolyfill(): void {
   if (typeof navigator === 'undefined') return;
 
+  const bluetoothNavigator = navigator as Navigator & {
+    bluetooth?: Bluetooth;
+  };
+
   // Expose BluetoothUUID global (spec §4) on all platforms
   if (typeof window !== 'undefined' && !(window as any).BluetoothUUID) {
     (window as any).BluetoothUUID = BluetoothUUID;
@@ -55,7 +59,7 @@ function applyPolyfill(): void {
   if (platform === 'safari-extension') {
     // Extension provides full API on navigator.webble — proxy to navigator.bluetooth
     const api = getBluetoothAPI();
-    if (api && !navigator.bluetooth) {
+    if (api && !bluetoothNavigator.bluetooth) {
       Object.defineProperty(navigator, 'bluetooth', {
         get: () => api,
         configurable: true,
@@ -69,7 +73,7 @@ function applyPolyfill(): void {
   // Unsupported or Safari without extension — install lazy proxy
   // Permissions API: no extension → 'prompt'
   patchPermissionsAPI('prompt');
-  if (!navigator.bluetooth) {
+  if (!bluetoothNavigator.bluetooth) {
     const handler: ProxyHandler<Record<string, unknown>> = {
       get(_target, prop) {
         if (prop === 'requestDevice') {

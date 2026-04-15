@@ -1,0 +1,468 @@
+/**
+ * @ios-web-bluetooth/react — default component styles
+ *
+ * Opt-in via: import '@ios-web-bluetooth/react/styles.css';
+ *
+ * All selectors target [data-webble-*] attributes so they compose cleanly
+ * with any CSS framework. Override with higher-specificity selectors or
+ * className props.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Shared tokens
+ * ------------------------------------------------------------------------- */
+:root {
+  --webble-color-connected: #22c55e;
+  --webble-color-connecting: #f59e0b;
+  --webble-color-disconnected: #ef4444;
+  --webble-color-idle: #6b7280;
+  --webble-color-primary: #3b82f6;
+  --webble-color-primary-hover: #2563eb;
+  --webble-color-danger: #ef4444;
+  --webble-color-danger-hover: #dc2626;
+  --webble-color-bg: #ffffff;
+  --webble-color-bg-subtle: #f9fafb;
+  --webble-color-border: #e5e7eb;
+  --webble-color-text: #111827;
+  --webble-color-text-muted: #6b7280;
+  --webble-font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --webble-radius: 8px;
+  --webble-spacing-xs: 4px;
+  --webble-spacing-sm: 8px;
+  --webble-spacing-md: 12px;
+  --webble-spacing-lg: 16px;
+  --webble-spacing-xl: 24px;
+}
+
+/* ---------------------------------------------------------------------------
+ * ConnectionStatus
+ * ------------------------------------------------------------------------- */
+[data-webble-status] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--webble-spacing-sm);
+  font-family: var(--webble-font-family);
+  font-size: 14px;
+  color: var(--webble-color-text);
+}
+
+[data-webble-status-indicator] {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+[data-webble-state="connected"] > [data-webble-status-indicator] {
+  background-color: var(--webble-color-connected);
+  box-shadow: 0 0 4px var(--webble-color-connected);
+}
+
+[data-webble-state="connecting"] > [data-webble-status-indicator],
+[data-webble-state="disconnecting"] > [data-webble-status-indicator] {
+  background-color: var(--webble-color-connecting);
+  animation: webble-pulse 1.2s ease-in-out infinite;
+}
+
+[data-webble-state="disconnected"] > [data-webble-status-indicator] {
+  background-color: var(--webble-color-disconnected);
+}
+
+[data-webble-status-label] {
+  text-transform: capitalize;
+}
+
+@keyframes webble-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ---------------------------------------------------------------------------
+ * DeviceScanner
+ * ------------------------------------------------------------------------- */
+[data-webble-scanner] {
+  font-family: var(--webble-font-family);
+  color: var(--webble-color-text);
+  border: 1px solid var(--webble-color-border);
+  border-radius: var(--webble-radius);
+  padding: var(--webble-spacing-lg);
+  background: var(--webble-color-bg);
+}
+
+[data-webble-scanner-header] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--webble-spacing-md);
+}
+
+[data-webble-scanner-header] h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+[data-webble-scanner-status] {
+  font-size: 13px;
+  color: var(--webble-color-text-muted);
+}
+
+[data-webble-scanner-controls] {
+  display: flex;
+  gap: var(--webble-spacing-sm);
+  margin-bottom: var(--webble-spacing-md);
+}
+
+[data-webble-scanner-controls] button {
+  padding: var(--webble-spacing-sm) var(--webble-spacing-lg);
+  border: none;
+  border-radius: var(--webble-radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+[data-webble-scanner-controls] .scan-button.start {
+  background: var(--webble-color-primary);
+  color: #fff;
+}
+
+[data-webble-scanner-controls] .scan-button.start:hover {
+  background: var(--webble-color-primary-hover);
+}
+
+[data-webble-scanner-controls] .scan-button.stop {
+  background: var(--webble-color-danger);
+  color: #fff;
+}
+
+[data-webble-scanner-controls] .scan-button.stop:hover {
+  background: var(--webble-color-danger-hover);
+}
+
+[data-webble-scanner-controls] .scan-button.clear {
+  background: var(--webble-color-bg-subtle);
+  color: var(--webble-color-text);
+  border: 1px solid var(--webble-color-border);
+}
+
+[data-webble-scanner-error] {
+  display: flex;
+  align-items: center;
+  gap: var(--webble-spacing-sm);
+  padding: var(--webble-spacing-sm) var(--webble-spacing-md);
+  margin-bottom: var(--webble-spacing-md);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--webble-radius);
+  color: var(--webble-color-danger);
+  font-size: 14px;
+}
+
+[data-webble-device-list] {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--webble-spacing-xs);
+}
+
+[data-webble-device] {
+  list-style: none;
+}
+
+[data-webble-device-button] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--webble-spacing-md);
+  border: 1px solid var(--webble-color-border);
+  border-radius: var(--webble-radius);
+  background: var(--webble-color-bg);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+[data-webble-device-button]:hover {
+  border-color: var(--webble-color-primary);
+  background: var(--webble-color-bg-subtle);
+}
+
+[data-webble-device][data-webble-state="connected"] [data-webble-device-button] {
+  border-color: var(--webble-color-connected);
+  background: #f0fdf4;
+}
+
+[data-webble-device][data-webble-state="connecting"] [data-webble-device-button] {
+  border-color: var(--webble-color-connecting);
+  background: #fffbeb;
+}
+
+[data-webble-device-info] {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+[data-webble-device-name] {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+[data-webble-device-id] {
+  font-size: 12px;
+  color: var(--webble-color-text-muted);
+  font-family: monospace;
+}
+
+[data-webble-device-status] {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--webble-color-connected);
+}
+
+[data-webble-scanner-empty] {
+  text-align: center;
+  padding: var(--webble-spacing-xl);
+  color: var(--webble-color-text-muted);
+  font-size: 14px;
+}
+
+[data-webble-scanner-animation] {
+  display: flex;
+  justify-content: center;
+  gap: var(--webble-spacing-sm);
+  margin-bottom: var(--webble-spacing-md);
+}
+
+[data-webble-scanner-animation] .pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--webble-color-primary);
+  animation: webble-pulse 1.4s ease-in-out infinite;
+}
+
+[data-webble-scanner-animation] .pulse:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+[data-webble-scanner-animation] .pulse:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ---------------------------------------------------------------------------
+ * ServiceExplorer
+ * ------------------------------------------------------------------------- */
+[data-webble-explorer] {
+  font-family: var(--webble-font-family);
+  color: var(--webble-color-text);
+  border: 1px solid var(--webble-color-border);
+  border-radius: var(--webble-radius);
+  padding: var(--webble-spacing-lg);
+  background: var(--webble-color-bg);
+}
+
+[data-webble-explorer-header] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--webble-spacing-md);
+}
+
+[data-webble-explorer-header] h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+[data-webble-explorer-controls] {
+  display: flex;
+  gap: var(--webble-spacing-sm);
+  margin-bottom: var(--webble-spacing-md);
+}
+
+[data-webble-explorer-controls] button {
+  padding: var(--webble-spacing-sm) var(--webble-spacing-lg);
+  border: none;
+  border-radius: var(--webble-radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+[data-webble-explorer-controls] .connection-button.connect {
+  background: var(--webble-color-primary);
+  color: #fff;
+}
+
+[data-webble-explorer-controls] .connection-button.disconnect {
+  background: var(--webble-color-danger);
+  color: #fff;
+}
+
+[data-webble-explorer-controls] .connection-button.connecting {
+  background: var(--webble-color-connecting);
+  color: #fff;
+  cursor: wait;
+}
+
+[data-webble-explorer-error] {
+  display: flex;
+  align-items: center;
+  gap: var(--webble-spacing-sm);
+  padding: var(--webble-spacing-sm) var(--webble-spacing-md);
+  margin-bottom: var(--webble-spacing-md);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--webble-radius);
+  color: var(--webble-color-danger);
+  font-size: 14px;
+}
+
+[data-webble-explorer-empty] {
+  text-align: center;
+  padding: var(--webble-spacing-xl);
+  color: var(--webble-color-text-muted);
+  font-size: 14px;
+}
+
+[data-webble-services-container] {
+  margin-top: var(--webble-spacing-md);
+}
+
+[data-webble-services-summary] {
+  font-size: 13px;
+  color: var(--webble-color-text-muted);
+  margin-bottom: var(--webble-spacing-sm);
+}
+
+[data-webble-service-list] {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--webble-spacing-xs);
+}
+
+[data-webble-service] {
+  list-style: none;
+  border: 1px solid var(--webble-color-border);
+  border-radius: var(--webble-radius);
+  overflow: hidden;
+}
+
+[data-webble-service-header] {
+  display: flex;
+  align-items: center;
+  gap: var(--webble-spacing-sm);
+  width: 100%;
+  padding: var(--webble-spacing-md);
+  border: none;
+  background: var(--webble-color-bg-subtle);
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+}
+
+[data-webble-service-name] {
+  font-weight: 500;
+  flex: 1;
+}
+
+[data-webble-service-type] {
+  font-size: 12px;
+  color: var(--webble-color-text-muted);
+}
+
+[data-webble-characteristic] {
+  list-style: none;
+  padding: var(--webble-spacing-md);
+  border-top: 1px solid var(--webble-color-border);
+}
+
+[data-webble-characteristic-header] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--webble-spacing-sm);
+}
+
+[data-webble-characteristic-name] {
+  font-size: 13px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--webble-color-primary);
+}
+
+[data-webble-characteristic-props] {
+  display: flex;
+  gap: var(--webble-spacing-xs);
+}
+
+[data-webble-characteristic-props] .property {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--webble-color-bg-subtle);
+  border: 1px solid var(--webble-color-border);
+  color: var(--webble-color-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * InstallationWizard
+ * ------------------------------------------------------------------------- */
+[data-webble-wizard] {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+}
+
+[data-webble-wizard-action] {
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+[data-webble-wizard-action]:active {
+  transform: scale(0.98);
+}
+
+[data-webble-wizard-dismiss] {
+  transition: color 0.15s ease;
+}
+
+[data-webble-wizard-dismiss]:hover {
+  color: #636366;
+}
+
+/* ---------------------------------------------------------------------------
+ * Responsive
+ * ------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  [data-webble-scanner],
+  [data-webble-explorer] {
+    padding: var(--webble-spacing-md);
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  [data-webble-scanner-header],
+  [data-webble-explorer-header] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--webble-spacing-sm);
+  }
+
+  [data-webble-scanner-controls],
+  [data-webble-explorer-controls] {
+    flex-wrap: wrap;
+  }
+}

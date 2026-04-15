@@ -1,8 +1,71 @@
 export { WebBLE } from './webble';
 export { WebBLEDevice } from './device';
-export { WebBLEError } from './errors';
-export type { WebBLEErrorCode } from './errors';
+export { WebBLEError, withRetry } from './errors';
+export type { RetryOptions, WebBLEErrorCode } from './errors';
 export { resolveUUID, getServiceName, getCharacteristicName } from './uuid';
 export { BluetoothUUID, canonicalUUID, getService, getCharacteristic, getDescriptor } from './bluetooth-uuid';
 export { detectPlatform, getBluetoothAPI } from './platform';
-export type { Platform, WebBLEOptions, RequestDeviceOptions, BluetoothLEScanFilter, NotificationCallback } from './types';
+export {
+  readUint8,
+  readUint16LE,
+  readUint16BE,
+  readInt16LE,
+  readUint32LE,
+  readFloat32LE,
+  readUtf8,
+  readBytes,
+} from './dataview-helpers';
+export type {
+  ActiveSubscription,
+  AutoReconnectOptions,
+  BackgroundConnectionOptions,
+  ConnectOptions,
+  BackgroundRegistration,
+  BackgroundRegistrationType,
+  BeaconScanFilter,
+  BeaconScanningOptions,
+  CharacteristicNotificationOptions,
+  ConditionDecoder,
+  ConditionOperator,
+  Platform,
+  WebBLEOptions,
+  RequestDeviceOptions,
+  BluetoothLEScanFilter,
+  DeviceErrorContext,
+  DisconnectReason,
+  NotificationCallback,
+  SubscribeOptions,
+  NotificationOptions,
+  NotificationOverflowStrategy,
+  QueueOverflowEvent,
+  ReadOptions,
+  NotificationCondition,
+  NotificationPermissionState,
+  NotificationTemplate,
+  ReplyActionConfig,
+  SubscriptionLostEvent,
+  WebBLEBackgroundSync,
+  WebBLEPeripheral,
+  WebBLEPeripheralAdvertisingOptions,
+  WebBLEPeripheralCharacteristicDefinition,
+  WebBLEPeripheralCharacteristicProperty,
+  WebBLEPeripheralCharacteristicRecord,
+  WebBLEPeripheralConnectionStateChange,
+  WebBLEPeripheralEventMap,
+  WebBLEPeripheralNotificationReady,
+  WebBLEPeripheralServiceDefinition,
+  WebBLEPeripheralServiceRecord,
+  WebBLEPeripheralSendOptions,
+  WebBLEPeripheralSendResult,
+  WebBLEPeripheralSubscriptionChange,
+  WebBLEPeripheralWriteRequest,
+  WriteMode,
+  WriteAutoOptions,
+  WriteAutoResult,
+  WriteOptions,
+  WriteFragmentedOptions,
+  WriteFragmentedResult,
+  WriteLargeOptions,
+  WriteLargeResult,
+  WriteLimits,
+} from './types';

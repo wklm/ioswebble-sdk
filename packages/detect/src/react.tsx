@@ -11,10 +11,13 @@
 
 import React, { useEffect, useState, createContext, useContext } from 'react';
 import type { IOSWebBLEOptions, BannerOptions } from './index';
+import type { ExtensionInstallState } from './detect';
 
 interface IOSWebBLEContextValue {
   /** Whether the extension is installed */
   isInstalled: boolean | null;
+  /** Detailed install state for onboarding vs active flows */
+  installState: ExtensionInstallState | null;
   /** Whether detection is still in progress */
   isDetecting: boolean;
   /** Whether we're on iOS Safari */
@@ -23,6 +26,7 @@ interface IOSWebBLEContextValue {
 
 const IOSWebBLEContext = createContext<IOSWebBLEContextValue>({
   isInstalled: null,
+  installState: null,
   isDetecting: true,
   isIOSSafari: false,
 });
@@ -37,6 +41,7 @@ interface IOSWebBLEProviderProps {
   operatorName?: string;
   banner?: BannerOptions | false;
   onReady?: () => void;
+  onInstalledInactive?: () => void;
   onNotInstalled?: () => void;
   children: React.ReactNode;
 }
@@ -46,11 +51,13 @@ export function IOSWebBLEProvider({
   operatorName,
   banner,
   onReady,
+  onInstalledInactive,
   onNotInstalled,
   children,
 }: IOSWebBLEProviderProps) {
   const [state, setState] = useState<IOSWebBLEContextValue>({
     isInstalled: null,
+    installState: null,
     isDetecting: true,
     isIOSSafari: false,
   });
@@ -63,7 +70,7 @@ export function IOSWebBLEProvider({
 
       if (!checkIOS()) {
         if (!cancelled) {
-          setState({ isInstalled: null, isDetecting: false, isIOSSafari: false });
+          setState({ isInstalled: null, installState: null, isDetecting: false, isIOSSafari: false });
         }
         return;
       }
@@ -76,13 +83,19 @@ export function IOSWebBLEProvider({
         banner,
         onReady: () => {
           if (!cancelled) {
-            setState({ isInstalled: true, isDetecting: false, isIOSSafari: true });
+            setState({ isInstalled: true, installState: 'active', isDetecting: false, isIOSSafari: true });
           }
           onReady?.();
         },
+        onInstalledInactive: () => {
+          if (!cancelled) {
+            setState({ isInstalled: true, installState: 'installed-inactive', isDetecting: false, isIOSSafari: true });
+          }
+          onInstalledInactive?.();
+        },
         onNotInstalled: () => {
           if (!cancelled) {
-            setState({ isInstalled: false, isDetecting: false, isIOSSafari: true });
+            setState({ isInstalled: false, installState: 'not-installed', isDetecting: false, isIOSSafari: true });
           }
           onNotInstalled?.();
         },
@@ -96,7 +109,7 @@ export function IOSWebBLEProvider({
     return () => {
       cancelled = true;
     };
-  }, [apiKey, operatorName, banner, onReady, onNotInstalled]);
+  }, [apiKey, operatorName, banner, onReady, onInstalledInactive, onNotInstalled]);
 
   return (
     <IOSWebBLEContext.Provider value={state}>

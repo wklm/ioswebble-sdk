@@ -1,13 +1,12 @@
 /**
  * @ios-web-bluetooth/react - Production-grade Web Bluetooth SDK for React
- * 
+ *
  * One-line integration for Web Bluetooth in React applications
  * with full Safari support through the WebBLE extension.
  */
 
 // Core exports
 export { WebBLEProvider, useWebBLE } from './core/WebBLEProvider';
-export { WebBLEClient } from './core/WebBLEClient';
 export { ExtensionDetector } from './core/ExtensionDetector';
 
 // Hook exports
@@ -16,8 +15,9 @@ export { useDevice } from './hooks/useDevice';
 export { useCharacteristic } from './hooks/useCharacteristic';
 export { useNotifications } from './hooks/useNotifications';
 export { useScan } from './hooks/useScan';
-export { useConnection } from './hooks/useConnection';
+export { useBackgroundSync } from './hooks/useBackgroundSync';
 export { useProfile } from './hooks/useProfile';
+export { useConnection } from './hooks/useConnection';
 
 // Component exports
 export { DeviceScanner } from './components/DeviceScanner';
@@ -25,36 +25,47 @@ export { ServiceExplorer } from './components/ServiceExplorer';
 export { ConnectionStatus } from './components/ConnectionStatus';
 export { InstallationWizard } from './components/InstallationWizard';
 
-// Type exports
+// Re-export core types (single source of truth -- not duplicated)
+export type {
+  BackgroundConnectionOptions,
+  BackgroundRegistration,
+  BackgroundRegistrationType,
+  BeaconScanningOptions,
+  CharacteristicNotificationOptions,
+  NotificationPermissionState,
+  NotificationTemplate,
+  WebBLEDevice,
+  WebBLEError,
+  WebBLEErrorCode,
+  Platform,
+  RequestDeviceOptions,
+  NotificationCallback,
+  WriteOptions,
+  WriteLimits,
+} from '@ios-web-bluetooth/core';
+
+// Local type exports
 export type {
   WebBLEConfig,
-  BluetoothDeviceInfo,
-  GATTServiceInfo,
-  GATTCharacteristicInfo,
+  UseBluetoothReturn,
+  UseDeviceReturn,
+  UseCharacteristicReturn,
+  UseNotificationsReturn,
+  UseBackgroundSyncOptions,
+  UseBackgroundSyncReturn,
+  UseScanReturn,
   ConnectionState,
   ScanState,
-  NotificationHandler
+  NotificationHandler,
+  UseConnectionOptions,
+  UseConnectionReturn,
+  ConnectionStatus as UseConnectionStatus,
 } from './types';
 
 // Utility exports
-export { 
+export {
   getServiceName,
   getCharacteristicName,
   parseValue,
   formatValue
 } from './utils/bluetooth-utils';
-
-// Main namespace export for convenient access
-import { WebBLEProvider, useWebBLE } from './core/WebBLEProvider';
-import { useBluetooth } from './hooks/useBluetooth';
-import { DeviceScanner } from './components/DeviceScanner';
-
-export const WebBLE = {
-  Provider: WebBLEProvider,
-  useWebBLE,
-  useBluetooth,
-  DeviceScanner
-};
-
-// Default export for simple import
-export default WebBLE;

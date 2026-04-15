@@ -1,59 +1,43 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
 import { useScan } from '../hooks/useScan';
-import { useConnection } from '../hooks/useConnection';
+import { useDevice } from '../hooks/useDevice';
 import type { BluetoothLEScanFilter } from '../types';
 
 interface DeviceScannerProps {
-  onDeviceSelected?: (device: BluetoothDevice) => void;
+  onDeviceSelected?: (device: WebBLEDevice) => void;
   filters?: BluetoothLEScanFilter[];
   className?: string;
-  autoConnect?: boolean;
   showRssi?: boolean;
   sortByRssi?: boolean;
   maxDevices?: number;
   scanDuration?: number;
+  autoConnect?: boolean;
 }
 
 interface DeviceItemProps {
-  device: BluetoothDevice;
-  rssi?: number;
-  onSelect: (device: BluetoothDevice) => void;
+  device: WebBLEDevice;
+  onSelect: (device: WebBLEDevice) => void;
   isConnecting?: boolean;
   isConnected?: boolean;
 }
 
-function DeviceItem({ device, rssi, onSelect, isConnecting, isConnected }: DeviceItemProps) {
-  const getRssiIndicator = useCallback((rssi?: number) => {
-    if (!rssi) return '';
-    if (rssi > -50) return '████';
-    if (rssi > -60) return '███░';
-    if (rssi > -70) return '██░░';
-    if (rssi > -80) return '█░░░';
-    return '░░░░';
-  }, []);
-
+function DeviceItem({ device, onSelect, isConnecting, isConnected }: DeviceItemProps) {
   return (
-    <li className="device-item">
-      <button 
+    <li className="device-item" data-webble-device="" data-webble-state={isConnected ? 'connected' : isConnecting ? 'connecting' : 'idle'}>
+      <button
         onClick={() => onSelect(device)}
         disabled={isConnecting}
         className={`device-button ${isConnected ? 'connected' : ''} ${isConnecting ? 'connecting' : ''}`}
-        aria-label={`Select ${device.name || 'Unknown Device'}`}
+        aria-label={`Select ${device.name ?? 'Unknown Device'}`}
+        data-webble-device-button=""
       >
-        <div className="device-info">
-          <span className="device-name">{device.name || 'Unknown Device'}</span>
-          <span className="device-id">{device.id}</span>
+        <div className="device-info" data-webble-device-info="">
+          <span className="device-name" data-webble-device-name="">{device.name ?? 'Unknown Device'}</span>
+          <span className="device-id" data-webble-device-id="">{device.id}</span>
         </div>
-        {rssi && (
-          <div className="device-rssi">
-            <span className="rssi-value">{rssi} dBm</span>
-            <span className="rssi-bars" aria-label={`Signal strength: ${rssi} dBm`}>
-              {getRssiIndicator(rssi)}
-            </span>
-          </div>
-        )}
-        {isConnected && <span className="connection-status">Connected</span>}
-        {isConnecting && <span className="connection-status">Connecting...</span>}
+        {isConnected && <span className="connection-status" data-webble-device-status="">Connected</span>}
+        {isConnecting && <span className="connection-status" data-webble-device-status="">Connecting...</span>}
       </button>
     </li>
   );
@@ -62,26 +46,25 @@ function DeviceItem({ device, rssi, onSelect, isConnecting, isConnected }: Devic
 /**
  * DeviceScanner - Full-featured device scanner UI component
  */
-export function DeviceScanner({ 
-  onDeviceSelected, 
-  filters,
-  className,
-  autoConnect = false,
-  showRssi = true,
-  sortByRssi = true,
-  maxDevices = 10,
-  scanDuration
-}: DeviceScannerProps) {
+export function DeviceScanner(props: DeviceScannerProps) {
+  const {
+    onDeviceSelected,
+    filters,
+    className,
+    maxDevices = 10,
+    scanDuration,
+    autoConnect = false,
+  } = props;
+
   const { scanState, devices, start, stop, error, clear } = useScan();
-  const [selectedDevice, setSelectedDevice] = useState<BluetoothDevice | null>(null);
-  const [deviceRssi, setDeviceRssi] = useState<Map<string, number>>(new Map());
-  const { connect, connectionState } = useConnection(selectedDevice?.id);
+  const [selectedDevice, setSelectedDevice] = useState<WebBLEDevice | null>(null);
+  const [pendingAutoConnect, setPendingAutoConnect] = useState(false);
+  const { connectionState, connect } = useDevice(selectedDevice);
 
   const handleStartScan = useCallback(async () => {
     clear();
-    setDeviceRssi(new Map());
     await start({ filters });
-    
+
     if (scanDuration) {
       setTimeout(() => {
         stop();
@@ -89,35 +72,29 @@ export function DeviceScanner({
     }
   }, [start, stop, clear, filters, scanDuration]);
 
-  const handleDeviceSelect = useCallback(async (device: BluetoothDevice) => {
+  const handleDeviceSelect = useCallback((device: WebBLEDevice) => {
     setSelectedDevice(device);
-    
-    if (autoConnect) {
-      await connect();
-    }
-    
     onDeviceSelected?.(device);
-  }, [connect, autoConnect, onDeviceSelected]);
-
-  const sortedDevices = useMemo(() => {
-    let devicesArray = [...devices];
-    
-    if (sortByRssi && showRssi) {
-      devicesArray = devicesArray.sort((a, b) => {
-        const rssiA = deviceRssi.get(a.id) || -100;
-        const rssiB = deviceRssi.get(b.id) || -100;
-        return rssiB - rssiA;
-      });
+    if (autoConnect) {
+      setPendingAutoConnect(true);
     }
-    
-    return devicesArray.slice(0, maxDevices);
-  }, [devices, deviceRssi, sortByRssi, showRssi, maxDevices]);
+  }, [autoConnect, onDeviceSelected]);
+
+  // Deferred auto-connect: waits for useDevice to resolve the new device
+  useEffect(() => {
+    if (pendingAutoConnect && connectionState === 'disconnected') {
+      setPendingAutoConnect(false);
+      void connect();
+    }
+  }, [pendingAutoConnect, connectionState, connect]);
+
+  const visibleDevices = devices.slice(0, maxDevices);
 
   return (
-    <div className={`device-scanner ${className || ''}`}>
-      <div className="scanner-header">
+    <div className={`device-scanner ${className || ''}`} data-webble-scanner="" data-webble-state={scanState}>
+      <div className="scanner-header" data-webble-scanner-header="">
         <h2>Bluetooth Device Scanner</h2>
-        <div className="scanner-status">
+        <div className="scanner-status" data-webble-scanner-status="">
           {scanState === 'scanning' && (
             <span className="status-indicator scanning">● Scanning</span>
           )}
@@ -127,7 +104,7 @@ export function DeviceScanner({
         </div>
       </div>
 
-      <div className="scanner-controls">
+      <div className="scanner-controls" data-webble-scanner-controls="">
         {scanState === 'idle' && (
           <button 
             onClick={handleStartScan}
@@ -158,19 +135,18 @@ export function DeviceScanner({
       </div>
 
       {error && (
-        <div className="scanner-error" role="alert">
+        <div className="scanner-error" role="alert" data-webble-scanner-error="">
           <span className="error-icon">⚠</span>
           <span className="error-message">{error.message}</span>
         </div>
       )}
 
-      {sortedDevices.length > 0 && (
-        <ul className="device-list" role="list">
-          {sortedDevices.map(device => (
+      {visibleDevices.length > 0 && (
+        <ul className="device-list" role="list" data-webble-device-list="">
+          {visibleDevices.map(device => (
             <DeviceItem
               key={device.id}
               device={device}
-              rssi={showRssi ? deviceRssi.get(device.id) : undefined}
               onSelect={handleDeviceSelect}
               isConnecting={selectedDevice?.id === device.id && connectionState === 'connecting'}
               isConnected={selectedDevice?.id === device.id && connectionState === 'connected'}
@@ -180,8 +156,8 @@ export function DeviceScanner({
       )}
 
       {scanState === 'scanning' && devices.length === 0 && (
-        <div className="scanner-empty">
-          <div className="scanning-animation">
+        <div className="scanner-empty" data-webble-scanner-empty="">
+          <div className="scanning-animation" data-webble-scanner-animation="">
             <div className="pulse"></div>
             <div className="pulse"></div>
             <div className="pulse"></div>
@@ -191,11 +167,10 @@ export function DeviceScanner({
       )}
 
       {scanState === 'idle' && devices.length === 0 && !error && (
-        <div className="scanner-empty">
+        <div className="scanner-empty" data-webble-scanner-empty="">
           <p>No devices found. Click "Start Scan" to search for Bluetooth devices.</p>
         </div>
       )}
     </div>
   );
 }
-

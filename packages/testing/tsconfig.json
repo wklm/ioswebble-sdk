@@ -3,13 +3,15 @@
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "ignoreDeprecations": "6.0",
     "declaration": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "outDir": "dist",
     "rootDir": "src",
-    "lib": ["ES2020", "DOM"]
+    "lib": ["ES2020", "DOM"],
+    "types": ["web-bluetooth"]
   },
   "include": ["src"],
   "exclude": ["dist", "node_modules", "__tests__"]

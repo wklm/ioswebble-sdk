@@ -1,8 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ExtensionDetector } from '../core/ExtensionDetector';
+import { ExtensionDetector, type ExtensionInstallState } from '../core/ExtensionDetector';
 
 interface InstallationWizardProps {
   onComplete?: () => void;
+  onInstalledInactive?: () => void;
+  /** Preferred onboarding URL override */
+  startOnboardingUrl?: string;
   /** App Store URL override */
   appStoreUrl?: string;
   /** Operator/app name shown in the prompt */
@@ -10,7 +13,7 @@ interface InstallationWizardProps {
   className?: string;
 }
 
-const DEFAULT_APP_STORE_URL = 'https://apps.apple.com/app/ioswebble/id0000000000';
+const DEFAULT_SETUP_URL = 'https://ioswebble.com/setup.html';
 
 export const navigationController = {
   navigateToUrl(url: string) {
@@ -26,14 +29,17 @@ export const navigationController = {
  */
 export function InstallationWizard({
   onComplete,
-  appStoreUrl = DEFAULT_APP_STORE_URL,
+  onInstalledInactive,
+  startOnboardingUrl,
+  appStoreUrl,
   operatorName,
   className,
 }: InstallationWizardProps) {
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [installState, setInstallState] = useState<ExtensionInstallState>('not-installed');
   const [isChecking, setIsChecking] = useState(true);
   const [dismissed, setDismissed] = useState(false);
-  const detector = new ExtensionDetector();
+  const detectorRef = React.useRef(new ExtensionDetector());
+  const detector = detectorRef.current;
 
   const displayName = operatorName || (typeof document !== 'undefined' ? document.title : '') || 'this website';
 
@@ -41,11 +47,15 @@ export function InstallationWizard({
     const checkInstallation = async () => {
       setIsChecking(true);
       try {
-        const installed = await detector.detect();
-        setIsInstalled(installed);
-        if (installed) onComplete?.();
+        const state = await detector.detectInstallState();
+        setInstallState(state);
+        if (state === 'active') {
+          onComplete?.();
+        } else if (state === 'installed-inactive') {
+          onInstalledInactive?.();
+        }
       } catch {
-        setIsInstalled(false);
+        setInstallState('not-installed');
       } finally {
         setIsChecking(false);
       }
@@ -54,7 +64,7 @@ export function InstallationWizard({
     checkInstallation();
 
     const handleReady = () => {
-      setIsInstalled(true);
+      setInstallState('active');
       onComplete?.();
     };
     window.addEventListener('webble:extension:ready', handleReady);
@@ -72,8 +82,8 @@ export function InstallationWizard({
         `webble://return?url=${encodeURIComponent(window.location.href)}`
       );
     } catch { /* noop */ }
-    navigationController.navigateToUrl(appStoreUrl);
-  }, [appStoreUrl]);
+    navigationController.navigateToUrl(startOnboardingUrl || appStoreUrl || DEFAULT_SETUP_URL);
+  }, [appStoreUrl, startOnboardingUrl]);
 
   const handleDismiss = useCallback(() => {
     setDismissed(true);
@@ -86,27 +96,27 @@ export function InstallationWizard({
   }, []);
 
   if (isChecking) return null;
-  if (isInstalled || dismissed) return null;
+  if (installState === 'active' || dismissed) return null;
 
   return (
-    <div className={className} style={overlayStyle}>
-      <div style={sheetStyle} onClick={(e) => e.stopPropagation()}>
-        <div style={handleBarStyle} />
+    <div className={className} style={overlayStyle} data-webble-wizard="" data-webble-state={installState}>
+      <div style={sheetStyle} onClick={(e) => e.stopPropagation()} data-webble-wizard-sheet="">
+        <div style={handleBarStyle} data-webble-wizard-handle="" />
 
-        <div style={headerStyle}>
-          <div style={iconStyle}>
+        <div style={headerStyle} data-webble-wizard-header="">
+          <div style={iconStyle} data-webble-wizard-icon="">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="white">
               <path d="M14.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-5 0c.83 0 1.5-.67 1.5-1.5S10.33 8.5 9.5 8.5 8 9.17 8 10s.67 1.5 1.5 1.5zm2.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
             </svg>
           </div>
-          <div style={titleStyle}>Bluetooth Required</div>
+          <div style={titleStyle} data-webble-wizard-title="">Bluetooth Required</div>
         </div>
 
-        <div style={bodyStyle}>
+        <div style={bodyStyle} data-webble-wizard-body="">
           To connect to your device, {esc(displayName)} needs the WebBLE Safari extension.
         </div>
 
-        <div style={metaStyle}>
+        <div style={metaStyle} data-webble-wizard-meta="">
           <span style={starsStyle}>★★★★★</span>
           <span>4.8</span>
           <span>·</span>
@@ -115,11 +125,11 @@ export function InstallationWizard({
           <span>Takes 1 minute</span>
         </div>
 
-        <button style={buttonStyle} onClick={handleInstall}>
-          Get WebBLE (Free)
-        </button>
+          <button style={buttonStyle} onClick={handleInstall} data-webble-wizard-action="">
+          {installState === 'installed-inactive' ? 'Finish Safari Setup' : 'Start Setup'}
+          </button>
 
-        <details style={detailsStyle}>
+        <details style={detailsStyle} data-webble-wizard-details="">
           <summary style={summaryStyle}>How does this work?</summary>
           <p style={detailsTextStyle}>
             WebBLE is a free Safari extension that enables Bluetooth communication
@@ -128,7 +138,7 @@ export function InstallationWizard({
           </p>
         </details>
 
-        <details style={detailsStyle}>
+        <details style={detailsStyle} data-webble-wizard-details="">
           <summary style={summaryStyle}>Privacy: No data collected</summary>
           <p style={detailsTextStyle}>
             WebBLE processes all Bluetooth data locally on your device. No browsing data,
@@ -136,7 +146,7 @@ export function InstallationWizard({
           </p>
         </details>
 
-        <button style={dismissStyle} onClick={handleDismiss}>
+        <button style={dismissStyle} onClick={handleDismiss} data-webble-wizard-dismiss="">
           Not now
         </button>
       </div>

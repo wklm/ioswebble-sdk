@@ -1,236 +1,126 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { NotificationHandler, CharacteristicProperties } from '../types';
-
-export interface UseCharacteristicReturn {
-  characteristic: BluetoothRemoteGATTCharacteristic | null;
-  value: DataView | null;
-  properties: CharacteristicProperties | null;
-  read: () => Promise<DataView | null>;
-  write: (value: BufferSource) => Promise<void>;
-  writeWithoutResponse: (value: BufferSource) => Promise<void>;
-  subscribe: (handler: NotificationHandler) => Promise<void>;
-  unsubscribe: () => Promise<void>;
-  isNotifying: boolean;
-  getDescriptor: (uuid: string) => Promise<BluetoothRemoteGATTDescriptor | null>;
-  getDescriptors: () => Promise<BluetoothRemoteGATTDescriptor[]>;
-  error: Error | null;
-}
+import { WebBLEError } from '@ios-web-bluetooth/core';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
+import type { UseCharacteristicReturn, NotificationHandler } from '../types';
 
 /**
- * useCharacteristic - Hook for managing a GATT characteristic
- * 
- * @param characteristic - The BluetoothRemoteGATTCharacteristic instance
- * @param service - The parent BluetoothRemoteGATTService 
- * @param device - The parent BluetoothDevice
- * @returns Characteristic state and control methods
+ * Hook for reading, writing, and subscribing to a BLE characteristic.
+ *
+ * Delegates all BLE operations to the core SDK's `device.read()`,
+ * `device.write()`, and `device.subscribeAsync()`. Does not resolve
+ * raw GATT objects — use `device.raw.gatt` for escape-hatch access.
+ *
+ * @param device - The connected {@link WebBLEDevice}, or `null`.
+ * @param serviceUUID - Service UUID (name or full UUID).
+ * @param characteristicUUID - Characteristic UUID (name or full UUID).
  */
 export function useCharacteristic(
-  characteristic?: BluetoothRemoteGATTCharacteristic | null,
-  _service?: BluetoothRemoteGATTService | null,
-  _device?: BluetoothDevice | null
+  device?: WebBLEDevice | null,
+  serviceUUID?: string | null,
+  characteristicUUID?: string | null,
 ): UseCharacteristicReturn {
   const [value, setValue] = useState<DataView | null>(null);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<WebBLEError | null>(null);
   const [isNotifying, setIsNotifying] = useState(false);
-  
+  const unsubscribeRef = useRef<(() => void) | null>(null);
   const notificationHandlerRef = useRef<NotificationHandler | null>(null);
-  const eventHandlerRef = useRef<((event: any) => void) | null>(null);
 
-  // Extract properties from characteristic
-  const properties = characteristic?.properties || null;
+  const hasTarget = Boolean(device && serviceUUID && characteristicUUID && device.connected);
 
-  // Read characteristic value
-  const read = useCallback(async (): Promise<DataView | null> => {
-    if (!characteristic) {
-      setError(new Error('No characteristic available'));
-      return null;
-    }
-
-    if (!properties?.read) {
-      setError(new Error('Characteristic does not support read'));
-      return null;
-    }
-
-    try {
-      setError(null);
-      const readValue = await characteristic.readValue();
-      setValue(readValue);
-      return readValue;
-    } catch (err) {
-      setError(err as Error);
-      return null;
-    }
-  }, [characteristic, properties]);
-
-  // Write characteristic value
-  const write = useCallback(async (value: BufferSource): Promise<void> => {
-    if (!characteristic) {
-      setError(new Error('No characteristic available'));
-      return;
-    }
-
-    if (!properties?.write && !properties?.writeWithoutResponse) {
-      setError(new Error('Characteristic does not support write'));
-      return;
-    }
-
-    try {
-      setError(null);
-      if (properties?.write) {
-        await characteristic.writeValue(value);
-      } else if (properties?.writeWithoutResponse && characteristic.writeValueWithoutResponse) {
-        await characteristic.writeValueWithoutResponse(value);
-      }
-    } catch (err) {
-      setError(err as Error);
-    }
-  }, [characteristic, properties]);
-
-  // Write without response
-  const writeWithoutResponse = useCallback(async (value: BufferSource): Promise<void> => {
-    if (!characteristic) {
-      setError(new Error('No characteristic available'));
-      return;
-    }
-
-    if (!properties?.writeWithoutResponse) {
-      setError(new Error('Characteristic does not support write without response'));
-      return;
-    }
-
-    try {
-      setError(null);
-      if (characteristic.writeValueWithoutResponse) {
-        await characteristic.writeValueWithoutResponse(value);
-      } else {
-        // Fallback to regular write if writeValueWithoutResponse is not available
-        await characteristic.writeValue(value);
-      }
-    } catch (err) {
-      setError(err as Error);
-    }
-  }, [characteristic, properties]);
-
-  // Subscribe to notifications
-  const subscribe = useCallback(async (handler: NotificationHandler): Promise<void> => {
-    if (!characteristic) {
-      setError(new Error('No characteristic available'));
-      return;
-    }
-
-    if (!properties?.notify && !properties?.indicate) {
-      setError(new Error('Characteristic does not support notifications'));
-      return;
-    }
-
-    try {
-      setError(null);
-      
-      // Start notifications
-      await characteristic.startNotifications();
-      
-      // Store the handler
-      notificationHandlerRef.current = handler;
-      
-      // Create event handler
-      const handleValueChanged = (event: any) => {
-        const value = event.target?.value;
-        if (value) {
-          setValue(value);
-          if (notificationHandlerRef.current) {
-            notificationHandlerRef.current(value);
-          }
-        }
-      };
-      
-      eventHandlerRef.current = handleValueChanged;
-      characteristic.addEventListener('characteristicvaluechanged', handleValueChanged);
-      
-      setIsNotifying(true);
-    } catch (err) {
-      setError(err as Error);
-      setIsNotifying(false);
-    }
-  }, [characteristic, properties]);
-
-  // Unsubscribe from notifications
-  const unsubscribe = useCallback(async (): Promise<void> => {
-    if (!characteristic) {
-      return;
-    }
-
-    try {
-      setError(null);
-      
-      // Stop notifications
-      await characteristic.stopNotifications();
-      
-      // Remove event listener
-      if (eventHandlerRef.current) {
-        characteristic.removeEventListener('characteristicvaluechanged', eventHandlerRef.current);
-        eventHandlerRef.current = null;
-      }
-      
+  // Clean up subscription when target changes or unmounts
+  useEffect(() => {
+    if (!hasTarget) {
+      unsubscribeRef.current?.();
+      unsubscribeRef.current = null;
       notificationHandlerRef.current = null;
       setIsNotifying(false);
-    } catch (err) {
-      setError(err as Error);
     }
-  }, [characteristic]);
+  }, [hasTarget]);
 
-  // Get descriptor by UUID
-  const getDescriptor = useCallback(async (uuid: string): Promise<BluetoothRemoteGATTDescriptor | null> => {
-    if (!characteristic) {
-      setError(new Error('No characteristic available'));
-      return null;
+  useEffect(() => () => {
+    unsubscribeRef.current?.();
+    unsubscribeRef.current = null;
+  }, []);
+
+  const requireTarget = useCallback(() => {
+    if (!device || !serviceUUID || !characteristicUUID) {
+      throw new WebBLEError('INVALID_PARAMETER', 'No characteristic target available');
     }
+    return { device, serviceUUID, characteristicUUID };
+  }, [device, serviceUUID, characteristicUUID]);
 
+  const read = useCallback(async (): Promise<DataView | null> => {
     try {
       setError(null);
-      return await characteristic.getDescriptor(uuid);
+      const { device: d, serviceUUID: s, characteristicUUID: c } = requireTarget();
+      const nextValue = await d.read(s, c);
+      setValue(nextValue);
+      return nextValue;
     } catch (err) {
-      setError(err as Error);
+      setError(WebBLEError.from(err));
       return null;
     }
-  }, [characteristic]);
+  }, [requireTarget]);
 
-  // Get all descriptors
-  const getDescriptors = useCallback(async (): Promise<BluetoothRemoteGATTDescriptor[]> => {
-    if (!characteristic) {
-      setError(new Error('No characteristic available'));
-      return [];
-    }
-
+  const write = useCallback(async (nextValue: BufferSource): Promise<void> => {
     try {
       setError(null);
-      return await characteristic.getDescriptors();
+      const { device: d, serviceUUID: s, characteristicUUID: c } = requireTarget();
+      await d.write(s, c, nextValue);
     } catch (err) {
-      setError(err as Error);
-      return [];
+      setError(WebBLEError.from(err));
     }
-  }, [characteristic]);
+  }, [requireTarget]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (characteristic && eventHandlerRef.current) {
-        characteristic.removeEventListener('characteristicvaluechanged', eventHandlerRef.current);
-      }
-    };
-  }, [characteristic]);
+  const writeWithoutResponse = useCallback(async (nextValue: BufferSource): Promise<void> => {
+    try {
+      setError(null);
+      const { device: d, serviceUUID: s, characteristicUUID: c } = requireTarget();
+      await d.writeWithoutResponse(s, c, nextValue);
+    } catch (err) {
+      setError(WebBLEError.from(err));
+    }
+  }, [requireTarget]);
+
+  const subscribe = useCallback(async (handler: NotificationHandler): Promise<void> => {
+    try {
+      setError(null);
+      const { device: d, serviceUUID: s, characteristicUUID: c } = requireTarget();
+
+      unsubscribeRef.current?.();
+      notificationHandlerRef.current = handler;
+
+      const unsub = await d.subscribeAsync(s, c, (nextValue: DataView) => {
+        setValue(nextValue);
+        notificationHandlerRef.current?.(nextValue);
+      });
+
+      unsubscribeRef.current = unsub;
+      setIsNotifying(true);
+    } catch (err) {
+      setError(WebBLEError.from(err));
+      setIsNotifying(false);
+    }
+  }, [requireTarget]);
+
+  const unsubscribe = useCallback(async (): Promise<void> => {
+    unsubscribeRef.current?.();
+    unsubscribeRef.current = null;
+    notificationHandlerRef.current = null;
+    setIsNotifying(false);
+  }, []);
 
   return {
-    characteristic: characteristic || null,
+    device: device ?? null,
+    serviceUUID: serviceUUID ?? null,
+    characteristicUUID: characteristicUUID ?? null,
     value,
-    properties,
     read,
     write,
     writeWithoutResponse,
     subscribe,
     unsubscribe,
     isNotifying,
-    getDescriptor,
-    getDescriptors,
-    error
+    error,
   };
 }

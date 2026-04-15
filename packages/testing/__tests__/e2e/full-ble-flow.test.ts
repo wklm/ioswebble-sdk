@@ -147,6 +147,33 @@ describe('E2E: Full BLE Flow', () => {
       const name = String.fromCharCode(...bytes);
       expect(name).toBe('WebBLE Test Corp');
     });
+
+    test('two peers can advertise independently while one remains connected', async () => {
+      const connectedPeer = mock.addDevice(devices.heartRate('Connected Peer'));
+      const beaconPeer = mock.addDevice(devices.battery('Beacon Peer'));
+      const seen: string[] = [];
+
+      mock.addEventListener('advertisementreceived', ((event: Event) => {
+        const adv = event as Event & { device?: BluetoothDevice };
+        if (adv.device?.name) {
+          seen.push(adv.device.name);
+        }
+      }) as EventListener);
+
+      const scan = await mock.requestLEScan({ acceptAllAdvertisements: true });
+
+      const btDevice = connectedPeer.asBluetoothDevice();
+      const server = await btDevice.gatt!.connect();
+      expect(server.connected).toBe(true);
+
+      beaconPeer.emitAdvertisement({ rssi: -62 });
+      connectedPeer.emitAdvertisement({ rssi: -47 });
+
+      expect(seen).toEqual(['Beacon Peer', 'Connected Peer']);
+      expect(server.connected).toBe(true);
+
+      scan.stop();
+    });
   });
 
   describe('Error Handling', () => {

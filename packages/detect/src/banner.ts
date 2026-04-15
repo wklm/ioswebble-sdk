@@ -8,7 +8,7 @@
  * Features:
  * - Clipboard context saving for return-to-web-app flow
  * - 14-day dismissal frequency capping
- * - Campaign-tracked App Store redirect
+ * - Configurable install/onboarding redirect
  * - Dark mode support via prefers-color-scheme
  */
 
@@ -19,6 +19,9 @@ export interface BannerOptions {
   text?: string;
   buttonText?: string;
   style?: Record<string, string>;
+  /** Preferred install or onboarding URL to open when the user taps the CTA */
+  startOnboardingUrl?: string;
+  /** Legacy install destination option; still supported for compatibility */
   appStoreUrl?: string;
   /** Operator/app name shown in the prompt (e.g. "FitTracker") */
   operatorName?: string;
@@ -28,7 +31,7 @@ export interface BannerOptions {
   dismissDays?: number;
 }
 
-const DEFAULT_APP_STORE_URL = 'https://apps.apple.com/app/ioswebble/id0000000000';
+const DEFAULT_APP_STORE_URL = 'https://apps.apple.com/search?term=WebBLE&mt=8';
 const DISMISS_KEY = 'ioswebble_dismiss_until';
 const RETURN_KEY = 'ioswebble_return';
 const RETURN_LINK_HOST = 'link.ioswebble.com';
@@ -72,14 +75,22 @@ function saveReturnContext(): void {
   }
 }
 
-function redirectToAppStore(appStoreUrl: string, apiKey?: string): void {
+function resolveOnboardingUrl(options: Pick<BannerOptions, 'startOnboardingUrl' | 'appStoreUrl'>): string {
+  return options.startOnboardingUrl ?? options.appStoreUrl ?? DEFAULT_APP_STORE_URL;
+}
+
+function redirectToOnboarding(url: string, apiKey?: string): void {
   saveReturnContext();
-  if (apiKey && !appStoreUrl.includes('ct=')) {
-    const sep = appStoreUrl.includes('?') ? '&' : '?';
-    window.location.href = `${appStoreUrl}${sep}ct=${encodeURIComponent(apiKey)}&mt=8`;
-  } else {
-    window.location.href = appStoreUrl;
+
+  const parsed = new URL(url, window.location.href);
+  const isAppStore = parsed.hostname === 'apps.apple.com';
+
+  if (apiKey && isAppStore && !parsed.searchParams.has('ct')) {
+    parsed.searchParams.set('ct', apiKey);
+    parsed.searchParams.set('mt', '8');
   }
+
+  window.location.href = parsed.toString();
 }
 
 function esc(s: string): string {
@@ -93,11 +104,11 @@ function esc(s: string): string {
 function showBottomSheet(options: BannerOptions): HTMLElement {
   const {
     operatorName = document.title || window.location.hostname,
-    buttonText = 'Get WebBLE (Free)',
-    appStoreUrl = DEFAULT_APP_STORE_URL,
+    buttonText = 'Start Setup',
     apiKey,
     dismissDays = 14,
   } = options;
+  const onboardingUrl = resolveOnboardingUrl(options);
 
   const overlay = document.createElement('div');
   overlay.id = 'ioswebble-banner';
@@ -146,12 +157,12 @@ function showBottomSheet(options: BannerOptions): HTMLElement {
   <div class="iwb-h"></div>
   <div class="iwb-hdr">
     <div class="iwb-ic"><svg viewBox="0 0 24 24"><path d="M12 2L7 7l5 5-5 5 5 5V2zm0 6.83L10.83 7 12 5.83v2.34zm0 8.34L10.83 17 12 15.83v1.34zM17 7l-5 5 5 5-2.12 2.12L12 17l-2.88 2.12L7 17l5-5-5-5 2.12-2.12L12 7l2.88-2.12L17 7z"/></svg></div>
-    <div class="iwb-tt">Bluetooth Required</div>
+    <div class="iwb-tt">Set Up Bluetooth in Safari</div>
   </div>
-  <div class="iwb-bd">To connect to your device, ${esc(operatorName)} needs the WebBLE Safari extension.</div>
-  <div class="iwb-mt"><span class="iwb-st">★★★★★</span><span>4.8</span><span>·</span><span>Free</span><span>·</span><span>Takes 1 minute</span></div>
+  <div class="iwb-bd">To connect to your device, install WebBLE, open the app once, enable the Safari extension, then return to ${esc(operatorName)}.</div>
+  <div class="iwb-mt"><span>Install</span><span>→</span><span>Open app</span><span>→</span><span>Enable in Safari</span><span>→</span><span>Return here</span></div>
   <button class="iwb-btn" id="iwb-install">${esc(buttonText)}</button>
-  <details class="iwb-det"><summary>How does this work?</summary><p>WebBLE is a free Safari extension that enables Bluetooth communication between this website and your device. After a quick one-time setup, Bluetooth will work seamlessly in Safari.</p></details>
+  <details class="iwb-det"><summary>How does setup work?</summary><p>WebBLE uses an iPhone app to guide the one-time Safari extension setup. After install, open the app, enable the extension in Safari, then come back to this page and try again.</p></details>
   <details class="iwb-det"><summary>Privacy: No data collected</summary><p>WebBLE processes all Bluetooth data locally on your device. No browsing data, device data, or personal information is ever collected or transmitted.</p></details>
   <button class="iwb-dis" id="iwb-dismiss">Not now</button>
 </div>
@@ -159,7 +170,7 @@ function showBottomSheet(options: BannerOptions): HTMLElement {
 
   requestAnimationFrame(() => {
     overlay.querySelector('#iwb-install')?.addEventListener('click', () => {
-      redirectToAppStore(appStoreUrl, apiKey);
+      redirectToOnboarding(onboardingUrl, apiKey);
     });
     overlay.querySelector('#iwb-dismiss')?.addEventListener('click', () => {
       overlay.remove();
@@ -182,13 +193,13 @@ function showBottomSheet(options: BannerOptions): HTMLElement {
 function showBarBanner(options: BannerOptions): HTMLElement {
   const {
     position = 'bottom',
-    text = 'Install the free WebBLE extension to connect your Bluetooth device',
-    buttonText = 'Install',
+    text = 'Install WebBLE, open the app, enable the Safari extension, then return here.',
+    buttonText = 'Start Setup',
     style = {},
-    appStoreUrl = DEFAULT_APP_STORE_URL,
     apiKey,
     dismissDays = 14,
   } = options;
+  const onboardingUrl = resolveOnboardingUrl(options);
 
   const el = document.createElement('div');
   el.id = 'ioswebble-banner';
@@ -226,7 +237,7 @@ function showBarBanner(options: BannerOptions): HTMLElement {
     </div>`;
 
   el.querySelector('#ioswebble-banner-install')?.addEventListener('click', () => {
-    redirectToAppStore(appStoreUrl, apiKey);
+    redirectToOnboarding(onboardingUrl, apiKey);
   });
   el.querySelector('#ioswebble-banner-close')?.addEventListener('click', () => {
     el.remove();

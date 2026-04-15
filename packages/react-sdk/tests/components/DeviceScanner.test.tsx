@@ -3,14 +3,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { DeviceScanner } from '../../src/components/DeviceScanner';
 import { useScan } from '../../src/hooks/useScan';
-import { useConnection } from '../../src/hooks/useConnection';
+import { useDevice } from '../../src/hooks/useDevice';
 
 // Mock the hooks
 jest.mock('../../src/hooks/useScan');
-jest.mock('../../src/hooks/useConnection');
+jest.mock('../../src/hooks/useDevice');
 
 const mockUseScan = useScan as jest.MockedFunction<typeof useScan>;
-const mockUseConnection = useConnection as jest.MockedFunction<typeof useConnection>;
+const mockUseDevice = useDevice as jest.MockedFunction<typeof useDevice>;
 
 describe('DeviceScanner', () => {
   const mockStart = jest.fn();
@@ -43,7 +43,7 @@ describe('DeviceScanner', () => {
       error: null
     } as any);
 
-    mockUseConnection.mockReturnValue({
+    mockUseDevice.mockReturnValue({
       connectionState: 'disconnected',
       connect: mockConnect,
       disconnect: jest.fn(),
@@ -287,7 +287,7 @@ describe('DeviceScanner', () => {
       } as any);
 
       // First render as connecting
-      mockUseConnection.mockReturnValue({
+      mockUseDevice.mockReturnValue({
         connectionState: 'connecting',
         connect: mockConnect,
         disconnect: jest.fn(),
@@ -303,7 +303,7 @@ describe('DeviceScanner', () => {
       expect(deviceButton).toBeDisabled();
       
       // Then update to connected
-      mockUseConnection.mockReturnValue({
+      mockUseDevice.mockReturnValue({
         connectionState: 'connected',
         connect: mockConnect,
         disconnect: jest.fn(),

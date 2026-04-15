@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
     "target": "ES2020",
+    "ignoreDeprecations": "6.0",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "jsx": "react",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "declaration": true,
     "declarationMap": false,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "..",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -20,7 +21,14 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ios-web-bluetooth/core": ["../core/src/index.ts"],
+      "@ios-web-bluetooth/detect": ["../detect/src/index.ts"]
+    },
+    "typeRoots": ["./node_modules/@types", "../../node_modules/@types"],
+    "types": ["web-bluetooth", "jest", "node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests"]

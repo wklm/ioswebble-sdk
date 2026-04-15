@@ -33,7 +33,9 @@ describe('InstallationWizard', () => {
     // Create mock instance methods
     mockDetector = {
       detect: jest.fn(),
+      detectInstallState: jest.fn(),
       isInstalled: jest.fn().mockReturnValue(false),
+      getInstallState: jest.fn().mockReturnValue('not-installed'),
       getInstallationInstructions: jest.fn(),
       openExtensionStore: jest.fn(),
       isBrowserSupported: jest.fn().mockReturnValue(true),
@@ -46,7 +48,7 @@ describe('InstallationWizard', () => {
 
   describe('Checking state', () => {
     it('should render null while checking', async () => {
-      mockDetector.detect.mockImplementation(() => new Promise(() => {})); // Never resolves
+      mockDetector.detectInstallState.mockImplementation(() => new Promise(() => {})); // Never resolves
       
       const { container } = render(<InstallationWizard />);
       
@@ -57,7 +59,7 @@ describe('InstallationWizard', () => {
 
   describe('Extension installed state', () => {
     it('should render null when extension is detected', async () => {
-      mockDetector.detect.mockResolvedValue(true);
+      mockDetector.detectInstallState.mockResolvedValue('active');
       
       const { container } = render(<InstallationWizard />);
       
@@ -67,7 +69,7 @@ describe('InstallationWizard', () => {
     });
 
     it('should call onComplete callback when extension is installed', async () => {
-      mockDetector.detect.mockResolvedValue(true);
+      mockDetector.detectInstallState.mockResolvedValue('active');
       const onComplete = jest.fn();
       
       render(<InstallationWizard onComplete={onComplete} />);
@@ -78,7 +80,7 @@ describe('InstallationWizard', () => {
     });
 
     it('should not show any UI when installed', async () => {
-      mockDetector.detect.mockResolvedValue(true);
+      mockDetector.detectInstallState.mockResolvedValue('active');
       
       const { container } = render(<InstallationWizard />);
       
@@ -87,13 +89,13 @@ describe('InstallationWizard', () => {
       });
       
       expect(screen.queryByText('Bluetooth Required')).not.toBeInTheDocument();
-      expect(screen.queryByText('Get WebBLE (Free)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Start Setup')).not.toBeInTheDocument();
     });
   });
 
   describe('Extension not installed state', () => {
     beforeEach(() => {
-      mockDetector.detect.mockResolvedValue(false);
+      mockDetector.detectInstallState.mockResolvedValue('not-installed');
     });
 
     it('should show Bluetooth Required title', async () => {
@@ -108,7 +110,7 @@ describe('InstallationWizard', () => {
       render(<InstallationWizard />);
       
       await waitFor(() => {
-        expect(screen.getByText('Get WebBLE (Free)')).toBeInTheDocument();
+        expect(screen.getByText('Start Setup')).toBeInTheDocument();
       });
     });
 
@@ -147,11 +149,11 @@ describe('InstallationWizard', () => {
       render(<InstallationWizard />);
       
       await waitFor(() => {
-        const button = screen.getByText('Get WebBLE (Free)');
+        const button = screen.getByText('Start Setup');
         fireEvent.click(button);
       });
 
-      expect(navigateSpy).toHaveBeenCalledWith('https://apps.apple.com/app/ioswebble/id0000000000');
+      expect(navigateSpy).toHaveBeenCalledWith('https://ioswebble.com/setup.html');
     });
 
     it('should use custom appStoreUrl when provided', async () => {
@@ -163,7 +165,7 @@ describe('InstallationWizard', () => {
       render(<InstallationWizard appStoreUrl={customUrl} />);
       
       await waitFor(() => {
-        const button = screen.getByText('Get WebBLE (Free)');
+        const button = screen.getByText('Start Setup');
         fireEvent.click(button);
       });
 
@@ -213,7 +215,7 @@ describe('InstallationWizard', () => {
 
   describe('Props handling', () => {
     it('should apply custom className', async () => {
-      mockDetector.detect.mockResolvedValue(false);
+      mockDetector.detectInstallState.mockResolvedValue('not-installed');
       const className = 'custom-wizard';
       
       const { container } = render(<InstallationWizard className={className} />);
@@ -226,7 +228,7 @@ describe('InstallationWizard', () => {
     });
 
     it('should use operatorName in description text', async () => {
-      mockDetector.detect.mockResolvedValue(false);
+      mockDetector.detectInstallState.mockResolvedValue('not-installed');
       
       render(<InstallationWizard operatorName="MyApp" />);
       
@@ -236,7 +238,7 @@ describe('InstallationWizard', () => {
     });
 
     it('should handle undefined onComplete', async () => {
-      mockDetector.detect.mockResolvedValue(true);
+      mockDetector.detectInstallState.mockResolvedValue('active');
       
       // Should not throw when onComplete is undefined
       expect(() => {
@@ -245,7 +247,7 @@ describe('InstallationWizard', () => {
     });
 
     it('should handle undefined className', async () => {
-      mockDetector.detect.mockResolvedValue(false);
+      mockDetector.detectInstallState.mockResolvedValue('not-installed');
       
       render(<InstallationWizard className={undefined} />);
       
@@ -257,7 +259,7 @@ describe('InstallationWizard', () => {
 
   describe('Error handling', () => {
     it('should handle detection errors gracefully', async () => {
-      mockDetector.detect.mockRejectedValue(new Error('Detection failed'));
+      mockDetector.detectInstallState.mockRejectedValue(new Error('Detection failed'));
       
       // Component should handle error internally — shows not-installed state
       render(<InstallationWizard />);
@@ -270,7 +272,7 @@ describe('InstallationWizard', () => {
 
   describe('Extension ready event', () => {
     it('should call onComplete when extension:ready event fires', async () => {
-      mockDetector.detect.mockResolvedValue(false);
+      mockDetector.detectInstallState.mockResolvedValue('not-installed');
       const onComplete = jest.fn();
       
       render(<InstallationWizard onComplete={onComplete} />);
@@ -290,7 +292,7 @@ describe('InstallationWizard', () => {
 
   describe('Re-detection behavior', () => {
     it('should only check once on mount', async () => {
-      mockDetector.detect.mockResolvedValue(false);
+      mockDetector.detectInstallState.mockResolvedValue('not-installed');
       
       const { rerender } = render(<InstallationWizard />);
       
@@ -298,25 +300,25 @@ describe('InstallationWizard', () => {
         expect(screen.getByText('Bluetooth Required')).toBeInTheDocument();
       });
       
-      expect(mockDetector.detect).toHaveBeenCalledTimes(1);
+      expect(mockDetector.detectInstallState).toHaveBeenCalledTimes(1);
       
       // Re-render with same props
       rerender(<InstallationWizard />);
       
       // detect is called per mount via useEffect, but rerender doesn't remount
       // The constructor is called each render (not ideal, but matches current impl)
-      expect(mockDetector.detect).toHaveBeenCalledTimes(1);
+      expect(mockDetector.detectInstallState).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('Async behavior', () => {
     it('should handle slow detection', async () => {
-      let resolveDetection: (value: boolean) => void;
-      const detectionPromise = new Promise<boolean>((resolve) => {
+      let resolveDetection: (value: 'not-installed' | 'installed-inactive' | 'active') => void;
+      const detectionPromise = new Promise<'not-installed' | 'installed-inactive' | 'active'>((resolve) => {
         resolveDetection = resolve;
       });
       
-      mockDetector.detect.mockReturnValue(detectionPromise);
+      mockDetector.detectInstallState.mockReturnValue(detectionPromise);
       
       const { container } = render(<InstallationWizard />);
       
@@ -325,7 +327,7 @@ describe('InstallationWizard', () => {
       
       // Resolve detection as not installed
       await act(async () => {
-        resolveDetection!(false);
+        resolveDetection!('not-installed');
       });
       
       // Should show not-installed state
@@ -335,12 +337,22 @@ describe('InstallationWizard', () => {
     });
 
     it('should handle rapid unmounting during detection', () => {
-      mockDetector.detect.mockImplementation(() => new Promise(() => {})); // Never resolves
+      mockDetector.detectInstallState.mockImplementation(() => new Promise(() => {})); // Never resolves
       
       const { unmount } = render(<InstallationWizard />);
       
       // Should not throw when unmounting during detection
       expect(() => unmount()).not.toThrow();
+    });
+
+    it('should show finish setup CTA when extension is installed but inactive', async () => {
+      mockDetector.detectInstallState.mockResolvedValue('installed-inactive');
+
+      render(<InstallationWizard />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Finish Safari Setup')).toBeInTheDocument();
+      });
     });
   });
 });

@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useScan } from '../../src/hooks/useScan';
 import { useWebBLE } from '../../src/core/WebBLEProvider';
+import { WebBLEDevice } from '@ios-web-bluetooth/core';
 
 // Mock the useWebBLE hook
 jest.mock('../../src/core/WebBLEProvider', () => ({
@@ -75,9 +76,10 @@ describe('useScan', () => {
       await act(async () => {
         await result.current.start();
       });
-      
+
       expect(result.current.scanState).toBe('idle');
-      expect(result.current.error).toBe(error);
+      expect(result.current.error).toBeInstanceOf(Error);
+      expect(result.current.error?.message).toBe(error.message);
     });
 
     it('should not start if already scanning', async () => {
@@ -195,7 +197,8 @@ describe('useScan', () => {
       });
 
       expect(result.current.devices).toHaveLength(1);
-      expect(result.current.devices[0]).toBe(mockDevice);
+      expect(result.current.devices[0]).toBeInstanceOf(WebBLEDevice);
+      expect((result.current.devices[0] as WebBLEDevice).raw).toBe(mockDevice as any);
     });
 
     it('should prevent duplicate devices', async () => {
@@ -269,13 +272,16 @@ describe('useScan', () => {
       expect(result.current.devices).toEqual([]);
     });
 
-    it('should clear error when clearing devices', () => {
+    it('should clear error when clearing devices', async () => {
+      const error = new Error('Test error');
+      mockRequestLEScan.mockRejectedValueOnce(error);
       const { result } = renderHook(() => useScan());
-      
-      // Set an error state first
-      act(() => {
-        result.current.setError?.(new Error('Test error'));
+
+      await act(async () => {
+        await result.current.start();
       });
+
+      expect(result.current.error).toBeInstanceOf(Error);
 
       act(() => {
         result.current.clear();

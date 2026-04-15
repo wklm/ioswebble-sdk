@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { WebBLEError } from '@ios-web-bluetooth/core';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
 import type { UseNotificationsReturn, NotificationEntry } from '../types';
 
 export interface NotificationOptions {
@@ -7,130 +9,107 @@ export interface NotificationOptions {
 }
 
 /**
- * useNotifications - Hook for managing characteristic notifications
- * 
- * @param characteristic - The BluetoothRemoteGATTCharacteristic to monitor
- * @param options - Optional configuration for notifications
- * @returns Notification state and control methods
+ * Hook for subscribing to GATT characteristic notifications.
+ *
+ * Delegates to {@link WebBLEDevice.subscribeAsync} for notification lifecycle
+ * management. Maintains a rolling history of received values.
+ *
+ * @param device - The connected {@link WebBLEDevice}, or `null`.
+ * @param service - Human-readable service name or UUID (e.g. `'heart_rate'`).
+ * @param characteristic - Human-readable characteristic name or UUID.
+ * @param options - Optional configuration.
+ *
+ * @example
+ * ```tsx
+ * const { value, history, subscribe, unsubscribe } = useNotifications(
+ *   device,
+ *   'heart_rate',
+ *   'heart_rate_measurement',
+ *   { autoSubscribe: true },
+ * );
+ * ```
  */
 export function useNotifications(
-  characteristic?: BluetoothRemoteGATTCharacteristic | null,
+  device: WebBLEDevice | null,
+  service: string,
+  characteristic: string,
   options?: NotificationOptions
 ): UseNotificationsReturn {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [value, setValue] = useState<DataView | null>(null);
   const [history, setHistory] = useState<NotificationEntry[]>([]);
-  const [error, setError] = useState<Error | null>(null);
-  
-  const eventHandlerRef = useRef<((event: any) => void) | null>(null);
+  const [error, setError] = useState<WebBLEError | null>(null);
+
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+  const isSubscribedRef = useRef(false);
   const maxHistory = options?.maxHistory ?? 100;
   const autoSubscribe = options?.autoSubscribe ?? false;
 
-  // Subscribe to notifications
+  const callback = useCallback((newValue: DataView) => {
+    setValue(newValue);
+    setHistory(prev => {
+      const entry: NotificationEntry = { timestamp: new Date(), value: newValue };
+      const updated = [...prev, entry];
+      return updated.length > maxHistory ? updated.slice(-maxHistory) : updated;
+    });
+  }, [maxHistory]);
+
   const subscribe = useCallback(async (): Promise<void> => {
-    // If already subscribed, do nothing
-    if (isSubscribed) {
-      return;
-    }
+    if (isSubscribedRef.current) return;
 
-    if (!characteristic) {
-      setError(new Error('No characteristic available'));
-      return;
-    }
-
-    const properties = characteristic.properties;
-    if (!properties?.notify && !properties?.indicate) {
-      setError(new Error('Characteristic does not support notifications'));
+    if (!device || !device.connected) {
+      setError(new WebBLEError('INVALID_PARAMETER', 'Device not available or not connected'));
       return;
     }
 
     try {
       setError(null);
-      
-      // Start notifications
-      await characteristic.startNotifications();
-      
-      // Create event handler
-      const handleValueChanged = (event: any) => {
-        const newValue = event.target?.value;
-        if (newValue) {
-          setValue(newValue);
-          setHistory(prev => {
-            const newEntry: NotificationEntry = {
-              timestamp: new Date(),
-              value: newValue
-            };
-            
-            // Keep only the last maxHistory entries
-            const updatedHistory = [...prev, newEntry];
-            if (updatedHistory.length > maxHistory) {
-              return updatedHistory.slice(-maxHistory);
-            }
-            return updatedHistory;
-          });
-        }
-      };
-      
-      eventHandlerRef.current = handleValueChanged;
-      characteristic.addEventListener('characteristicvaluechanged', handleValueChanged);
-      
+      unsubscribeRef.current?.();
+      const unsub = await device.subscribeAsync(service, characteristic, callback);
+      unsubscribeRef.current = unsub;
+      isSubscribedRef.current = true;
       setIsSubscribed(true);
     } catch (err) {
-      setError(err as Error);
+      setError(WebBLEError.from(err));
+      isSubscribedRef.current = false;
       setIsSubscribed(false);
     }
-  }, [characteristic, isSubscribed, maxHistory]);
+  }, [device, service, characteristic, callback]);
 
-  // Unsubscribe from notifications
   const unsubscribe = useCallback(async (): Promise<void> => {
-    // If not subscribed, do nothing
-    if (!isSubscribed) {
-      return;
-    }
+    if (!isSubscribedRef.current) return;
 
-    if (!characteristic) {
-      return;
-    }
+    unsubscribeRef.current?.();
+    unsubscribeRef.current = null;
+    isSubscribedRef.current = false;
+    setIsSubscribed(false);
+  }, []);
 
-    try {
-      setError(null);
-      
-      // Stop notifications
-      await characteristic.stopNotifications();
-      
-      // Remove event listener
-      if (eventHandlerRef.current) {
-        characteristic.removeEventListener('characteristicvaluechanged', eventHandlerRef.current);
-        eventHandlerRef.current = null;
-      }
-      
-      setIsSubscribed(false);
-    } catch (err) {
-      setError(err as Error);
-    }
-  }, [characteristic, isSubscribed]);
-
-  // Clear history and value
   const clear = useCallback((): void => {
     setHistory([]);
     setValue(null);
   }, []);
 
-  // Auto-subscribe if requested
+  // Reset on target change
   useEffect(() => {
-    if (autoSubscribe && characteristic && !isSubscribed) {
-      subscribe();
-    }
-  }, [autoSubscribe, characteristic, isSubscribed, subscribe]);
+    isSubscribedRef.current = false;
+    setIsSubscribed(false);
+    unsubscribeRef.current?.();
+    unsubscribeRef.current = null;
 
-  // Cleanup on unmount
-  useEffect(() => {
     return () => {
-      if (characteristic && eventHandlerRef.current) {
-        characteristic.removeEventListener('characteristicvaluechanged', eventHandlerRef.current);
-      }
+      unsubscribeRef.current?.();
+      unsubscribeRef.current = null;
+      isSubscribedRef.current = false;
     };
-  }, [characteristic]);
+  }, [device, service, characteristic]);
+
+  // Auto-subscribe when device is connected and option is set
+  useEffect(() => {
+    if (autoSubscribe && device?.connected && !isSubscribedRef.current) {
+      void subscribe();
+    }
+  }, [autoSubscribe, device, subscribe]);
 
   return {
     isSubscribed,

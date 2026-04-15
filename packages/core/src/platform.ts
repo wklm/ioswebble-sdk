@@ -1,6 +1,17 @@
 import type { Platform } from './types';
 
-/** Detect the current Web Bluetooth platform. */
+/**
+ * Detect the current Web Bluetooth platform by probing `navigator`.
+ *
+ * **Detection order:**
+ * 1. Safari extension -- `navigator.webble?.__webble === true`
+ * 2. Native Web Bluetooth -- `navigator.bluetooth` exists (excluding CDN stubs)
+ * 3. Unsupported -- No Web Bluetooth capability
+ *
+ * @returns The detected {@link Platform} value.
+ *
+ * @see {@link getBluetoothAPI} for getting the actual API object
+ */
 export function detectPlatform(): Platform {
   if (typeof navigator === 'undefined') return 'unsupported';
 
@@ -14,7 +25,17 @@ export function detectPlatform(): Platform {
   return 'unsupported';
 }
 
-/** Get the Bluetooth API object for the current platform, or null if unsupported. */
+/**
+ * Get the `Bluetooth` API object for the current platform.
+ *
+ * Returns `navigator.webble` for the Safari extension, `navigator.bluetooth` for
+ * native Web Bluetooth, or `null` if unsupported. CDN stubs (from `@ios-web-bluetooth/detect`)
+ * are excluded.
+ *
+ * @returns The platform's `Bluetooth` API object, or `null` if unavailable.
+ *
+ * @see {@link detectPlatform} for identifying the platform without getting the API
+ */
 export function getBluetoothAPI(): Bluetooth | null {
   if (typeof navigator === 'undefined') return null;
 

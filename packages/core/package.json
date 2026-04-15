@@ -4,6 +4,8 @@
   "description": "The only Web Bluetooth polyfill for Safari iOS — make navigator.bluetooth work on iPhone. Scan, connect, read/write BLE devices from any browser",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
+  "unpkg": "dist/browser.global.js",
+  "jsdelivr": "dist/browser.global.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
@@ -17,18 +19,19 @@
       "require": "./dist/auto.js"
     },
     "./global": {
-      "types": "./dist/global.d.ts"
+      "types": "./dist/global.d.ts",
+      "import": "./dist/global.mjs",
+      "require": "./dist/global.js"
     }
   },
   "sideEffects": ["./dist/auto.mjs", "./dist/auto.js"],
-  "files": ["dist", "README.md", "AGENTS.md", "CONTEXT.md"],
+  "files": ["dist", "README.md", "CHANGELOG.md", "POWER_MANAGEMENT.md", "AGENTS.md", "CONTEXT.md"],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsup --config tsup.browser.config.ts",
     "dev": "tsup --watch",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build && npm run typecheck",
-    "postinstall": "echo '\\n  @ios-web-bluetooth/core installed. Add `import \"@ios-web-bluetooth/core/auto\"` to your entry point for Safari iOS Bluetooth support.\\n'"
+    "prepublishOnly": "npm run build && npm run typecheck"
   },
   "keywords": ["bluetooth", "ble", "web-bluetooth", "webbluetooth", "webble", "safari", "sdk", "ios", "gatt", "bluetooth-low-energy", "ai", "agent", "mcp", "polyfill", "cross-browser", "web-bluetooth-polyfill", "safari-bluetooth", "ios-bluetooth", "bluetooth-polyfill", "web-bluetooth-safari", "navigator-bluetooth", "iphone-bluetooth"],
   "author": "wklm",
@@ -52,6 +55,6 @@
     "jest-environment-jsdom": "^30",
     "ts-jest": "^29",
     "tsup": "^8.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   }
 }

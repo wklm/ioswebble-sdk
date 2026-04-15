@@ -8,6 +8,14 @@ Pre-built BLE device profiles -- heart rate, battery, device info. Typed parsers
 npm install @ios-web-bluetooth/profiles @ios-web-bluetooth/core
 ```
 
+Enable Safari iOS support in your browser entry file:
+
+```typescript
+import '@ios-web-bluetooth/core/auto';
+```
+
+`requestDevice()` must be triggered from a direct user gesture such as a button click.
+
 ## Usage
 
 ```typescript
@@ -29,12 +37,21 @@ const location = await hr.readSensorLocation(); // 0=Other, 1=Chest, 2=Wrist
 hr.stop(); // unsubscribe all
 ```
 
+Use `stop()` as soon as the user leaves the live monitoring view. Profiles usually wrap notifications under the hood, so prompt cleanup helps both app responsiveness and battery life.
+
 ## Available profiles
 
 - **`HeartRateProfile`** -- `onHeartRate(cb)`, `readSensorLocation()`, `resetEnergyExpended()`
 - **`BatteryProfile`** -- battery level reads and notifications
 - **`DeviceInfoProfile`** -- manufacturer, model, firmware, serial number
 - **`defineProfile(config)`** -- factory to create custom profiles with typed parsers
+
+## Lifecycle guidance
+
+- Call `profile.connect()` only when the user is ready to interact with the device.
+- Use a click or tap handler for the initial `requestDevice()` call.
+- Call `profile.stop()` before disconnecting or when the screen unmounts.
+- Prefer built-in profile callbacks over ad hoc long-lived raw notification code.
 
 ## AI agent integration
 

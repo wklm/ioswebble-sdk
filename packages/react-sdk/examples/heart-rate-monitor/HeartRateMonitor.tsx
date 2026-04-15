@@ -1,20 +1,14 @@
-/**
- * Heart Rate Monitor Example
- * 
- * A complete example demonstrating Web Bluetooth heart rate monitoring
- * with the @ios-web-bluetooth/react SDK
- */
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { WebBLE } from '@ios-web-bluetooth/react';
-import './HeartRateMonitor.css';
+import { useBluetooth, useDevice, useProfile } from '@ios-web-bluetooth/react';
+import { HeartRateProfile } from '@ios-web-bluetooth/profiles';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
 
-interface HeartRateData {
-  heartRate: number;
-  contactDetected: boolean;
-  energyExpended?: number;
-  rrIntervals?: number[];
-}
+type HeartRateReading = {
+  bpm: number;
+  contact: boolean | null;
+  energyExpended: number | null;
+  rrIntervals: number[];
+};
 
 interface RecordedData {
   timestamp: number;
@@ -23,63 +17,24 @@ interface RecordedData {
 }
 
 export function HeartRateMonitor() {
-  const { isAvailable, isExtensionInstalled, requestDevice } = WebBLE.useBluetooth();
-  const [deviceId, setDeviceId] = useState<string>();
+  const { isAvailable, isExtensionInstalled, requestDevice } = useBluetooth();
+  const [selectedDevice, setSelectedDevice] = useState<WebBLEDevice | null>(null);
   const [error, setError] = useState<string>();
   const [isRecording, setIsRecording] = useState(false);
   const [recordedData, setRecordedData] = useState<RecordedData[]>([]);
-  
-  const { device, isConnected, connect, disconnect, connectionState } = WebBLE.useDevice(deviceId || '');
-  const { value, isSubscribed, subscribe, unsubscribe, history } = WebBLE.useNotifications(
-    deviceId ? `${deviceId}/heart_rate/heart_rate_measurement` : ''
-  );
-  const { connectionQuality, reconnect } = WebBLE.useConnection(deviceId || '');
+  const [heartRateData, setHeartRateData] = useState<HeartRateReading | null>(null);
+  const [history, setHistory] = useState<Array<{ timestamp: number; reading: HeartRateReading }>>([]);
 
-  // Parse heart rate data from DataView
-  const heartRateData = useMemo<HeartRateData | null>(() => {
-    if (!value || !(value instanceof DataView)) return null;
+  const {
+    device,
+    isConnected,
+    isConnecting,
+    connect,
+    disconnect,
+    error: deviceError,
+  } = useDevice(selectedDevice);
+  const { profile, error: profileError } = useProfile(HeartRateProfile, device);
 
-    const flags = value.getUint8(0);
-    const heartRateValue16Bit = flags & 0x01;
-    const contactDetected = Boolean(flags & 0x02);
-    const contactSupported = Boolean(flags & 0x04);
-    const energyExpendedPresent = Boolean(flags & 0x08);
-    const rrIntervalPresent = Boolean(flags & 0x10);
-
-    let offset = 1;
-    let heartRate: number;
-
-    if (heartRateValue16Bit) {
-      heartRate = value.getUint16(offset, true);
-      offset += 2;
-    } else {
-      heartRate = value.getUint8(offset);
-      offset += 1;
-    }
-
-    let energyExpended: number | undefined;
-    if (energyExpendedPresent) {
-      energyExpended = value.getUint16(offset, true);
-      offset += 2;
-    }
-
-    const rrIntervals: number[] = [];
-    if (rrIntervalPresent) {
-      while (offset + 1 < value.byteLength) {
-        rrIntervals.push(value.getUint16(offset, true));
-        offset += 2;
-      }
-    }
-
-    return {
-      heartRate,
-      contactDetected: contactSupported ? contactDetected : true,
-      energyExpended,
-      rrIntervals: rrIntervals.length > 0 ? rrIntervals : undefined
-    };
-  }, [value]);
-
-  // Handle device connection
   const handleConnect = async () => {
     setError(undefined);
     try {
@@ -87,50 +42,50 @@ export function HeartRateMonitor() {
         filters: [{ services: ['heart_rate'] }],
         optionalServices: ['battery_service']
       });
-      
+
       if (selectedDevice) {
-        setDeviceId(selectedDevice.id);
+        setSelectedDevice(selectedDevice);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Connection failed');
     }
   };
 
-  // Auto-connect and subscribe to notifications when device is set
   useEffect(() => {
-    if (deviceId && !isConnected) {
-      connect();
+    if (device && !isConnected && !isConnecting) {
+      void connect();
     }
-  }, [deviceId, isConnected, connect]);
+  }, [connect, device, isConnected, isConnecting]);
 
   useEffect(() => {
-    if (isConnected && !isSubscribed) {
-      subscribe();
+    if (!profile || !isConnected) {
+      return;
     }
-  }, [isConnected, isSubscribed, subscribe]);
 
-  // Handle recording
+    const unsubscribe = profile.onHeartRate((nextReading: HeartRateReading) => {
+      const timestamp = Date.now();
+      setHeartRateData(nextReading);
+      setHistory((previous) => {
+        const nextHistory = [...previous, { timestamp, reading: nextReading }];
+        return nextHistory.slice(-50);
+      });
+    });
+
+    return unsubscribe;
+  }, [isConnected, profile]);
+
   useEffect(() => {
     if (isRecording && heartRateData) {
       setRecordedData(prev => [...prev, {
         timestamp: Date.now(),
-        heartRate: heartRateData.heartRate,
-        contactDetected: heartRateData.contactDetected
+        heartRate: heartRateData.bpm,
+        contactDetected: heartRateData.contact !== false
       }]);
     }
   }, [isRecording, heartRateData]);
 
-  // Calculate statistics
   const stats = useMemo(() => {
-    const values = history.map(h => {
-      if (typeof h.value === 'number') return h.value;
-      if (h.value instanceof DataView) {
-        const flags = h.value.getUint8(0);
-        const is16Bit = flags & 0x01;
-        return is16Bit ? h.value.getUint16(1, true) : h.value.getUint8(1);
-      }
-      return 0;
-    }).filter(v => v > 0);
+    const values = history.map((entry) => entry.reading.bpm).filter((value) => value > 0);
 
     if (values.length === 0) return null;
 
@@ -147,7 +102,7 @@ export function HeartRateMonitor() {
 
     const csv = [
       'Timestamp,Heart Rate,Contact Detected',
-      ...recordedData.map(d => 
+      ...recordedData.map(d =>
         `${new Date(d.timestamp).toISOString()},${d.heartRate},${d.contactDetected}`
       )
     ].join('\n');
@@ -166,9 +121,8 @@ export function HeartRateMonitor() {
     successDiv.style.display = 'none';
     document.body.appendChild(successDiv);
     setTimeout(() => document.body.removeChild(successDiv), 100);
-  };
+  }, [recordedData]);
 
-  // Check if Bluetooth is available
   if (!isAvailable) {
     return (
       <div className="heart-rate-monitor">
@@ -180,7 +134,6 @@ export function HeartRateMonitor() {
     );
   }
 
-  // Check if extension is installed
   if (!isExtensionInstalled) {
     return (
       <div className="heart-rate-monitor">
@@ -192,8 +145,7 @@ export function HeartRateMonitor() {
     );
   }
 
-  // Connection states
-  if (connectionState === 'connecting') {
+  if (isConnecting) {
     return (
       <div className="heart-rate-monitor">
         <div className="connecting">
@@ -204,13 +156,16 @@ export function HeartRateMonitor() {
     );
   }
 
-  // Not connected
   if (!isConnected) {
     return (
       <div className="heart-rate-monitor">
         <div className="connect-prompt">
           <h1>Heart Rate Monitor</h1>
-          {error && <div className="error">Connection failed: {error}</div>}
+          {(error || deviceError || profileError) && (
+            <div className="error">
+              Connection failed: {error ?? deviceError?.message ?? profileError?.message}
+            </div>
+          )}
           <button
             onClick={handleConnect}
             className="connect-button"
@@ -223,28 +178,18 @@ export function HeartRateMonitor() {
     );
   }
 
-  // Connected and showing data
   return (
     <div className="heart-rate-monitor connected">
       <header>
         <h1>{device?.name || 'Heart Rate Monitor'}</h1>
         <div className="connection-info">
-          <div 
-            data-testid="connection-quality" 
-            className={`connection-quality quality-${connectionQuality}`}
+          <div
+            data-testid="connection-state"
+            className="connection-quality quality-good"
           >
             <span className="quality-indicator" />
-            <span className="quality-text">
-              {connectionQuality === 'excellent' ? 'Excellent' :
-               connectionQuality === 'good' ? 'Good' :
-               connectionQuality === 'fair' ? 'Fair' : 'Poor'}
-            </span>
+            <span className="quality-text">Connected</span>
           </div>
-          {connectionQuality === 'poor' && (
-            <button onClick={reconnect} className="reconnect-button">
-              Improve Connection
-            </button>
-          )}
         </div>
       </header>
 
@@ -254,22 +199,21 @@ export function HeartRateMonitor() {
             <div className="current-reading">
               <div className="heart-rate-value">
                 <span className="value" aria-live="polite" aria-atomic="true">
-                  {heartRateData.heartRate}
+                  {heartRateData.bpm}
                 </span>
                 <span className="unit">BPM</span>
               </div>
-              <div 
+              <div
                 data-testid="contact-indicator"
-                className={`contact-indicator ${heartRateData.contactDetected ? 'contact-detected' : 'no-contact'}`}
+                className={`contact-indicator ${heartRateData.contact !== false ? 'contact-detected' : 'no-contact'}`}
               />
             </div>
-            
-            {/* Screen reader announcement */}
+
             <div role="status" className="sr-only">
-              Heart rate: {heartRateData.heartRate} beats per minute
+              Heart rate: {heartRateData.bpm} beats per minute
             </div>
 
-            {heartRateData.energyExpended !== undefined && (
+            {heartRateData.energyExpended !== null && (
               <div className="energy-expended">
                 Energy: {heartRateData.energyExpended} kJ
               </div>
@@ -303,23 +247,23 @@ export function HeartRateMonitor() {
           <button onClick={disconnect} className="disconnect-button">
             Disconnect
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setIsRecording(!isRecording)}
             className={`record-button ${isRecording ? 'recording' : ''}`}
           >
             {isRecording ? 'Stop Recording' : 'Start Recording'}
           </button>
-          
+
           {isRecording && (
             <div data-testid="recording-indicator" className="recording-indicator">
               <span className="record-dot" />
               Recording
             </div>
           )}
-          
-          <button 
-            onClick={exportData} 
+
+          <button
+            onClick={exportData}
             className="export-button"
             disabled={recordedData.length === 0}
           >

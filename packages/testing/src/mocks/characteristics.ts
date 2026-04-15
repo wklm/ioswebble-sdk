@@ -68,6 +68,9 @@ export class MockGATTServer {
   }
 
   async connect(): Promise<BluetoothRemoteGATTServer> {
+    if (this._device.shouldFailConnect()) {
+      throw new DOMException('Simulated transient connection failure', 'NetworkError');
+    }
     this._connected = true;
     return this.asBluetoothRemoteGATTServer();
   }

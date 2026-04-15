@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
 import { useDevice } from '../hooks/useDevice';
 import { useCharacteristic } from '../hooks/useCharacteristic';
 import { getServiceName, getCharacteristicName } from '../utils/bluetooth-utils';
 
 interface ServiceExplorerProps {
-  device?: BluetoothDevice | null;
+  device?: WebBLEDevice | null;
   className?: string;
   autoConnect?: boolean;
   onCharacteristicSelect?: (characteristicId: string) => void;
@@ -13,7 +14,7 @@ interface ServiceExplorerProps {
 
 interface CharacteristicItemProps {
   characteristic: BluetoothRemoteGATTCharacteristic;
-  service: BluetoothRemoteGATTService;
+  device: WebBLEDevice;
   onSelect?: (characteristicId: string) => void;
 }
 
@@ -24,8 +25,13 @@ interface ServiceItemProps {
   onCharacteristicSelect?: (characteristicId: string) => void;
 }
 
-function CharacteristicItem({ characteristic, service, onSelect }: CharacteristicItemProps) {
-  const { value, read, write, subscribe, unsubscribe, isNotifying, error } = useCharacteristic(characteristic, service);
+function CharacteristicItem({ characteristic, device, onSelect }: CharacteristicItemProps) {
+  const serviceUUID = characteristic.service?.uuid ?? null;
+  const { value, read, write, subscribe, unsubscribe, isNotifying, error } = useCharacteristic(
+    device,
+    serviceUUID,
+    characteristic.uuid,
+  );
   const [inputValue, setInputValue] = useState('');
   const [showValue, setShowValue] = useState(false);
 
@@ -47,8 +53,8 @@ function CharacteristicItem({ characteristic, service, onSelect }: Characteristi
     if (isNotifying) {
       await unsubscribe();
     } else {
-      await subscribe((_event: any) => {
-        // Notification handler is managed by the hook
+      await subscribe(() => {
+        // Notification state is managed by the hook.
       });
     }
   }, [isNotifying, subscribe, unsubscribe]);
@@ -71,16 +77,17 @@ function CharacteristicItem({ characteristic, service, onSelect }: Characteristi
   const properties = characteristic.properties;
 
   return (
-    <li className="characteristic-item">
-      <div className="characteristic-header">
-        <button 
+    <li className="characteristic-item" data-webble-characteristic="">
+      <div className="characteristic-header" data-webble-characteristic-header="">
+        <button
           className="characteristic-name"
           onClick={() => onSelect?.(characteristic.uuid)}
           aria-label={`Select characteristic ${characteristicName}`}
+          data-webble-characteristic-name=""
         >
           {characteristicName}
         </button>
-        <div className="characteristic-properties">
+        <div className="characteristic-properties" data-webble-characteristic-props="">
           {properties?.read && <span className="property read">R</span>}
           {properties?.write && <span className="property write">W</span>}
           {properties?.writeWithoutResponse && <span className="property write-no-response">WNR</span>}
@@ -166,16 +173,17 @@ function ServiceItem({ service, isExpanded, onToggle, onCharacteristicSelect }: 
   }, [isExpanded, service, characteristics.length, loadingChars]);
   
   return (
-    <li className="service-item">
-      <button 
+    <li className="service-item" data-webble-service="" data-webble-state={isExpanded ? 'expanded' : 'collapsed'}>
+      <button
         className="service-header"
         onClick={onToggle}
         aria-expanded={isExpanded}
         aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${serviceName}`}
+        data-webble-service-header=""
       >
         <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
-        <span className="service-name">{serviceName}</span>
-        <span className="service-type">{service.isPrimary ? 'Primary' : 'Secondary'}</span>
+        <span className="service-name" data-webble-service-name="">{serviceName}</span>
+        <span className="service-type" data-webble-service-type="">{service.isPrimary ? 'Primary' : 'Secondary'}</span>
       </button>
       
       {isExpanded && loadingChars && (
@@ -188,7 +196,7 @@ function ServiceItem({ service, isExpanded, onToggle, onCharacteristicSelect }: 
             <CharacteristicItem
               key={char.uuid}
               characteristic={char}
-              service={service}
+              device={service.device as unknown as WebBLEDevice}
               onSelect={onCharacteristicSelect}
             />
           ))}
@@ -239,29 +247,29 @@ export function ServiceExplorer({
 
   if (!device) {
     return (
-      <div className={`service-explorer ${className || ''}`}>
-        <div className="explorer-empty">No device selected</div>
+      <div className={`service-explorer ${className || ''}`} data-webble-explorer="" data-webble-state="idle">
+        <div className="explorer-empty" data-webble-explorer-empty="">No device selected</div>
       </div>
     );
   }
 
   return (
-    <div className={`service-explorer ${className || ''}`}>
-      <div className="explorer-header">
+    <div className={`service-explorer ${className || ''}`} data-webble-explorer="" data-webble-state={connectionState}>
+      <div className="explorer-header" data-webble-explorer-header="">
         <h2>Service Explorer</h2>
         {device && (
-          <div className="device-info">
-            <span className="device-name">{device.name || 'Unknown Device'}</span>
-            <span className={`connection-status ${connectionState}`}>
+          <div className="device-info" data-webble-device-info="">
+            <span className="device-name" data-webble-device-name="">{device.name || 'Unknown Device'}</span>
+            <span className={`connection-status ${connectionState}`} data-webble-device-status="">
               {connectionState}
             </span>
           </div>
         )}
       </div>
 
-      <div className="explorer-controls">
+      <div className="explorer-controls" data-webble-explorer-controls="">
         {!isConnected && !isConnecting && (
-          <button onClick={connect} className="connection-button connect">
+          <button onClick={() => { void connect(); }} className="connection-button connect">
             Connect to Device
           </button>
         )}
@@ -278,7 +286,7 @@ export function ServiceExplorer({
       </div>
 
       {error && (
-        <div className="explorer-error" role="alert">
+        <div className="explorer-error" role="alert" data-webble-explorer-error="">
           <span className="error-icon">⚠</span>
           <span className="error-message">{error.message}</span>
         </div>
@@ -291,11 +299,11 @@ export function ServiceExplorer({
       )}
 
       {isConnected && services.length > 0 && (
-        <div className="services-container">
-          <div className="services-summary">
+        <div className="services-container" data-webble-services-container="">
+          <div className="services-summary" data-webble-services-summary="">
             Found {services.length} service(s)
           </div>
-          <ul className="services-list" role="tree">
+          <ul className="services-list" role="tree" data-webble-service-list="">
             {services.map(service => (
               <ServiceItem
                 key={service.uuid}
