@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "ignoreDeprecations": "6.0",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "jsx": "react",
     "module": "ESNext",
@@ -22,7 +21,6 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
     "paths": {
       "@ios-web-bluetooth/core": ["../core/src/index.ts"],
       "@ios-web-bluetooth/detect": ["../detect/src/index.ts"]
