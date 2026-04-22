@@ -37,6 +37,58 @@ function patchPermissionsAPI(state: PermissionState): void {
   };
 }
 
+/**
+ * Members allowed on the polyfilled `navigator.bluetooth`. Everything else
+ * (peripheral, backgroundSync, getCapabilities, debug, __webble, etc.) is
+ * filtered out so the polyfill surface matches the W3C Web Bluetooth spec
+ * exactly. iOS-specific capabilities are reached via `window.webbleIOS`.
+ */
+const W3C_BLUETOOTH_MEMBERS: ReadonlySet<string> = new Set([
+  // Bluetooth interface (spec §4)
+  'requestDevice',
+  'getAvailability',
+  'getDevices',
+  'onavailabilitychanged',
+  // EventTarget
+  'addEventListener',
+  'removeEventListener',
+  'dispatchEvent',
+]);
+
+function buildW3CProxy(api: object): object {
+  return new Proxy(api, {
+    get(target, prop, receiver) {
+      if (typeof prop === 'symbol') return Reflect.get(target, prop, receiver);
+      if (!W3C_BLUETOOTH_MEMBERS.has(prop)) return undefined;
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+    set(target, prop, value) {
+      if (typeof prop !== 'symbol' && !W3C_BLUETOOTH_MEMBERS.has(prop)) return false;
+      return Reflect.set(target, prop, value);
+    },
+    has(_target, prop) {
+      return typeof prop === 'symbol' || W3C_BLUETOOTH_MEMBERS.has(prop);
+    },
+    ownKeys() {
+      return Array.from(W3C_BLUETOOTH_MEMBERS);
+    },
+    getOwnPropertyDescriptor(target, prop) {
+      if (typeof prop === 'symbol' || !W3C_BLUETOOTH_MEMBERS.has(prop)) return undefined;
+      const value = Reflect.get(target, prop);
+      return {
+        enumerable: true,
+        configurable: true,
+        value: typeof value === 'function' ? value.bind(target) : value,
+      };
+    },
+    getPrototypeOf() {
+      // Expose EventTarget.prototype so `instanceof EventTarget` holds.
+      return EventTarget.prototype;
+    },
+  });
+}
+
 function applyPolyfill(): void {
   if (typeof navigator === 'undefined') return;
 
@@ -57,13 +109,31 @@ function applyPolyfill(): void {
   }
 
   if (platform === 'safari-extension') {
-    // Extension provides full API on navigator.webble — proxy to navigator.bluetooth
+    // Extension provides the full vendor surface on navigator.webble. We expose
+    // two distinct facades here:
+    //   1. navigator.bluetooth — W3C-only proxy (requestDevice, getAvailability,
+    //      getDevices, onavailabilitychanged, EventTarget). Non-standard iOS
+    //      members (peripheral, backgroundSync, getCapabilities) are hidden so
+    //      portable code matches Chrome/Edge exactly.
+    //   2. window.webbleIOS — vendor-prefixed iOS capabilities. The extension
+    //      already mounts this; we only mirror when missing (e.g. if the
+    //      polyfill loads in a context where it wasn't mounted).
     const api = getBluetoothAPI();
     if (api && !bluetoothNavigator.bluetooth) {
       Object.defineProperty(navigator, 'bluetooth', {
-        get: () => api,
+        get: () => buildW3CProxy(api),
         configurable: true,
       });
+    }
+    if (typeof window !== 'undefined' && !(window as any).webbleIOS) {
+      const ios = (api as any)?.peripheral || (api as any)?.backgroundSync
+        ? { peripheral: (api as any).peripheral, backgroundSync: (api as any).backgroundSync, getCapabilities: () => (api as any).getCapabilities?.() }
+        : undefined;
+      if (ios) {
+        Object.defineProperty(window, 'webbleIOS', {
+          value: Object.freeze(ios), writable: false, enumerable: true, configurable: false,
+        });
+      }
     }
     // Permissions API: extension active → 'granted'
     patchPermissionsAPI('granted');
