@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@rollup/plugin-terser": "^1.0.0",
-    "@types/chrome": "^0.1.39",
+    "@types/chrome": "^0.1.40",
     "@types/jest": "^30",
     "@types/web-bluetooth": "^0.0.21",
     "jest": "^30",
