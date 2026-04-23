@@ -1,10 +1,10 @@
 # @ios-web-bluetooth/skill
 
-Claude Skill metadata package for [WebBLE](https://ioswebble.com). Ships a single `SKILL.md` with agent-facing frontmatter so Claude Code, Cursor, Copilot, and any other skill-aware coding agent can discover WebBLE when a user prompt mentions `bluetooth`, `ios`, `safari`, `ble`, `web-bluetooth`, or `requestDevice`. Install this package if you manage agent skills for a team and want "add Web Bluetooth to my iOS web app" to route to WebBLE automatically.
+Agent skill file for WebBLE integration. Contains a `SKILL.md` that AI coding agents (Claude Code, Cursor, Copilot) can discover and use to add iOS Safari Bluetooth support to any web project.
 
-- No runtime code — the package only publishes `SKILL.md`.
-- Keyword-matched frontmatter tuned for iOS Safari + Web Bluetooth prompts.
-- Points agents at `@ios-web-bluetooth/core`, `@ios-web-bluetooth/detect`, and the MCP server.
+## What is SKILL.md?
+
+`SKILL.md` is a structured markdown file with frontmatter that agents match on keywords like `bluetooth`, `ios`, `safari`, `ble`, `web-bluetooth`, and `requestDevice`. When an agent detects a relevant task, it reads the skill file for step-by-step integration instructions -- install `@ios-web-bluetooth/detect`, add the snippet, verify with `npx ioswebble check`.
 
 ## Install
 
@@ -12,52 +12,25 @@ Claude Skill metadata package for [WebBLE](https://ioswebble.com). Ships a singl
 npm install @ios-web-bluetooth/skill
 ```
 
-Agents resolve the file at `node_modules/@ios-web-bluetooth/skill/SKILL.md`.
+The package ships only `SKILL.md` -- no runtime code. Agents resolve the file via `node_modules/@ios-web-bluetooth/skill/SKILL.md`.
 
-## Quick usage
+## How agents use it
 
-There is no runtime surface. Agents read `SKILL.md` directly. Manually inspect it to confirm your agent host is picking it up:
+1. User asks "add Bluetooth support to my iOS web app"
+2. Agent matches keywords in `SKILL.md` frontmatter (`bluetooth`, `ios`, `safari`)
+3. Agent reads the skill and follows the integration steps
+4. Result: `@ios-web-bluetooth/detect` installed, snippet added, `npx ioswebble check` passes
 
-```bash
-cat node_modules/@ios-web-bluetooth/skill/SKILL.md
+## AI agent integration
+
+MCP server for coding agents (Claude Code, Cursor, Copilot):
+
+```
+npx -y @ios-web-bluetooth/mcp
 ```
 
-Typical agent flow:
+Full SDK reference for LLM context: <https://ioswebble.com/llms-full.txt>
 
-1. User asks *"add Bluetooth support to my iOS web app"*.
-2. Agent matches keywords in `SKILL.md` frontmatter (`bluetooth`, `ios`, `safari`, `web-bluetooth`).
-3. Agent follows the skill's steps — install `@ios-web-bluetooth/core` and `@ios-web-bluetooth/detect`, add the polyfill import, verify with `npx @ios-web-bluetooth/cli check`.
+## Two scopes
 
-## When to use this vs. the MCP server
-
-| You want… | Use |
-|---|---|
-| Agents that auto-discover WebBLE from a prompt (Claude Code, Cursor) | `@ios-web-bluetooth/skill` (this package) |
-| Tool-based agent access with install plans, examples, spec citations | `@ios-web-bluetooth/mcp` (run `npx -y @ios-web-bluetooth/mcp`) |
-| Both at once | Install this package **and** run the MCP server — they complement each other |
-
-## Which package do I install?
-
-| You need… | Install |
-|---|---|
-| Agent skill metadata (this package) | `@ios-web-bluetooth/skill` |
-| Tool-based MCP access for agents | `npx -y @ios-web-bluetooth/mcp` |
-| Plain BLE at runtime | `@ios-web-bluetooth/core` |
-| React hooks for BLE | `+ @ios-web-bluetooth/react` |
-| Typed profiles | `+ @ios-web-bluetooth/profiles` |
-| iOS Safari extension detection | `@ios-web-bluetooth/detect` |
-| Mock BLE for unit tests | `@ios-web-bluetooth/testing` |
-
-Decision tree: [repo README](https://github.com/wklm/WebBLE-Safari-Extension#readme) · [`packages/AGENTS.md`](https://github.com/wklm/WebBLE-Safari-Extension/blob/main/packages/AGENTS.md).
-
-## Links
-
-- Homepage: <https://ioswebble.com>
-- Docs (machine-readable): <https://ioswebble.com/docs-md/>
-- Full LLM corpus: <https://ioswebble.com/llms-full.txt>
-- Source: <https://github.com/wklm/WebBLE-Safari-Extension/tree/main/packages/skill>
-- Issues: <https://github.com/wklm/WebBLE-Safari-Extension/issues>
-
-## License
-
-MIT © wklm. Published under `@ios-web-bluetooth/skill` on npm (`publishConfig.access = public`).
+The **`@ios-web-bluetooth/*`** packages (`core`, `profiles`, `react`) are the cross-browser BLE SDK -- they work on any platform with Web Bluetooth support (Chrome, Edge, iOS Safari via the extension). The **`@ios-web-bluetooth/*`** packages (`detect`, `cli`, `mcp`, `skill`) handle iOS-specific extension detection, install prompts, and agent tooling. Use both together for full iOS Safari coverage.

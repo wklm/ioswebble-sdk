@@ -1,56 +1,64 @@
 {
   "name": "@ios-web-bluetooth/mcp",
-  "version": "0.0.1",
-  "description": "MCP server for WebBLE — six tools that teach coding agents how to ship iOS Safari Web Bluetooth.",
-  "type": "module",
+  "version": "0.1.1",
+  "description": "MCP server for AI coding agents — scaffold BLE web apps, look up UUIDs, get code examples",
+  "main": "dist/index.js",
   "bin": {
-    "webble-mcp": "./dist/cli.js"
+    "ioswebble-mcp": "./dist/index.js"
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "AGENTS.md"
   ],
-  "publishConfig": {
-    "access": "public"
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs && NODE_OPTIONS=--max-old-space-size=8192 tsc --emitDeclarationOnly",
+    "dev": "tsup src/index.ts --format cjs --watch"
   },
-  "homepage": "https://ioswebble.com/mcp",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/wklm/WebBLE-Safari-Extension.git",
-    "directory": "packages/mcp"
-  },
-  "bugs": {
-    "url": "https://github.com/wklm/WebBLE-Safari-Extension/issues"
-  },
-  "license": "MIT",
-  "author": "wklm",
   "keywords": [
     "mcp",
-    "model-context-protocol",
-    "web-bluetooth",
     "ios",
     "safari",
     "bluetooth",
     "ble",
-    "webble"
+    "ai",
+    "agent",
+    "web-bluetooth",
+    "webbluetooth",
+    "webble",
+    "gatt",
+    "model-context-protocol",
+    "claude",
+    "cursor",
+    "copilot",
+    "polyfill",
+    "cross-browser",
+    "web-bluetooth-polyfill",
+    "safari-bluetooth",
+    "navigator-bluetooth"
   ],
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest run",
-    "dev": "tsx watch src/cli.ts",
-    "prepublishOnly": "npm run build && npm test"
+  "author": "wklm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wklm/ioswebble-sdk.git",
+    "directory": "packages/mcp"
   },
+  "homepage": "https://ioswebble.com",
+  "bugs": {
+    "url": "https://github.com/wklm/ioswebble-sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
   "dependencies": {
+    "@ios-web-bluetooth/detect": "^0.1.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "tsx": "^4.7.0",
-    "typescript": "^5.4.0",
-    "vitest": "^1.6.0"
-  },
-  "engines": {
-    "node": ">=20"
+    "@types/node": "^25.6.0",
+    "tsup": "^8.0.0",
+    "typescript": "^6.0.3"
   }
 }

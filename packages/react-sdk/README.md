@@ -1,131 +1,268 @@
 # @ios-web-bluetooth/react
 
-Typed React hooks and components for [Web Bluetooth](https://webbluetoothcg.github.io/web-bluetooth/) — pair, connect, read, write, and subscribe to BLE peripherals from React apps, with Safari iOS support via the WebBLE Safari Web Extension (<https://ioswebble.com>). Install this package if you are writing a React (or Next.js, Remix, Astro, Vite, CRA, etc.) app that needs `navigator.bluetooth`.
+[![npm version](https://img.shields.io/npm/v/@ios-web-bluetooth/react.svg)](https://www.npmjs.com/package/@ios-web-bluetooth/react)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
-- Works on Safari iOS, Chrome, Edge, and Android — same hooks, same API.
-- Hooks: `useBluetooth`, `useDevice`, `useCharacteristic`, `useNotifications`, `useScan`.
-- Components: `<WebBLEProvider>`, `<DeviceScanner>`, `<ConnectionStatus>`, `<InstallationWizard>`.
+React hooks and components for Web Bluetooth. Works with the WebBLE Safari Extension for iOS support.
 
-## Install
+## Installation
 
 ```bash
-npm install @ios-web-bluetooth/core @ios-web-bluetooth/react
+npm install @ios-web-bluetooth/react @ios-web-bluetooth/core
 ```
 
-## Quick usage
-
-Mount the core polyfill once at your entry point, then use hooks from any component. Snippet copied verbatim from the canonical React quickstart at <https://ioswebble.com/docs-md/quickstart-react.md>.
+Add the polyfill import to your app entry file:
 
 ```tsx
-// main.tsx
-import '@ios-web-bluetooth/core';
-import { createRoot } from 'react-dom/client';
-import App from './App';
-
-createRoot(document.getElementById('root')!).render(<App />);
+import '@ios-web-bluetooth/core/auto';
 ```
 
+## Quick Start
+
 ```tsx
-// HeartRate.tsx
-import { useState } from 'react';
-import { useBluetoothDevice } from '@ios-web-bluetooth/react';
+import { WebBLEProvider, useBluetooth, useDevice } from '@ios-web-bluetooth/react';
+import type { WebBLEDevice } from '@ios-web-bluetooth/core';
 
-export function HeartRate() {
-  const { device, connect, connecting, error } = useBluetoothDevice({
-    filters: [{ services: ['heart_rate'] }]
-  });
-  const [bpm, setBpm] = useState<number | null>(null);
+function App() {
+  return (
+    <WebBLEProvider>
+      <HeartRateMonitor />
+    </WebBLEProvider>
+  );
+}
 
-  async function start() {
-    const d = await connect();
-    const server = await d.gatt!.connect();
-    const service = await server.getPrimaryService('heart_rate');
-    const char = await service.getCharacteristic('heart_rate_measurement');
-    await char.startNotifications();
-    char.addEventListener('characteristicvaluechanged', (ev) => {
-      const v = (ev.target as BluetoothRemoteGATTCharacteristic).value!;
-      setBpm(v.getUint8(0) & 0x01 ? v.getUint16(1, true) : v.getUint8(1));
-    });
-  }
+function HeartRateMonitor() {
+  const { requestDevice } = useBluetooth();
+  const [device, setDevice] = useState<WebBLEDevice | null>(null);
+  const { isConnected, connect, disconnect } = useDevice(device, { autoReconnect: true });
 
-  if (error) return <p>Error: {error.message}</p>;
-  if (!device) return <button onClick={start} disabled={connecting}>Connect</button>;
-  return <p>{bpm ?? '—'} bpm</p>;
+  const handlePair = async () => {
+    // Must be called from a user gesture (button click)
+    const d = await requestDevice({ filters: [{ services: ['heart_rate'] }] });
+    if (d) setDevice(d);
+  };
+
+  return (
+    <div>
+      {!device && <button onClick={handlePair}>Pair</button>}
+      {device && !isConnected && <button onClick={connect}>Connect</button>}
+      {isConnected && <button onClick={disconnect}>Disconnect</button>}
+    </div>
+  );
 }
 ```
 
-## Safari iOS constraints (read before shipping)
+## Hooks
 
-- `requestDevice()` **must be called from a user gesture** (click/tap handler). Never call it in `useEffect`, `componentDidMount`, `DOMContentLoaded`, or on page load — Safari iOS throws `SecurityError`.
-- No persistent pairing — each page load starts fresh. Do **not** assume previously connected devices are remembered.
-- BLE is blocked in cross-origin iframes. Place BLE code in the top-level frame only.
-- Web Bluetooth **does** work on iOS Safari with `@ios-web-bluetooth/core` installed — do not tell users it is impossible.
+### `useBluetooth()`
 
-These constraints are extracted from [`packages/AGENTS.md`](https://github.com/wklm/WebBLE-Safari-Extension/blob/main/packages/AGENTS.md).
+Main hook for Bluetooth availability and device requests.
 
-## Hooks (summary)
+```tsx
+import { useBluetooth } from '@ios-web-bluetooth/react';
 
-| Hook | Purpose |
-|------|---------|
-| `useBluetooth()` | Availability, extension-installed state, `requestDevice`, `getDevices`, and access to `ble`, `backgroundSync`, `peripheral`. |
-| `useDevice(device, options?)` | Connection lifecycle with optional auto-reconnect (`reconnectAttempts`, `reconnectDelay`, `reconnectBackoffMultiplier`, callbacks). |
-| `useCharacteristic(device, service, characteristic)` | `read`, `write`, `writeWithoutResponse`, `subscribe`, `unsubscribe`, latest `value`. |
-| `useNotifications(device, service, characteristic, { autoSubscribe, maxHistory })` | Notification stream with rolling history. |
-| `useScan()` | `start`, `stop`, `clear` with a live `devices` array. |
-| `useBluetoothDevice(options)` | Thin wrapper around `requestDevice` that stabilises the device reference across renders. |
+const {
+  isAvailable,          // Web Bluetooth available?
+  isExtensionInstalled, // WebBLE extension installed?
+  requestDevice,        // Request device (must be called from user gesture)
+  getDevices,           // Get previously paired devices
+  ble,                  // Core WebBLE instance
+  backgroundSync,       // Background sync API
+  peripheral,           // Peripheral mode API
+  error,
+} = useBluetooth();
+```
 
-## Components (summary)
+### `useDevice(device, options?)`
 
-- `<WebBLEProvider ble={existingInstance?} config={{ apiKey?, operatorName? }}>` — required context provider.
-- `<DeviceScanner filters onDeviceSelected autoConnect maxDevices scanDuration />` — device picker UI.
-- `<ConnectionStatus device className />` — state dot.
-- `<InstallationWizard onComplete />` — guides users through enabling the Safari Web Extension on iOS.
+Manage a device's connection lifecycle with optional auto-reconnect.
 
-Full API reference: <https://ioswebble.com/docs-md/api-reference.md>.
+```tsx
+import { useDevice } from '@ios-web-bluetooth/react';
 
-## Which package do I install?
+const {
+  connectionState,   // 'disconnected' | 'connecting' | 'connected' | 'disconnecting'
+  isConnected,
+  isConnecting,
+  connect,
+  disconnect,
+  services,          // Discovered GATT services
+  error,
+  autoReconnect,     // Current auto-reconnect state
+  setAutoReconnect,  // Toggle auto-reconnect
+  reconnectAttempt,  // Current reconnect attempt number (0 = not reconnecting)
+} = useDevice(device, {
+  autoReconnect: true,
+  reconnectAttempts: 3,
+  reconnectDelay: 1000,
+  reconnectBackoffMultiplier: 2,
+  onReconnectAttempt: (attempt, delayMs) => {},
+  onReconnectSuccess: (attempt) => {},
+  onReconnectFailure: (error, attempt, willRetry) => {},
+});
+```
 
-| You need… | Install |
-|---|---|
-| BLE in React | `@ios-web-bluetooth/core` + `@ios-web-bluetooth/react` (this package) |
-| Plain BLE (no React) | `@ios-web-bluetooth/core` |
-| Typed profiles (heart-rate, battery, device-info) | `+ @ios-web-bluetooth/profiles` |
-| iOS Safari extension detection / install banner | `+ @ios-web-bluetooth/detect` |
-| Mock BLE for unit tests | `+ @ios-web-bluetooth/testing` |
-| MCP server for coding agents | `npx -y @ios-web-bluetooth/mcp` |
+### `useCharacteristic(device, serviceUUID, characteristicUUID)`
 
-Decision tree: [repo README](https://github.com/wklm/WebBLE-Safari-Extension#readme) · [`packages/AGENTS.md`](https://github.com/wklm/WebBLE-Safari-Extension/blob/main/packages/AGENTS.md).
+Read, write, and subscribe to a BLE characteristic. All operations delegate to the core SDK.
 
-## Errors
+```tsx
+import { useCharacteristic } from '@ios-web-bluetooth/react';
 
-All hooks expose a typed `error: WebBLEError` with `.code` and `.suggestion` fields. See the [core package error table](https://github.com/wklm/WebBLE-Safari-Extension/blob/main/packages/core/README.md#errors) for the full list.
+const {
+  value,              // Latest DataView value
+  isNotifying,        // Currently subscribed?
+  read,               // () => Promise<DataView | null>
+  write,              // (value: BufferSource) => Promise<void>
+  writeWithoutResponse,
+  subscribe,          // (handler: (value: DataView) => void) => Promise<void>
+  unsubscribe,
+  error,
+} = useCharacteristic(device, 'heart_rate', 'heart_rate_measurement');
+
+// Read a value
+const data = await read();
+
+// Write a value
+await write(new Uint8Array([0x01, 0x02]));
+
+// Subscribe to notifications
+await subscribe((value) => {
+  console.log('Heart rate:', value.getUint8(1));
+});
+```
+
+### `useNotifications(device, service, characteristic, options?)`
+
+Subscribe to characteristic notifications with a rolling history.
+
+```tsx
+import { useNotifications } from '@ios-web-bluetooth/react';
+
+const {
+  value,          // Latest DataView
+  history,        // Array<{ timestamp: Date, value: DataView }>
+  isSubscribed,
+  subscribe,      // () => Promise<void>
+  unsubscribe,
+  clear,          // Clear history
+  error,
+} = useNotifications(device, 'heart_rate', 'heart_rate_measurement', {
+  autoSubscribe: true,
+  maxHistory: 100,
+});
+```
+
+### `useScan()`
+
+Scan for nearby BLE devices.
+
+```tsx
+import { useScan } from '@ios-web-bluetooth/react';
+
+const {
+  scanState,  // 'idle' | 'scanning' | 'stopped'
+  devices,    // WebBLEDevice[]
+  start,      // (options?: ScanOptions) => Promise<void>
+  stop,
+  clear,
+  error,
+} = useScan();
+
+await start({
+  filters: [{ namePrefix: 'Device' }],
+  keepRepeatedDevices: true,
+});
+```
+
+## Components
+
+### `<WebBLEProvider>`
+
+Required context provider. Optionally accepts a pre-configured `WebBLE` instance.
+
+```tsx
+import { WebBLEProvider } from '@ios-web-bluetooth/react';
+
+// Auto-creates WebBLE instance
+<WebBLEProvider config={{ apiKey: 'wbl_xxxxx', operatorName: 'MyApp' }}>
+  <App />
+</WebBLEProvider>
+
+// Or pass an existing instance (useful for testing)
+<WebBLEProvider ble={existingBleInstance}>
+  <App />
+</WebBLEProvider>
+```
+
+### `<DeviceScanner>`
+
+Device selection UI with scan controls.
+
+```tsx
+import { DeviceScanner } from '@ios-web-bluetooth/react';
+
+<DeviceScanner
+  filters={[{ services: ['heart_rate'] }]}
+  onDeviceSelected={(device) => setDevice(device)}
+  autoConnect
+  maxDevices={10}
+  scanDuration={30000}
+/>
+```
+
+### `<ConnectionStatus>`
+
+Connection state indicator dot.
+
+```tsx
+import { ConnectionStatus } from '@ios-web-bluetooth/react';
+
+<ConnectionStatus device={device} className="status-dot" />
+```
+
+### `<InstallationWizard>`
+
+Guides users through WebBLE extension installation on Safari iOS.
+
+```tsx
+import { InstallationWizard } from '@ios-web-bluetooth/react';
+
+<InstallationWizard
+  onComplete={() => console.log('Extension installed!')}
+/>
+```
+
+## Error Handling
+
+All hooks return a `WebBLEError` with `.code` and `.suggestion` fields:
+
+```tsx
+const { error } = useDevice(device);
+
+if (error) {
+  console.log(error.code);       // e.g. 'GATT_OPERATION_FAILED'
+  console.log(error.suggestion);  // e.g. 'Check that the device is in range'
+}
+```
 
 ## TypeScript
 
 Types are re-exported from `@ios-web-bluetooth/core` for convenience:
 
-```ts
+```tsx
 import type { WebBLEDevice, WebBLEError, RequestDeviceOptions } from '@ios-web-bluetooth/react';
 import type { ConnectionState, UseDeviceReturn } from '@ios-web-bluetooth/react';
 ```
 
-## Browser support
+## Browser Support
 
 | Browser | Support | Notes |
-|---|---|---|
-| Safari iOS 15+ | Full | Requires the WebBLE Safari Web Extension |
+|---------|---------|-------|
+| Safari iOS | Full | Requires WebBLE Extension |
 | Chrome 56+ | Full | Native Web Bluetooth |
 | Edge 79+ | Full | Native Web Bluetooth |
-| Chrome Android | Full | Native Web Bluetooth |
-
-## Links
-
-- Homepage: <https://ioswebble.com>
-- Docs (machine-readable): <https://ioswebble.com/docs-md/>
-- React quickstart: <https://ioswebble.com/docs-md/quickstart-react.md>
-- Source: <https://github.com/wklm/WebBLE-Safari-Extension/tree/main/packages/react-sdk>
-- Issues: <https://github.com/wklm/WebBLE-Safari-Extension/issues>
 
 ## License
 
-MIT © wklm. Published under `@ios-web-bluetooth/react` on npm (`publishConfig.access = public`).
+MIT

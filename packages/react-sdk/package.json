@@ -97,11 +97,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wklm/WebBLE-Safari-Extension.git",
+    "url": "https://github.com/wklm/ioswebble-sdk.git",
     "directory": "packages/react-sdk"
   },
   "bugs": {
-    "url": "https://github.com/wklm/WebBLE-Safari-Extension/issues"
+    "url": "https://github.com/wklm/ioswebble-sdk/issues"
   },
   "homepage": "https://ioswebble.com/docs#react-sdk",
   "publishConfig": {
