@@ -21,7 +21,7 @@
  * Contract invariants (must not drift — verified by grep guards):
  *   - Endpoint: `https://beacon.ioswebble.com/beacon` (apex `/beacon`).
  *   - Event name: `sdk_loaded_origin` (exact string, no variants).
- *   - Token regex: `/^webble_(\d{6})_(mcp|cdn|direct|github|npm)_([a-z0-9]{1,40})$/`,
+ *   - Token regex: `/^webble_(\d{6})_(mcp|cdn|direct|github|npm)_([a-z0-9]{12,40})$/`,
  *     total length ≤ 80. Pinned across the MCP server (Wave I.3), the
  *     beacon Worker (Wave I.2), `website-src/openapi.yaml`, and the
  *     attribution section of `docs/distribution/cursor/README.md`.
@@ -64,7 +64,7 @@ import { detectPlatform } from './platform';
 // Drift here silently breaks attribution. Touching it requires a
 // playbook amendment plus coordinated edits to every producer.
 const ATTRIBUTION_TOKEN_REGEX =
-  /^webble_\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{1,40}$/;
+  /^webble_\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{12,40}$/;
 const ATTRIBUTION_TOKEN_MAX_LEN = 80;
 
 const DEFAULT_BEACON_URL = 'https://beacon.ioswebble.com/beacon';

@@ -1,7 +1,7 @@
 /**
  * Cross-producer contract test for `ATTRIBUTION_TOKEN_REGEX` (Wave H.15).
  *
- * The byte-identical regex `^webble_\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{1,40}$`
+ * The byte-identical regex `^webble_\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{12,40}$`
  * is pinned across six producers. If any one drifts, attribution silently
  * breaks for the channel whose tokens the validator starts rejecting.
  *
@@ -74,7 +74,7 @@ const PRODUCERS = [
 ] as const;
 
 const CANONICAL_REGEX_SOURCE =
-  '^webble_\\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{1,40}$';
+  '^webble_\\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{12,40}$';
 const CANONICAL_MAX_LEN = 80;
 
 describe('ATTRIBUTION_TOKEN_REGEX cross-producer contract', () => {

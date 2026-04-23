@@ -72,7 +72,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
     // fails, attribution is broken — coordinate the update across
     // every producer listed in docs/distribution/cursor/README.md.
     expect(mod.__internals.ATTRIBUTION_TOKEN_REGEX.source).toBe(
-      '^webble_\\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{1,40}$',
+      '^webble_\\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{12,40}$',
     );
     expect(mod.__internals.ATTRIBUTION_TOKEN_MAX_LEN).toBe(80);
     expect(mod.__internals.DEFAULT_BEACON_URL).toBe('https://beacon.ioswebble.com/beacon');
@@ -111,7 +111,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
     Object.defineProperty(navigator, 'sendBeacon', {
       value: sendBeacon, configurable: true, writable: true,
     });
-    installScript('webble_202604_mcp_test123');
+    installScript('webble_202604_mcp_test12345678');
 
     const mod = loadModule();
     mod.emitSdkLoadedOrigin();
@@ -127,11 +127,11 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
   it('valid token → payload JSON fields are correct', () => {
     // Verify body contents via the __internals helper since Blob.text() is
     // async and we want a synchronous assertion path.
-    installScript('webble_202604_cdn_abc123xyz');
+    installScript('webble_202604_cdn_abc123xyz789');
     const mod = loadModule();
-    const payload = mod.__internals.buildPayload('webble_202604_cdn_abc123xyz');
+    const payload = mod.__internals.buildPayload('webble_202604_cdn_abc123xyz789');
     expect(payload.event).toBe('sdk_loaded_origin');
-    expect(payload.attribution_token).toBe('webble_202604_cdn_abc123xyz');
+    expect(payload.attribution_token).toBe('webble_202604_cdn_abc123xyz789');
     expect(typeof payload.props.sdk_version).toBe('string');
     expect(payload.props.sdk_version.length).toBeGreaterThan(0);
     expect(['native', 'safari-extension', 'unsupported']).toContain(payload.props.platform);
@@ -170,7 +170,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
     });
 
     installScript('webble_202604_xyz_badchannel');    // regex-invalid → skipped
-    installScript('webble_202604_mcp_goodtoken01');   // valid → wins
+    installScript('webble_202604_mcp_goodtoken012');   // valid → wins
 
     const mod = loadModule();
     mod.emitSdkLoadedOrigin();
@@ -178,7 +178,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
 
     expect(sendBeacon).toHaveBeenCalledTimes(1);
     const found = mod.__internals.findAttributionToken();
-    expect(found).toBe('webble_202604_mcp_goodtoken01');
+    expect(found).toBe('webble_202604_mcp_goodtoken012');
   });
 
   it('per-session dedup: two invocations → at most one network emit', () => {
@@ -186,7 +186,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
     Object.defineProperty(navigator, 'sendBeacon', {
       value: sendBeacon, configurable: true, writable: true,
     });
-    installScript('webble_202604_mcp_dedup00001');
+    installScript('webble_202604_mcp_dedup0000001');
 
     const mod = loadModule();
     mod.emitSdkLoadedOrigin();
@@ -205,7 +205,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
       value: sendBeacon, configurable: true, writable: true,
     });
     (globalThis as { fetch?: unknown }).fetch = fetchSpy;
-    installScript('webble_202604_mcp_prefersb001');
+    installScript('webble_202604_mcp_prefersb0012');
 
     const mod = loadModule();
     mod.emitSdkLoadedOrigin();
@@ -219,7 +219,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
     delete (navigator as unknown as { sendBeacon?: unknown }).sendBeacon;
     const fetchSpy = jest.fn().mockResolvedValue({ status: 204, ok: true });
     (globalThis as { fetch?: unknown }).fetch = fetchSpy;
-    installScript('webble_202604_mcp_fallbackfe1');
+    installScript('webble_202604_mcp_fallbackfe12');
 
     const mod = loadModule();
     mod.emitSdkLoadedOrigin();
@@ -236,7 +236,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
     expect(typeof init.body).toBe('string');
     const body = JSON.parse(init.body as string);
     expect(body.event).toBe('sdk_loaded_origin');
-    expect(body.attribution_token).toBe('webble_202604_mcp_fallbackfe1');
+    expect(body.attribution_token).toBe('webble_202604_mcp_fallbackfe12');
   });
 
   it('fetch fallback activates when sendBeacon returns false (quota rejection)', () => {
@@ -246,7 +246,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
       value: sendBeacon, configurable: true, writable: true,
     });
     (globalThis as { fetch?: unknown }).fetch = fetchSpy;
-    installScript('webble_202604_mcp_quotaflow1');
+    installScript('webble_202604_mcp_quotaflow001');
 
     const mod = loadModule();
     mod.emitSdkLoadedOrigin();
@@ -263,7 +263,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
       value: sendBeacon, configurable: true, writable: true,
     });
     (globalThis as { fetch?: unknown }).fetch = fetchSpy;
-    installScript('webble_202604_mcp_errors00001');
+    installScript('webble_202604_mcp_errors000012');
 
     const mod = loadModule();
     expect(() => {
@@ -277,7 +277,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
     Object.defineProperty(navigator, 'sendBeacon', {
       value: sendBeacon, configurable: true, writable: true,
     });
-    installScript('webble_202604_mcp_optedout001', { optOut: true });
+    installScript('webble_202604_mcp_optedout0012', { optOut: true });
 
     const mod = loadModule();
     mod.emitSdkLoadedOrigin();
@@ -291,8 +291,8 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
     Object.defineProperty(navigator, 'sendBeacon', {
       value: sendBeacon, configurable: true, writable: true,
     });
-    installScript('webble_202604_mcp_mutedfirst0', { optOut: true });
-    installScript('webble_202604_npm_livesecond1');
+    installScript('webble_202604_mcp_mutedfirst01', { optOut: true });
+    installScript('webble_202604_npm_livesecond12');
 
     const mod = loadModule();
     mod.emitSdkLoadedOrigin();
@@ -307,7 +307,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
     Object.defineProperty(navigator, 'sendBeacon', {
       value: sendBeacon, configurable: true, writable: true,
     });
-    installScript('webble_202604_mcp_globalblock');
+    installScript('webble_202604_mcp_globalblock1');
 
     const mod = loadModule();
     mod.emitSdkLoadedOrigin();
@@ -323,7 +323,7 @@ describe('emitSdkLoadedOrigin — attribution hook', () => {
     Object.defineProperty(navigator, 'sendBeacon', {
       value: sendBeacon, configurable: true, writable: true,
     });
-    installScript('webble_202604_mcp_selfhosted1');
+    installScript('webble_202604_mcp_selfhosted12');
 
     const mod = loadModule();
     mod.emitSdkLoadedOrigin();

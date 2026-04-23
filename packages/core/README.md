@@ -122,7 +122,7 @@ Agents can ingest the full corpus at <https://ioswebble.com/llms-full.txt>.
 
 When the polyfill mounts, it looks for a `data-webble-attr="…"` attribute on
 any `<script>` in the DOM and — if the value matches the pinned token regex
-`^webble_\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{1,40}$` — fires a single
+`^webble_\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{12,40}$` — fires a single
 `sdk_loaded_origin` beacon to `https://beacon.ioswebble.com/beacon`. This
 closes the attribution round-trip: the distribution channel (Cursor MCP
 install, CDN bootstrap, npm loader, GitHub clone, direct download) stamps a

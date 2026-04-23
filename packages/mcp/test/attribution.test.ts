@@ -3,7 +3,7 @@ import { ATTRIBUTION_REGEX, generateAttributionToken } from '../src/attribution.
 
 // The SAME regex the Wave I.2 beacon Worker uses when accepting attribution. If this
 // assertion ever starts failing, the beacon Worker will reject every MCP-minted token.
-const WORKER_REGEX = /^webble_\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{1,40}$/;
+const WORKER_REGEX = /^webble_\d{6}_(mcp|cdn|direct|github|npm)_[a-z0-9]{12,40}$/;
 
 describe('generateAttributionToken', () => {
   it('matches the MCP regex and the Worker regex', () => {
@@ -25,7 +25,7 @@ describe('generateAttributionToken', () => {
   });
 
   it('rejects out-of-range suffix length', () => {
-    expect(() => generateAttributionToken({ suffixLength: 7 })).toThrow(RangeError);
+    expect(() => generateAttributionToken({ suffixLength: 11 })).toThrow(RangeError);
     expect(() => generateAttributionToken({ suffixLength: 17 })).toThrow(RangeError);
   });
 });
