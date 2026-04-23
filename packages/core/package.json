@@ -24,8 +24,21 @@
       "require": "./dist/global.js"
     }
   },
-  "sideEffects": ["./dist/auto.mjs", "./dist/auto.js"],
-  "files": ["dist", "README.md", "CHANGELOG.md", "POWER_MANAGEMENT.md", "AGENTS.md", "CONTEXT.md"],
+  "sideEffects": [
+    "./dist/auto.mjs",
+    "./dist/auto.js",
+    "./dist/index.mjs",
+    "./dist/index.js",
+    "./dist/browser.global.js"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "POWER_MANAGEMENT.md",
+    "AGENTS.md",
+    "CONTEXT.md"
+  ],
   "scripts": {
     "build": "tsup && tsup --config tsup.browser.config.ts",
     "dev": "tsup --watch",
@@ -33,23 +46,47 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build && npm run typecheck"
   },
-  "keywords": ["bluetooth", "ble", "web-bluetooth", "webbluetooth", "webble", "safari", "sdk", "ios", "gatt", "bluetooth-low-energy", "ai", "agent", "mcp", "polyfill", "cross-browser", "web-bluetooth-polyfill", "safari-bluetooth", "ios-bluetooth", "bluetooth-polyfill", "web-bluetooth-safari", "navigator-bluetooth", "iphone-bluetooth"],
+  "keywords": [
+    "bluetooth",
+    "ble",
+    "web-bluetooth",
+    "webbluetooth",
+    "webble",
+    "safari",
+    "sdk",
+    "ios",
+    "gatt",
+    "bluetooth-low-energy",
+    "ai",
+    "agent",
+    "mcp",
+    "polyfill",
+    "cross-browser",
+    "web-bluetooth-polyfill",
+    "safari-bluetooth",
+    "ios-bluetooth",
+    "bluetooth-polyfill",
+    "web-bluetooth-safari",
+    "navigator-bluetooth",
+    "iphone-bluetooth"
+  ],
   "author": "wklm",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wklm/ioswebble-sdk.git",
+    "url": "git+https://github.com/wklm/WebBLE-Safari-Extension.git",
     "directory": "packages/core"
   },
   "homepage": "https://ioswebble.com/docs#core-package",
   "bugs": {
-    "url": "https://github.com/wklm/ioswebble-sdk/issues"
+    "url": "https://github.com/wklm/WebBLE-Safari-Extension/issues"
   },
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
     "@types/jest": "^30",
+    "@types/node": "^25.6.0",
     "@types/web-bluetooth": "^0.0.21",
     "jest": "^30",
     "jest-environment-jsdom": "^30",

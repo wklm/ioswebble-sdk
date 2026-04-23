@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
-import { RequestDeviceOptions as RequestDeviceOptions$1, WebBLE, WebBLEBackgroundSync, WebBLEPeripheral, WebBLEDevice, WebBLEError } from '@ios-web-bluetooth/core';
-export { NotificationCallback, Platform, RequestDeviceOptions, WebBLEDevice, WebBLEError, WebBLEErrorCode, WriteLimits, WriteOptions } from '@ios-web-bluetooth/core';
+import { RequestDeviceOptions as RequestDeviceOptions$1, NotificationPermissionState, BackgroundRegistration, WebBLEError, BackgroundConnectionOptions, CharacteristicNotificationOptions, BeaconScanningOptions, NotificationTemplate, WebBLE, WebBLEBackgroundSync, WebBLEPeripheral, WebBLEDevice } from '@ios-web-bluetooth/core';
+export { BackgroundConnectionOptions, BackgroundRegistration, BackgroundRegistrationType, BeaconScanningOptions, CharacteristicNotificationOptions, NotificationCallback, NotificationPermissionState, NotificationTemplate, Platform, RequestDeviceOptions, WebBLEDevice, WebBLEError, WebBLEErrorCode, WriteLimits, WriteOptions } from '@ios-web-bluetooth/core';
 
 /**
  * Type definitions for @ios-web-bluetooth/react SDK
@@ -16,10 +16,11 @@ interface WebBLEConfig {
     apiKey?: string;
     /** Operator/app name shown in the install prompt (e.g. "FitTracker") */
     operatorName?: string;
+    /** Preferred onboarding URL override (defaults to WebBLE setup flow) */
+    startOnboardingUrl?: string;
     /** App Store URL override (defaults to WebBLE listing) */
     appStoreUrl?: string;
 }
-type CharacteristicProperties = BluetoothCharacteristicProperties;
 
 type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'disconnecting';
 interface ConnectionOptions {
@@ -43,6 +44,7 @@ type NotificationHandler = (value: DataView) => void;
 interface UseBluetoothReturn {
     isAvailable: boolean;
     isExtensionInstalled: boolean;
+    extensionInstallState: 'not-installed' | 'installed-inactive' | 'active';
     isSupported: boolean;
     ble: WebBLE;
     backgroundSync: WebBLEBackgroundSync;
@@ -56,32 +58,25 @@ interface UseDeviceReturn {
     connectionState: ConnectionState;
     isConnected: boolean;
     isConnecting: boolean;
-    connect: (options?: ConnectionOptions) => Promise<void>;
+    connect: () => Promise<void>;
     disconnect: () => void;
     services: BluetoothRemoteGATTService[];
     error: WebBLEError | null;
-    watchAdvertisements: () => Promise<void>;
-    unwatchAdvertisements: () => Promise<void>;
-    isWatchingAdvertisements: boolean;
-    forget: () => Promise<void>;
-    connectionPriority: ConnectionPriority | null;
-    setConnectionPriority: (priority: ConnectionPriority) => Promise<void>;
+    autoReconnect: boolean;
+    setAutoReconnect: (value: boolean) => void;
+    reconnectAttempt: number;
 }
 interface UseCharacteristicReturn {
     device: WebBLEDevice | null;
     serviceUUID: string | null;
     characteristicUUID: string | null;
-    characteristic: BluetoothRemoteGATTCharacteristic | null;
     value: DataView | null;
-    properties: CharacteristicProperties | null;
     read: () => Promise<DataView | null>;
     write: (value: BufferSource) => Promise<void>;
     writeWithoutResponse: (value: BufferSource) => Promise<void>;
     subscribe: (handler: NotificationHandler) => Promise<void>;
     unsubscribe: () => Promise<void>;
     isNotifying: boolean;
-    getDescriptor: (uuid: string) => Promise<BluetoothRemoteGATTDescriptor | null>;
-    getDescriptors: () => Promise<BluetoothRemoteGATTDescriptor[]>;
     error: WebBLEError | null;
 }
 interface UseNotificationsReturn {
@@ -105,24 +100,100 @@ interface UseScanReturn {
     clear: () => void;
     error: WebBLEError | null;
 }
-interface UseConnectionReturn {
-    connectionState: ConnectionState;
-    rssi: number | null;
-    connect: () => Promise<void>;
-    disconnect: () => Promise<void>;
-    requestConnectionPriority: (priority: ConnectionPriority) => Promise<void>;
-    error: WebBLEError | null;
-    setAutoReconnect: (value: boolean) => void;
-    startRssiMonitoring: () => Promise<void>;
-    stopRssiMonitoring: () => Promise<void>;
-    autoReconnect: boolean;
-    reconnectAttempt: number;
+interface UseBackgroundSyncOptions {
+    autoFetch?: boolean;
 }
-type ConnectionPriority = 'balanced' | 'high' | 'low-power';
+interface UseBackgroundSyncReturn {
+    permissionState: NotificationPermissionState | null;
+    registrations: BackgroundRegistration[];
+    isLoading: boolean;
+    error: WebBLEError | null;
+    isSupported: boolean;
+    requestPermission: () => Promise<NotificationPermissionState | null>;
+    requestBackgroundConnection: (options: BackgroundConnectionOptions) => Promise<BackgroundRegistration | null>;
+    registerCharacteristicNotifications: (options: CharacteristicNotificationOptions) => Promise<BackgroundRegistration | null>;
+    registerBeaconScanning: (options: BeaconScanningOptions) => Promise<BackgroundRegistration | null>;
+    list: () => Promise<BackgroundRegistration[]>;
+    unregister: (registrationId: string) => Promise<void>;
+    update: (registrationId: string, template: Partial<NotificationTemplate>) => Promise<void>;
+    clearError: () => void;
+}
+type ConnectionStatus$1 = 'idle' | 'requesting' | 'connecting' | 'connected' | 'disconnected';
+interface AutoReconnectOptions {
+    maxAttempts?: number;
+    initialDelay?: number;
+    backoffMultiplier?: number;
+}
+interface UseConnectionOptions {
+    filters?: BluetoothLEScanFilter[];
+    optionalServices?: string[];
+    acceptAllDevices?: boolean;
+    autoReconnect?: boolean | AutoReconnectOptions;
+}
+interface UseConnectionReturn {
+    device: WebBLEDevice | null;
+    status: ConnectionStatus$1;
+    isConnected: boolean;
+    connect: () => Promise<void>;
+    disconnect: () => void;
+    services: BluetoothRemoteGATTService[];
+    error: WebBLEError | null;
+}
+
+/**
+ * ExtensionDetector - Automatically detects if the WebBLE Safari extension is installed
+ */
+type ExtensionInstallState = 'not-installed' | 'installed-inactive' | 'active';
+declare class ExtensionDetector {
+    private detectionPromise;
+    private readonly DETECTION_TIMEOUT;
+    private readInstallState;
+    /**
+     * Determine whether the given user agent represents Safari (excluding
+     * iOS in-app/alternate browsers such as Chrome iOS, Firefox iOS, Edge iOS,
+     * and Opera iOS).
+     *
+     * This keeps Safari detection logic consistent between isBrowserSupported()
+     * and getBrowserCompatibilityMessage().
+     */
+    private isSafariUserAgent;
+    /**
+     * Check if the extension is installed.
+     * Checks the global marker and navigator.webble runtime marker set by the extension.
+     */
+    isInstalled(): boolean;
+    getInstallState(): ExtensionInstallState;
+    /**
+     * Detect extension with a timeout
+     */
+    detect(): Promise<boolean>;
+    detectInstallState(): Promise<ExtensionInstallState>;
+    /**
+     * Perform the actual detection
+     */
+    private performDetection;
+    /**
+     * Get installation instructions for iOS Safari
+     */
+    getInstallationInstructions(): string;
+    /**
+     * Open the extension store for installation
+     */
+    openExtensionStore(): void;
+    /**
+     * Check if the browser supports Web Bluetooth
+     */
+    isBrowserSupported(): boolean;
+    /**
+     * Get browser compatibility message
+     */
+    getBrowserCompatibilityMessage(): string | null;
+}
 
 interface WebBLEContextValue {
     isAvailable: boolean;
     isExtensionInstalled: boolean;
+    extensionInstallState: ExtensionInstallState;
     isLoading: boolean;
     isScanning: boolean;
     devices: WebBLEDevice[];
@@ -181,53 +252,6 @@ declare function WebBLEProvider({ children, config, ble }: WebBLEProviderProps):
 declare function useWebBLE(): WebBLEContextValue;
 
 /**
- * ExtensionDetector - Automatically detects if the WebBLE Safari extension is installed
- */
-declare class ExtensionDetector {
-    private isDetected;
-    private detectionPromise;
-    private readonly DETECTION_TIMEOUT;
-    /**
-     * Determine whether the given user agent represents Safari (excluding
-     * iOS in-app/alternate browsers such as Chrome iOS, Firefox iOS, Edge iOS,
-     * and Opera iOS).
-     *
-     * This keeps Safari detection logic consistent between isBrowserSupported()
-     * and getBrowserCompatibilityMessage().
-     */
-    private isSafariUserAgent;
-    /**
-     * Check if the extension is installed.
-     * Checks the global marker and navigator.webble runtime marker set by the extension.
-     */
-    isInstalled(): boolean;
-    /**
-     * Detect extension with a timeout
-     */
-    detect(): Promise<boolean>;
-    /**
-     * Perform the actual detection
-     */
-    private performDetection;
-    /**
-     * Get installation instructions for iOS Safari
-     */
-    getInstallationInstructions(): string;
-    /**
-     * Open the extension store for installation
-     */
-    openExtensionStore(): void;
-    /**
-     * Check if the browser supports Web Bluetooth
-     */
-    isBrowserSupported(): boolean;
-    /**
-     * Get browser compatibility message
-     */
-    getBrowserCompatibilityMessage(): string | null;
-}
-
-/**
  * Primary hook for Web Bluetooth operations.
  *
  * Provides simplified access to Bluetooth device requesting, availability
@@ -272,11 +296,11 @@ declare function useBluetooth(): UseBluetoothReturn;
  * Hook for managing the lifecycle of a specific Bluetooth device.
  *
  * Handles GATT connection, service discovery, disconnect events,
- * advertisement watching, and connection priority. Pass `null` when
- * no device has been selected yet.
+ * and optional auto-reconnect with exponential backoff. Pass `null`
+ * when no device has been selected yet.
  *
  * @param device - The {@link WebBLEDevice} to manage, or `null`.
- * @returns Device state (connection, services, errors) and control methods.
+ * @param options - Optional auto-reconnect configuration.
  *
  * @example
  * ```tsx
@@ -287,9 +311,9 @@ declare function useBluetooth(): UseBluetoothReturn;
  *   const { requestDevice } = useBluetooth();
  *   const [device, setDevice] = useState<WebBLEDevice | null>(null);
  *   const {
- *     isConnected, isConnecting, services, error,
+ *     isConnected, isConnecting, error,
  *     connect, disconnect,
- *   } = useDevice(device);
+ *   } = useDevice(device, { autoReconnect: true });
  *
  *   const handlePair = async () => {
  *     const d = await requestDevice({
@@ -306,33 +330,37 @@ declare function useBluetooth(): UseBluetoothReturn;
  *           {isConnecting ? 'Connecting...' : 'Connect'}
  *         </button>
  *       )}
- *       {isConnected && (
- *         <>
- *           <p>Services: {services.length}</p>
- *           <button onClick={disconnect}>Disconnect</button>
- *         </>
- *       )}
+ *       {isConnected && <button onClick={disconnect}>Disconnect</button>}
  *       {error && <p>Error: {error.message}</p>}
  *     </div>
  *   );
  * }
  * ```
  */
-declare function useDevice(device: WebBLEDevice | null): UseDeviceReturn;
+declare function useDevice(device: WebBLEDevice | null, options?: ConnectionOptions): UseDeviceReturn;
 
+/**
+ * Hook for reading, writing, and subscribing to a BLE characteristic.
+ *
+ * Delegates all BLE operations to the core SDK's `device.read()`,
+ * `device.write()`, and `device.subscribeAsync()`. Does not resolve
+ * raw GATT objects — use `device.raw.gatt` for escape-hatch access.
+ *
+ * @param device - The connected {@link WebBLEDevice}, or `null`.
+ * @param serviceUUID - Service UUID (name or full UUID).
+ * @param characteristicUUID - Characteristic UUID (name or full UUID).
+ */
 declare function useCharacteristic(device?: WebBLEDevice | null, serviceUUID?: string | null, characteristicUUID?: string | null): UseCharacteristicReturn;
 
 interface NotificationOptions {
     autoSubscribe?: boolean;
     maxHistory?: number;
-    maxQueueSize?: number;
 }
 /**
  * Hook for subscribing to GATT characteristic notifications.
  *
- * Delegates to {@link WebBLEDevice.subscribe} for notification lifecycle
- * management — including native start/stop and event dispatch. Maintains
- * a rolling history of received values.
+ * Delegates to {@link WebBLEDevice.subscribeAsync} for notification lifecycle
+ * management. Maintains a rolling history of received values.
  *
  * @param device - The connected {@link WebBLEDevice}, or `null`.
  * @param service - Human-readable service name or UUID (e.g. `'heart_rate'`).
@@ -365,7 +393,7 @@ declare function useNotifications(device: WebBLEDevice | null, service: string, 
  */
 declare function useScan(): UseScanReturn;
 
-declare function useConnection(deviceOrId?: WebBLEDevice | string | null, options?: ConnectionOptions): UseConnectionReturn;
+declare function useBackgroundSync(options?: UseBackgroundSyncOptions): UseBackgroundSyncReturn;
 
 /**
  * Hook that wraps a {@link BaseProfile} subclass from `@ios-web-bluetooth/profiles`.
@@ -414,6 +442,43 @@ declare function useProfile<T extends {
     error: WebBLEError | null;
 };
 
+/**
+ * All-in-one hook for single-device Bluetooth connections.
+ *
+ * Composes {@link useBluetooth} (device requesting) and {@link useDevice}
+ * (connection lifecycle) into one call. Covers the full flow from device
+ * picker to connected GATT session with a single `connect()` trigger.
+ *
+ * For multi-device scenarios use `useBluetooth()` + `useDevice()` directly.
+ *
+ * @param options - Scan filters, optional services, and reconnect configuration.
+ *
+ * @example
+ * ```tsx
+ * import { useConnection } from '@ios-web-bluetooth/react';
+ *
+ * function HeartRatePanel() {
+ *   const { device, status, isConnected, connect, disconnect, error } =
+ *     useConnection({
+ *       filters: [{ services: ['heart_rate'] }],
+ *       autoReconnect: true,
+ *     });
+ *
+ *   return (
+ *     <div>
+ *       <button onClick={connect} disabled={status === 'requesting' || status === 'connecting'}>
+ *         {status === 'idle' ? 'Connect' : status}
+ *       </button>
+ *       {isConnected && <p>Connected to {device?.name}</p>}
+ *       {error && <p>Error: {error.message}</p>}
+ *       {isConnected && <button onClick={disconnect}>Disconnect</button>}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+declare function useConnection(options?: UseConnectionOptions): UseConnectionReturn;
+
 interface DeviceScannerProps {
     onDeviceSelected?: (device: WebBLEDevice) => void;
     filters?: BluetoothLEScanFilter[];
@@ -443,16 +508,18 @@ declare function ServiceExplorer({ device: inputDevice, className, autoConnect, 
 
 interface ConnectionStatusProps {
     device?: WebBLEDevice | null;
-    deviceId?: string;
     className?: string;
 }
 /**
  * ConnectionStatus - Connection status indicator component
  */
-declare function ConnectionStatus({ device, deviceId, className }: ConnectionStatusProps): React.JSX.Element;
+declare function ConnectionStatus({ device, className }: ConnectionStatusProps): React.JSX.Element;
 
 interface InstallationWizardProps {
     onComplete?: () => void;
+    onInstalledInactive?: () => void;
+    /** Preferred onboarding URL override */
+    startOnboardingUrl?: string;
     /** App Store URL override */
     appStoreUrl?: string;
     /** Operator/app name shown in the prompt */
@@ -465,7 +532,7 @@ interface InstallationWizardProps {
  * Renders as a bottom sheet overlay on iOS Safari, or a simple
  * inline message on other platforms.
  */
-declare function InstallationWizard({ onComplete, appStoreUrl, operatorName, className, }: InstallationWizardProps): React.JSX.Element | null;
+declare function InstallationWizard({ onComplete, onInstalledInactive, startOnboardingUrl, appStoreUrl, operatorName, className, }: InstallationWizardProps): React.JSX.Element | null;
 
 /**
  * Bluetooth utility functions for the React SDK
@@ -489,4 +556,4 @@ declare function parseValue(value: DataView, uuid: string): any;
  */
 declare function formatValue(value: any, uuid: string): ArrayBuffer;
 
-export { type ConnectionState, ConnectionStatus, DeviceScanner, ExtensionDetector, InstallationWizard, type NotificationHandler, type ScanState, ServiceExplorer, type UseBluetoothReturn, type UseCharacteristicReturn, type UseConnectionReturn, type UseDeviceReturn, type UseNotificationsReturn, type UseScanReturn, type WebBLEConfig, WebBLEProvider, formatValue, getCharacteristicName, getServiceName, parseValue, useBluetooth, useCharacteristic, useConnection, useDevice, useNotifications, useProfile, useScan, useWebBLE };
+export { type ConnectionState, ConnectionStatus, DeviceScanner, ExtensionDetector, InstallationWizard, type NotificationHandler, type ScanState, ServiceExplorer, type UseBackgroundSyncOptions, type UseBackgroundSyncReturn, type UseBluetoothReturn, type UseCharacteristicReturn, type UseConnectionOptions, type UseConnectionReturn, type ConnectionStatus$1 as UseConnectionStatus, type UseDeviceReturn, type UseNotificationsReturn, type UseScanReturn, type WebBLEConfig, WebBLEProvider, formatValue, getCharacteristicName, getServiceName, parseValue, useBackgroundSync, useBluetooth, useCharacteristic, useConnection, useDevice, useNotifications, useProfile, useScan, useWebBLE };

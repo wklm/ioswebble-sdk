@@ -9,12 +9,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wklm/ioswebble-sdk.git",
+    "url": "git+https://github.com/wklm/WebBLE-Safari-Extension.git",
     "directory": "packages/skill"
   },
   "homepage": "https://ioswebble.com",
   "bugs": {
-    "url": "https://github.com/wklm/ioswebble-sdk/issues"
+    "url": "https://github.com/wklm/WebBLE-Safari-Extension/issues"
   },
   "publishConfig": {
     "access": "public"

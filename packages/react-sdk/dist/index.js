@@ -10,11 +10,27 @@ var React3__default = /*#__PURE__*/_interopDefault(React3);
 // src/core/WebBLEProvider.tsx
 
 // src/core/ExtensionDetector.ts
+var DEFAULT_SETUP_URL = "https://ioswebble.com/setup.html";
+var DEFAULT_APP_STORE_SEARCH_URL = "https://apps.apple.com/search?term=WebBLE&mt=8";
 var ExtensionDetector = class {
   constructor() {
-    this.isDetected = false;
     this.detectionPromise = null;
     this.DETECTION_TIMEOUT = 3e3;
+  }
+  readInstallState() {
+    if (typeof navigator !== "undefined" && navigator.webble?.__webble === true) {
+      return "active";
+    }
+    if (typeof document !== "undefined" && document.documentElement.dataset.webbleExtension === "true") {
+      return "active";
+    }
+    if (typeof window !== "undefined" && window.__webble?.status === "installed") {
+      return "installed-inactive";
+    }
+    if (typeof document !== "undefined" && document.documentElement.dataset.webbleInstalled === "true") {
+      return "installed-inactive";
+    }
+    return "not-installed";
   }
   /**
    * Determine whether the given user agent represents Safari (excluding
@@ -37,24 +53,21 @@ var ExtensionDetector = class {
    * Checks the global marker and navigator.webble runtime marker set by the extension.
    */
   isInstalled() {
-    if (typeof window !== "undefined" && window.__webble?.status === "installed") {
-      this.isDetected = true;
-      return true;
-    }
-    if (typeof navigator !== "undefined") {
-      if (navigator.webble?.__webble === true) {
-        this.isDetected = true;
-        return true;
-      }
-    }
-    return this.isDetected;
+    return this.getInstallState() !== "not-installed";
+  }
+  getInstallState() {
+    return this.readInstallState();
   }
   /**
    * Detect extension with a timeout
    */
   detect() {
-    if (this.isDetected) {
-      return Promise.resolve(true);
+    return this.detectInstallState().then((state) => state !== "not-installed");
+  }
+  detectInstallState() {
+    const currentState = this.readInstallState();
+    if (currentState === "active") {
+      return Promise.resolve(currentState);
     }
     if (this.detectionPromise) {
       return this.detectionPromise;
@@ -69,21 +82,21 @@ var ExtensionDetector = class {
    */
   async performDetection() {
     return new Promise((resolve) => {
-      if (this.isInstalled()) {
-        resolve(true);
+      const initialState = this.readInstallState();
+      if (initialState !== "not-installed") {
+        resolve(initialState);
         return;
       }
       if (typeof window === "undefined") {
-        resolve(false);
+        resolve("not-installed");
         return;
       }
       let resolved = false;
       const handleExtensionReady = () => {
         if (!resolved) {
           resolved = true;
-          this.isDetected = true;
           window.removeEventListener("webble:extension:ready", handleExtensionReady);
-          resolve(true);
+          resolve("active");
         }
       };
       window.addEventListener("webble:extension:ready", handleExtensionReady);
@@ -91,7 +104,7 @@ var ExtensionDetector = class {
         if (!resolved) {
           resolved = true;
           window.removeEventListener("webble:extension:ready", handleExtensionReady);
-          resolve(this.isInstalled());
+          resolve(this.readInstallState());
         }
       }, this.DETECTION_TIMEOUT);
     });
@@ -114,11 +127,10 @@ var ExtensionDetector = class {
   openExtensionStore() {
     if (typeof navigator === "undefined") return;
     const userAgent = navigator.userAgent.toLowerCase();
-    const appStoreUrl = "https://apps.apple.com/app/ioswebble/id0000000000";
     if (userAgent.includes("iphone") || userAgent.includes("ipad")) {
-      window.open(appStoreUrl, "_blank");
+      window.open(DEFAULT_APP_STORE_SEARCH_URL, "_blank");
     } else {
-      window.open("https://ioswebble.com", "_blank");
+      window.open(DEFAULT_SETUP_URL, "_blank");
     }
   }
   /**
@@ -150,7 +162,7 @@ var ExtensionDetector = class {
     }
     const userAgent = navigator.userAgent;
     const isSafari = this.isSafariUserAgent(userAgent);
-    if (isSafari && !this.isInstalled()) {
+    if (isSafari && this.getInstallState() !== "active") {
       return "Safari requires the WebBLE extension for Bluetooth support";
     }
     if (!("bluetooth" in navigator) && !isSafari) {
@@ -170,6 +182,7 @@ function reportBLEEvent(apiKey, event) {
 function WebBLEProvider({ children, config, ble }) {
   const [isAvailable, setIsAvailable] = React3.useState(false);
   const [isExtensionInstalled, setIsExtensionInstalled] = React3.useState(false);
+  const [extensionInstallState, setExtensionInstallState] = React3.useState("not-installed");
   const [isLoading, setIsLoading] = React3.useState(true);
   const [isScanning, setIsScanning] = React3.useState(false);
   const [devices, setDevices] = React3.useState([]);
@@ -209,11 +222,12 @@ function WebBLEProvider({ children, config, ble }) {
   }, [coreInstance]);
   React3.useEffect(() => {
     const handleExtensionReady = () => {
+      setExtensionInstallState("active");
       setIsExtensionInstalled(true);
     };
-    if (detector.isInstalled()) {
-      setIsExtensionInstalled(true);
-    }
+    const currentInstallState = detector.getInstallState();
+    setExtensionInstallState(currentInstallState);
+    setIsExtensionInstalled(currentInstallState !== "not-installed");
     window.addEventListener("webble:extension:ready", handleExtensionReady);
     return () => {
       window.removeEventListener("webble:extension:ready", handleExtensionReady);
@@ -228,10 +242,21 @@ function WebBLEProvider({ children, config, ble }) {
         const detect = await import('@ios-web-bluetooth/detect');
         if (cancelled) return;
         await detect.initIOSWebBLE({
-          key: config.apiKey,
+          key: config?.apiKey ?? "",
           operatorName: config.operatorName,
-          banner: config.appStoreUrl ? { appStoreUrl: config.appStoreUrl } : void 0,
-          onReady: () => setIsExtensionInstalled(true)
+          banner: config.startOnboardingUrl || config.appStoreUrl ? { startOnboardingUrl: config.startOnboardingUrl, appStoreUrl: config.appStoreUrl } : void 0,
+          onReady: () => {
+            setExtensionInstallState("active");
+            setIsExtensionInstalled(true);
+          },
+          onInstalledInactive: () => {
+            setExtensionInstallState("installed-inactive");
+            setIsExtensionInstalled(true);
+          },
+          onNotInstalled: () => {
+            setExtensionInstallState("not-installed");
+            setIsExtensionInstalled(false);
+          }
         });
       } catch {
       }
@@ -239,7 +264,7 @@ function WebBLEProvider({ children, config, ble }) {
     return () => {
       cancelled = true;
     };
-  }, [config?.apiKey, config?.operatorName, config?.appStoreUrl, isExtensionInstalled]);
+  }, [config?.apiKey, config?.operatorName, config?.startOnboardingUrl, config?.appStoreUrl]);
   const requestDevice = React3.useCallback(async (options = { acceptAllDevices: true }) => {
     try {
       setError(null);
@@ -292,6 +317,7 @@ function WebBLEProvider({ children, config, ble }) {
   const contextValue = React3.useMemo(() => ({
     isAvailable,
     isExtensionInstalled,
+    extensionInstallState,
     isLoading,
     isScanning,
     devices,
@@ -304,6 +330,7 @@ function WebBLEProvider({ children, config, ble }) {
   }), [
     isAvailable,
     isExtensionInstalled,
+    extensionInstallState,
     isLoading,
     isScanning,
     devices,
@@ -344,6 +371,7 @@ function useBluetooth() {
   return {
     isAvailable: context.isAvailable,
     isExtensionInstalled: context.isExtensionInstalled,
+    extensionInstallState: context.extensionInstallState,
     isSupported,
     ble,
     backgroundSync,
@@ -353,14 +381,34 @@ function useBluetooth() {
     error: context.error
   };
 }
-function useDevice(device) {
+var DEFAULT_RECONNECT_ATTEMPTS = 3;
+var DEFAULT_RECONNECT_DELAY = 1e3;
+var DEFAULT_RECONNECT_BACKOFF = 2;
+function useDevice(device, options) {
   const [connectionState, setConnectionState] = React3.useState(() => device?.connected ? "connected" : "disconnected");
   const [services, setServices] = React3.useState([]);
   const [error, setError] = React3.useState(null);
-  const [isWatchingAdvertisements, setIsWatchingAdvertisements] = React3.useState(false);
-  const [connectionPriority, setConnectionPriorityState] = React3.useState(null);
+  const [autoReconnect, setAutoReconnectState] = React3.useState(options?.autoReconnect ?? false);
+  const [reconnectAttempt, setReconnectAttempt] = React3.useState(0);
+  const reconnectTimeoutRef = React3.useRef(null);
+  const reconnectCancelledRef = React3.useRef(false);
+  const optionsRef = React3.useRef(options);
+  const connectionStateRef = React3.useRef(connectionState);
   const isConnected = connectionState === "connected";
   const isConnecting = connectionState === "connecting";
+  React3.useEffect(() => {
+    optionsRef.current = options;
+    setAutoReconnectState(options?.autoReconnect ?? false);
+  }, [options]);
+  React3.useEffect(() => {
+    connectionStateRef.current = connectionState;
+  }, [connectionState]);
+  const clearReconnectTimer = React3.useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  }, []);
   const loadServices = React3.useCallback(async (target) => {
     const getPrimaryServices = target.getPrimaryServices;
     if (typeof getPrimaryServices !== "function") {
@@ -370,16 +418,57 @@ function useDevice(device) {
     const discoveredServices = await getPrimaryServices.call(target);
     setServices(discoveredServices);
   }, []);
-  const connect = React3.useCallback(async (_options) => {
+  const scheduleReconnect = React3.useCallback((attempt) => {
+    if (!device || !autoReconnect || reconnectCancelledRef.current) {
+      return;
+    }
+    const opts = optionsRef.current;
+    const maxAttempts = opts?.reconnectAttempts ?? DEFAULT_RECONNECT_ATTEMPTS;
+    if (attempt > maxAttempts) {
+      return;
+    }
+    const baseDelay = opts?.reconnectDelay ?? DEFAULT_RECONNECT_DELAY;
+    const multiplier = opts?.reconnectBackoffMultiplier ?? DEFAULT_RECONNECT_BACKOFF;
+    const delayMs = baseDelay * Math.max(1, Math.pow(multiplier, attempt - 1));
+    opts?.onReconnectAttempt?.(attempt, delayMs);
+    setReconnectAttempt(attempt);
+    clearReconnectTimer();
+    reconnectTimeoutRef.current = setTimeout(async () => {
+      try {
+        await device.connect();
+        if (!device.connected && connectionStateRef.current !== "connected") {
+          throw new core.WebBLEError("GATT_OPERATION_FAILED", "Failed to reconnect device");
+        }
+        setError(null);
+        setReconnectAttempt(0);
+        setConnectionState("connected");
+        loadServices(device).catch(() => {
+        });
+        optionsRef.current?.onReconnectSuccess?.(attempt);
+      } catch (reconnectError) {
+        const reconnectFailure = core.WebBLEError.from(reconnectError);
+        const willRetry = attempt < maxAttempts;
+        setError(reconnectFailure);
+        optionsRef.current?.onReconnectFailure?.(reconnectFailure, attempt, willRetry);
+        if (willRetry) {
+          scheduleReconnect(attempt + 1);
+        }
+      }
+    }, delayMs);
+  }, [autoReconnect, clearReconnectTimer, device, loadServices]);
+  const connect = React3.useCallback(async () => {
     if (!device) {
       setError(new core.WebBLEError("INVALID_PARAMETER", "No device available"));
       return;
     }
+    reconnectCancelledRef.current = false;
+    clearReconnectTimer();
     try {
       setError(null);
       setConnectionState("connecting");
       await device.connect();
-      setConnectionState(device.connected ? "connected" : "connected");
+      setConnectionState(device.connected ? "connected" : "disconnected");
+      setReconnectAttempt(0);
       try {
         await loadServices(device);
       } catch (serviceError) {
@@ -389,11 +478,12 @@ function useDevice(device) {
       setError(core.WebBLEError.from(err));
       setConnectionState("disconnected");
     }
-  }, [device, loadServices]);
+  }, [clearReconnectTimer, device, loadServices]);
   const disconnect = React3.useCallback(() => {
-    if (!device) {
-      return;
-    }
+    if (!device) return;
+    reconnectCancelledRef.current = true;
+    clearReconnectTimer();
+    setReconnectAttempt(0);
     try {
       setError(null);
       setConnectionState("disconnecting");
@@ -404,74 +494,22 @@ function useDevice(device) {
       setConnectionState("disconnected");
     }
     setServices([]);
-  }, [device]);
-  const watchAdvertisements = React3.useCallback(async () => {
-    if (!device) {
-      setError(new core.WebBLEError("INVALID_PARAMETER", "No device to watch"));
-      return;
+  }, [clearReconnectTimer, device]);
+  const setAutoReconnect = React3.useCallback((value) => {
+    setAutoReconnectState(value);
+    if (!value) {
+      clearReconnectTimer();
+      setReconnectAttempt(0);
     }
-    try {
-      setError(null);
-      await device.watchAdvertisements();
-      setIsWatchingAdvertisements(true);
-    } catch (err) {
-      setError(core.WebBLEError.from(err));
-    }
-  }, [device]);
-  const unwatchAdvertisements = React3.useCallback(async () => {
-    if (!device) {
-      setError(new core.WebBLEError("INVALID_PARAMETER", "No device to unwatch"));
-      return;
-    }
-    try {
-      setError(null);
-      await device.unwatchAdvertisements();
-      setIsWatchingAdvertisements(false);
-    } catch (err) {
-      setError(core.WebBLEError.from(err));
-    }
-  }, [device]);
-  const forget = React3.useCallback(async () => {
-    if (!device) {
-      setError(new core.WebBLEError("INVALID_PARAMETER", "No device to forget"));
-      return;
-    }
-    try {
-      setError(null);
-      await device.forget();
-      setConnectionState("disconnected");
-      setServices([]);
-    } catch (err) {
-      setError(core.WebBLEError.from(err));
-    }
-  }, [device]);
-  const setConnectionPriority = React3.useCallback(async (priority) => {
-    if (!device) {
-      setError(new core.WebBLEError("INVALID_PARAMETER", "Device not available"));
-      return;
-    }
-    const gatt = device.raw.gatt;
-    if (!gatt) {
-      setError(new core.WebBLEError("GATT_OPERATION_FAILED", "Device does not support GATT"));
-      return;
-    }
-    try {
-      setError(null);
-      if ("requestConnectionPriority" in gatt) {
-        await gatt.requestConnectionPriority(priority);
-        setConnectionPriorityState(priority);
-      } else {
-        setError(new core.WebBLEError("GATT_OPERATION_FAILED", "Connection priority not supported"));
-      }
-    } catch (err) {
-      setError(core.WebBLEError.from(err));
-    }
-  }, [device]);
+  }, [clearReconnectTimer]);
   React3.useEffect(() => {
+    reconnectCancelledRef.current = false;
+    clearReconnectTimer();
+    setError(null);
+    setReconnectAttempt(0);
     if (!device) {
       setConnectionState("disconnected");
       setServices([]);
-      setIsWatchingAdvertisements(false);
       return;
     }
     setConnectionState(device.connected ? "connected" : "disconnected");
@@ -479,23 +517,30 @@ function useDevice(device) {
       loadServices(device).catch(() => {
       });
     }
-    const handleDisconnect = () => {
+    const offDisconnect = device.on("disconnected", () => {
       setConnectionState("disconnected");
       setServices([]);
-      setIsWatchingAdvertisements(false);
-    };
-    const handleReconnect = () => {
+      if (autoReconnect && !reconnectCancelledRef.current) {
+        scheduleReconnect(1);
+      }
+    });
+    const offReconnect = device.on("reconnected", () => {
       setConnectionState("connected");
+      setReconnectAttempt(0);
       loadServices(device).catch(() => {
       });
-    };
-    const offDisconnect = device.on("disconnected", handleDisconnect);
-    const offReconnect = device.on("reconnected", handleReconnect);
+    });
     return () => {
+      reconnectCancelledRef.current = true;
       offDisconnect();
       offReconnect();
+      clearReconnectTimer();
     };
-  }, [device, loadServices]);
+  }, [autoReconnect, clearReconnectTimer, device, loadServices, scheduleReconnect]);
+  React3.useEffect(() => () => {
+    reconnectCancelledRef.current = true;
+    clearReconnectTimer();
+  }, [clearReconnectTimer]);
   return {
     device,
     connectionState,
@@ -505,72 +550,41 @@ function useDevice(device) {
     error,
     connect,
     disconnect,
-    watchAdvertisements,
-    unwatchAdvertisements,
-    isWatchingAdvertisements,
-    forget,
-    connectionPriority,
-    setConnectionPriority
+    autoReconnect,
+    setAutoReconnect,
+    reconnectAttempt
   };
 }
-async function resolveCharacteristic(device, serviceUUID, characteristicUUID) {
-  const services = await device.getPrimaryServices();
-  const service = services.find((candidate) => candidate.uuid === serviceUUID) ?? await device.raw.gatt?.getPrimaryService(serviceUUID);
-  if (!service) {
-    throw new Error(`Service ${serviceUUID} not found`);
-  }
-  return service.getCharacteristic(characteristicUUID);
-}
 function useCharacteristic(device, serviceUUID, characteristicUUID) {
-  const [target, setTarget] = React3.useState({
-    device: device ?? null,
-    serviceUUID: serviceUUID ?? null,
-    characteristicUUID: characteristicUUID ?? null,
-    characteristic: null
-  });
   const [value, setValue] = React3.useState(null);
   const [error, setError] = React3.useState(null);
   const [isNotifying, setIsNotifying] = React3.useState(false);
-  const notificationHandlerRef = React3.useRef(null);
   const unsubscribeRef = React3.useRef(null);
+  const notificationHandlerRef = React3.useRef(null);
+  const hasTarget = Boolean(device && serviceUUID && characteristicUUID && device.connected);
   React3.useEffect(() => {
-    let cancelled = false;
-    if (!device || !serviceUUID || !characteristicUUID || !device.connected) {
-      setTarget({
-        device: device ?? null,
-        serviceUUID: serviceUUID ?? null,
-        characteristicUUID: characteristicUUID ?? null,
-        characteristic: null
-      });
-      setIsNotifying(false);
+    if (!hasTarget) {
       unsubscribeRef.current?.();
       unsubscribeRef.current = null;
-      return;
+      notificationHandlerRef.current = null;
+      setIsNotifying(false);
     }
-    void resolveCharacteristic(device, serviceUUID, characteristicUUID).then((characteristic) => {
-      if (cancelled) return;
-      setTarget({ device, serviceUUID, characteristicUUID, characteristic });
-    }).catch((resolveError) => {
-      if (cancelled) return;
-      setError(core.WebBLEError.from(resolveError));
-      setTarget({ device, serviceUUID, characteristicUUID, characteristic: null });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [device, serviceUUID, characteristicUUID]);
-  const properties = target.characteristic?.properties ?? null;
+  }, [hasTarget]);
+  React3.useEffect(() => () => {
+    unsubscribeRef.current?.();
+    unsubscribeRef.current = null;
+  }, []);
   const requireTarget = React3.useCallback(() => {
     if (!device || !serviceUUID || !characteristicUUID) {
-      throw new Error("No characteristic target available");
+      throw new core.WebBLEError("INVALID_PARAMETER", "No characteristic target available");
     }
     return { device, serviceUUID, characteristicUUID };
   }, [device, serviceUUID, characteristicUUID]);
   const read = React3.useCallback(async () => {
     try {
       setError(null);
-      const current = requireTarget();
-      const nextValue = await current.device.read(current.serviceUUID, current.characteristicUUID);
+      const { device: d, serviceUUID: s, characteristicUUID: c } = requireTarget();
+      const nextValue = await d.read(s, c);
       setValue(nextValue);
       return nextValue;
     } catch (err) {
@@ -581,8 +595,8 @@ function useCharacteristic(device, serviceUUID, characteristicUUID) {
   const write = React3.useCallback(async (nextValue) => {
     try {
       setError(null);
-      const current = requireTarget();
-      await current.device.write(current.serviceUUID, current.characteristicUUID, nextValue);
+      const { device: d, serviceUUID: s, characteristicUUID: c } = requireTarget();
+      await d.write(s, c, nextValue);
     } catch (err) {
       setError(core.WebBLEError.from(err));
     }
@@ -590,8 +604,8 @@ function useCharacteristic(device, serviceUUID, characteristicUUID) {
   const writeWithoutResponse = React3.useCallback(async (nextValue) => {
     try {
       setError(null);
-      const current = requireTarget();
-      await current.device.writeWithoutResponse(current.serviceUUID, current.characteristicUUID, nextValue);
+      const { device: d, serviceUUID: s, characteristicUUID: c } = requireTarget();
+      await d.writeWithoutResponse(s, c, nextValue);
     } catch (err) {
       setError(core.WebBLEError.from(err));
     }
@@ -599,15 +613,14 @@ function useCharacteristic(device, serviceUUID, characteristicUUID) {
   const subscribe = React3.useCallback(async (handler) => {
     try {
       setError(null);
-      const current = requireTarget();
+      const { device: d, serviceUUID: s, characteristicUUID: c } = requireTarget();
       unsubscribeRef.current?.();
       notificationHandlerRef.current = handler;
-      const subscribeAsync = current.device.subscribeAsync;
-      const startSubscription = typeof subscribeAsync === "function" ? subscribeAsync.bind(current.device) : current.device.subscribe.bind(current.device);
-      unsubscribeRef.current = await startSubscription(current.serviceUUID, current.characteristicUUID, (nextValue) => {
+      const unsub = await d.subscribeAsync(s, c, (nextValue) => {
         setValue(nextValue);
         notificationHandlerRef.current?.(nextValue);
       });
+      unsubscribeRef.current = unsub;
       setIsNotifying(true);
     } catch (err) {
       setError(core.WebBLEError.from(err));
@@ -620,49 +633,17 @@ function useCharacteristic(device, serviceUUID, characteristicUUID) {
     notificationHandlerRef.current = null;
     setIsNotifying(false);
   }, []);
-  const getDescriptor = React3.useCallback(async (uuid) => {
-    try {
-      setError(null);
-      if (!target.characteristic) {
-        throw new Error("No characteristic target available");
-      }
-      return await target.characteristic.getDescriptor(uuid);
-    } catch (err) {
-      setError(core.WebBLEError.from(err));
-      return null;
-    }
-  }, [target.characteristic]);
-  const getDescriptors = React3.useCallback(async () => {
-    try {
-      setError(null);
-      if (!target.characteristic) {
-        throw new Error("No characteristic target available");
-      }
-      return await target.characteristic.getDescriptors();
-    } catch (err) {
-      setError(core.WebBLEError.from(err));
-      return [];
-    }
-  }, [target.characteristic]);
-  React3.useEffect(() => () => {
-    unsubscribeRef.current?.();
-    unsubscribeRef.current = null;
-  }, []);
   return {
-    device: target.device,
-    serviceUUID: target.serviceUUID,
-    characteristicUUID: target.characteristicUUID,
-    characteristic: target.characteristic,
+    device: device ?? null,
+    serviceUUID: serviceUUID ?? null,
+    characteristicUUID: characteristicUUID ?? null,
     value,
-    properties,
     read,
     write,
     writeWithoutResponse,
     subscribe,
     unsubscribe,
     isNotifying,
-    getDescriptor,
-    getDescriptors,
     error
   };
 }
@@ -672,6 +653,7 @@ function useNotifications(device, service, characteristic, options) {
   const [history, setHistory] = React3.useState([]);
   const [error, setError] = React3.useState(null);
   const unsubscribeRef = React3.useRef(null);
+  const isSubscribedRef = React3.useRef(false);
   const maxHistory = options?.maxHistory ?? 100;
   const autoSubscribe = options?.autoSubscribe ?? false;
   const callback = React3.useCallback((newValue) => {
@@ -683,57 +665,51 @@ function useNotifications(device, service, characteristic, options) {
     });
   }, [maxHistory]);
   const subscribe = React3.useCallback(async () => {
-    if (isSubscribed) return;
-    if (!device) {
-      setError(new core.WebBLEError("INVALID_PARAMETER", "No device available"));
-      return;
-    }
-    if (!device.connected) {
-      setError(new core.WebBLEError("INVALID_PARAMETER", "Device is not connected"));
+    if (isSubscribedRef.current) return;
+    if (!device || !device.connected) {
+      setError(new core.WebBLEError("INVALID_PARAMETER", "Device not available or not connected"));
       return;
     }
     try {
       setError(null);
       unsubscribeRef.current?.();
-      const subscribeAsync = device.subscribeAsync;
-      const startSubscription = typeof subscribeAsync === "function" ? subscribeAsync.bind(device) : device.subscribe.bind(device);
-      const unsub = await startSubscription(service, characteristic, callback);
+      const unsub = await device.subscribeAsync(service, characteristic, callback);
       unsubscribeRef.current = unsub;
+      isSubscribedRef.current = true;
       setIsSubscribed(true);
     } catch (err) {
-      setError(err instanceof core.WebBLEError ? err : core.WebBLEError.from(err));
+      setError(core.WebBLEError.from(err));
+      isSubscribedRef.current = false;
       setIsSubscribed(false);
     }
-  }, [device, service, characteristic, callback, isSubscribed]);
+  }, [device, service, characteristic, callback]);
   const unsubscribe = React3.useCallback(async () => {
-    if (!isSubscribed) return;
-    try {
-      setError(null);
-      unsubscribeRef.current?.();
-      unsubscribeRef.current = null;
-      setIsSubscribed(false);
-    } catch (err) {
-      setError(err instanceof core.WebBLEError ? err : core.WebBLEError.from(err));
-    }
-  }, [isSubscribed]);
+    if (!isSubscribedRef.current) return;
+    unsubscribeRef.current?.();
+    unsubscribeRef.current = null;
+    isSubscribedRef.current = false;
+    setIsSubscribed(false);
+  }, []);
   const clear = React3.useCallback(() => {
     setHistory([]);
     setValue(null);
   }, []);
   React3.useEffect(() => {
+    isSubscribedRef.current = false;
     setIsSubscribed(false);
     unsubscribeRef.current?.();
     unsubscribeRef.current = null;
     return () => {
       unsubscribeRef.current?.();
       unsubscribeRef.current = null;
+      isSubscribedRef.current = false;
     };
   }, [device, service, characteristic]);
   React3.useEffect(() => {
-    if (autoSubscribe && device?.connected && !isSubscribed) {
+    if (autoSubscribe && device?.connected && !isSubscribedRef.current) {
       void subscribe();
     }
-  }, [autoSubscribe, device, isSubscribed, subscribe]);
+  }, [autoSubscribe, device, subscribe]);
   return {
     isSubscribed,
     value,
@@ -817,183 +793,227 @@ function useScan() {
     error
   };
 }
-var DEFAULT_RECONNECT_ATTEMPTS = 3;
-var DEFAULT_RECONNECT_DELAY = 1e3;
-var DEFAULT_RECONNECT_BACKOFF = 2;
-function useConnection(deviceOrId, options) {
-  const { devices } = useWebBLE();
-  const [rssi, setRssi] = React3.useState(null);
-  const [localError, setLocalError] = React3.useState(null);
-  const [autoReconnect, setAutoReconnectState] = React3.useState(options?.autoReconnect ?? false);
-  const [reconnectAttempt, setReconnectAttempt] = React3.useState(0);
-  const reconnectTimeoutRef = React3.useRef(null);
-  const stopRssiMonitoringRef = React3.useRef(null);
-  const reconnectCancelledRef = React3.useRef(false);
-  const reconnectOptionsRef = React3.useRef(options);
-  const connectionStateRef = React3.useRef("disconnected");
-  const resolvedDevice = typeof deviceOrId === "string" ? devices.find((candidate) => candidate.id === deviceOrId) ?? null : deviceOrId ?? null;
-  const deviceState = useDevice(resolvedDevice);
-  const {
-    connectionState,
-    error: deviceError,
-    connect: connectDevice,
-    disconnect: disconnectDevice,
-    setConnectionPriority
-  } = deviceState;
-  const clearReconnectTimer = React3.useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
+var UNSUPPORTED_ERROR = new core.WebBLEError(
+  "GATT_OPERATION_FAILED",
+  "Background sync is not supported on this platform."
+);
+function useBackgroundSync(options = {}) {
+  const context = useWebBLE();
+  const sync = context.core.backgroundSync;
+  const autoFetch = options.autoFetch ?? false;
+  const [permissionState, setPermissionState] = React3.useState(null);
+  const [registrations, setRegistrations] = React3.useState([]);
+  const [isLoading, setIsLoading] = React3.useState(false);
+  const [error, setError] = React3.useState(null);
+  const mountedRef = React3.useRef(true);
+  const syncRef = React3.useRef(sync);
+  const isSupported = context.core.isSupported && context.core.platform === "safari-extension";
+  React3.useEffect(() => {
+    syncRef.current = sync;
+  }, [sync]);
+  React3.useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
-  const stopRssiMonitoring = React3.useCallback(async () => {
-    const stop = stopRssiMonitoringRef.current;
-    stopRssiMonitoringRef.current = null;
-    if (stop) {
-      await stop();
-    }
-  }, []);
-  const connect = React3.useCallback(async () => {
-    if (!resolvedDevice) {
-      setLocalError(new core.WebBLEError("DEVICE_NOT_FOUND", "Device not found"));
-      return;
-    }
-    reconnectCancelledRef.current = false;
-    clearReconnectTimer();
-    setLocalError(null);
-    await connectDevice(reconnectOptionsRef.current);
-    if (resolvedDevice.connected || connectionStateRef.current === "connected") {
-      setReconnectAttempt(0);
-    }
-  }, [clearReconnectTimer, connectDevice, resolvedDevice]);
-  const disconnect = React3.useCallback(async () => {
-    reconnectCancelledRef.current = true;
-    clearReconnectTimer();
-    await stopRssiMonitoring();
-    setLocalError(null);
-    setReconnectAttempt(0);
-    disconnectDevice();
-  }, [clearReconnectTimer, disconnectDevice, stopRssiMonitoring]);
-  const scheduleReconnect = React3.useCallback((attempt) => {
-    if (!resolvedDevice || !autoReconnect || reconnectCancelledRef.current) {
-      return;
-    }
-    const reconnectOptions = reconnectOptionsRef.current;
-    const maxAttempts = reconnectOptions?.reconnectAttempts ?? DEFAULT_RECONNECT_ATTEMPTS;
-    if (attempt > maxAttempts) {
-      return;
-    }
-    const baseDelay = reconnectOptions?.reconnectDelay ?? DEFAULT_RECONNECT_DELAY;
-    const multiplier = reconnectOptions?.reconnectBackoffMultiplier ?? DEFAULT_RECONNECT_BACKOFF;
-    const delayMs = baseDelay * Math.max(1, Math.pow(multiplier, attempt - 1));
-    reconnectOptions?.onReconnectAttempt?.(attempt, delayMs);
-    setReconnectAttempt(attempt);
-    clearReconnectTimer();
-    reconnectTimeoutRef.current = setTimeout(async () => {
+  React3.useEffect(() => {
+    if (!autoFetch || !isSupported) return;
+    let cancelled = false;
+    const fetchRegistrations = async () => {
       try {
-        await resolvedDevice.connect();
-        if (!resolvedDevice.connected && connectionStateRef.current !== "connected") {
-          throw new core.WebBLEError("GATT_OPERATION_FAILED", "Failed to reconnect device");
+        const result = await syncRef.current.getRegistrations();
+        if (!cancelled && mountedRef.current) {
+          setRegistrations(result);
         }
-        setLocalError(null);
-        setReconnectAttempt(0);
-        reconnectOptionsRef.current?.onReconnectSuccess?.(attempt);
-      } catch (reconnectError) {
-        const reconnectFailure = core.WebBLEError.from(reconnectError);
-        const willRetry = attempt < maxAttempts;
-        setLocalError(reconnectFailure);
-        reconnectOptionsRef.current?.onReconnectFailure?.(reconnectFailure, attempt, willRetry);
-        if (willRetry) {
-          scheduleReconnect(attempt + 1);
-        }
+      } catch {
       }
-    }, delayMs);
-  }, [autoReconnect, clearReconnectTimer, connectDevice, resolvedDevice]);
-  const requestConnectionPriority = React3.useCallback(async (priority) => {
-    if (!resolvedDevice) {
-      setLocalError(new core.WebBLEError("DEVICE_NOT_FOUND", "Device not found"));
-      return;
+    };
+    void fetchRegistrations();
+    return () => {
+      cancelled = true;
+    };
+  }, [autoFetch, isSupported]);
+  const clearError = React3.useCallback(() => {
+    setError(null);
+  }, []);
+  const requestPermission = React3.useCallback(async () => {
+    if (!isSupported) {
+      if (mountedRef.current) setError(UNSUPPORTED_ERROR);
+      return null;
     }
-    setLocalError(null);
-    await setConnectionPriority(priority);
-  }, [resolvedDevice, setConnectionPriority]);
-  const startRssiMonitoring = React3.useCallback(async () => {
-    if (!resolvedDevice) {
-      setLocalError(new core.WebBLEError("DEVICE_NOT_FOUND", "Device not found"));
-      return;
+    if (mountedRef.current) {
+      setIsLoading(true);
+      setError(null);
     }
     try {
-      setLocalError(null);
-      await stopRssiMonitoring();
-      await resolvedDevice.watchAdvertisements();
-      const handleAdvertisement = (event) => {
-        const advertisement = event;
-        if (advertisement.device?.id === resolvedDevice.id && typeof advertisement.rssi === "number") {
-          setRssi(advertisement.rssi);
-        }
-      };
-      resolvedDevice.raw.addEventListener?.("advertisementreceived", handleAdvertisement);
-      stopRssiMonitoringRef.current = async () => {
-        resolvedDevice.raw.removeEventListener?.("advertisementreceived", handleAdvertisement);
-        try {
-          await resolvedDevice.unwatchAdvertisements();
-        } catch {
-        }
-      };
+      const state = await syncRef.current.requestPermission();
+      if (mountedRef.current) {
+        setPermissionState(state);
+        setIsLoading(false);
+      }
+      return state;
     } catch (err) {
-      setLocalError(core.WebBLEError.from(err));
+      if (mountedRef.current) {
+        setError(core.WebBLEError.from(err));
+        setIsLoading(false);
+      }
+      return null;
     }
-  }, [resolvedDevice, stopRssiMonitoring]);
-  React3.useEffect(() => {
-    reconnectOptionsRef.current = options;
-    setAutoReconnectState(options?.autoReconnect ?? false);
-  }, [options]);
-  React3.useEffect(() => {
-    connectionStateRef.current = connectionState;
-  }, [connectionState]);
-  React3.useEffect(() => {
-    reconnectCancelledRef.current = false;
-    clearReconnectTimer();
-    void stopRssiMonitoring();
-    setLocalError(null);
-    setReconnectAttempt(0);
-    setRssi(null);
-    if (!resolvedDevice) {
+  }, [isSupported]);
+  const requestBackgroundConnection = React3.useCallback(async (connectionOptions) => {
+    if (!isSupported) {
+      if (mountedRef.current) setError(UNSUPPORTED_ERROR);
+      return null;
+    }
+    if (mountedRef.current) {
+      setIsLoading(true);
+      setError(null);
+    }
+    try {
+      const registration = await syncRef.current.requestBackgroundConnection(connectionOptions);
+      if (mountedRef.current) {
+        setRegistrations((prev) => [...prev, registration]);
+        setIsLoading(false);
+      }
+      return registration;
+    } catch (err) {
+      if (mountedRef.current) {
+        setError(core.WebBLEError.from(err));
+        setIsLoading(false);
+      }
+      return null;
+    }
+  }, [isSupported]);
+  const registerCharacteristicNotifications = React3.useCallback(async (notificationOptions) => {
+    if (!isSupported) {
+      if (mountedRef.current) setError(UNSUPPORTED_ERROR);
+      return null;
+    }
+    if (mountedRef.current) {
+      setIsLoading(true);
+      setError(null);
+    }
+    try {
+      const registration = await syncRef.current.registerCharacteristicNotifications(notificationOptions);
+      if (mountedRef.current) {
+        setRegistrations((prev) => [...prev, registration]);
+        setIsLoading(false);
+      }
+      return registration;
+    } catch (err) {
+      if (mountedRef.current) {
+        setError(core.WebBLEError.from(err));
+        setIsLoading(false);
+      }
+      return null;
+    }
+  }, [isSupported]);
+  const registerBeaconScanning = React3.useCallback(async (scanOptions) => {
+    if (!isSupported) {
+      if (mountedRef.current) setError(UNSUPPORTED_ERROR);
+      return null;
+    }
+    if (mountedRef.current) {
+      setIsLoading(true);
+      setError(null);
+    }
+    try {
+      const registration = await syncRef.current.registerBeaconScanning(scanOptions);
+      if (mountedRef.current) {
+        setRegistrations((prev) => [...prev, registration]);
+        setIsLoading(false);
+      }
+      return registration;
+    } catch (err) {
+      if (mountedRef.current) {
+        setError(core.WebBLEError.from(err));
+        setIsLoading(false);
+      }
+      return null;
+    }
+  }, [isSupported]);
+  const list = React3.useCallback(async () => {
+    if (!isSupported) {
+      if (mountedRef.current) setError(UNSUPPORTED_ERROR);
+      return [];
+    }
+    if (mountedRef.current) {
+      setIsLoading(true);
+      setError(null);
+    }
+    try {
+      const result = await syncRef.current.getRegistrations();
+      if (mountedRef.current) {
+        setRegistrations(result);
+        setIsLoading(false);
+      }
+      return result;
+    } catch (err) {
+      if (mountedRef.current) {
+        setError(core.WebBLEError.from(err));
+        setIsLoading(false);
+      }
+      return [];
+    }
+  }, [isSupported]);
+  const unregister = React3.useCallback(async (registrationId) => {
+    if (!isSupported) {
+      if (mountedRef.current) setError(UNSUPPORTED_ERROR);
       return;
     }
-    const unsubscribe = resolvedDevice.on("disconnected", () => {
-      setRssi(null);
-      if (autoReconnect) {
-        scheduleReconnect(1);
+    if (mountedRef.current) {
+      setIsLoading(true);
+      setError(null);
+    }
+    try {
+      await syncRef.current.unregister(registrationId);
+      if (mountedRef.current) {
+        setRegistrations((prev) => prev.filter((r) => r.id !== registrationId));
+        setIsLoading(false);
       }
-    });
-    return () => {
-      reconnectCancelledRef.current = true;
-      unsubscribe();
-      clearReconnectTimer();
-      void stopRssiMonitoring();
-    };
-  }, [autoReconnect, clearReconnectTimer, resolvedDevice, scheduleReconnect, stopRssiMonitoring]);
-  React3.useEffect(() => () => {
-    reconnectCancelledRef.current = true;
-    clearReconnectTimer();
-    void stopRssiMonitoring();
-  }, [clearReconnectTimer, stopRssiMonitoring]);
-  const setAutoReconnect = React3.useCallback((value) => {
-    setAutoReconnectState(value);
-  }, []);
+    } catch (err) {
+      if (mountedRef.current) {
+        setError(core.WebBLEError.from(err));
+        setIsLoading(false);
+      }
+    }
+  }, [isSupported]);
+  const update = React3.useCallback(async (registrationId, template) => {
+    if (!isSupported) {
+      if (mountedRef.current) setError(UNSUPPORTED_ERROR);
+      return;
+    }
+    if (mountedRef.current) {
+      setIsLoading(true);
+      setError(null);
+    }
+    try {
+      await syncRef.current.update(registrationId, template);
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
+    } catch (err) {
+      if (mountedRef.current) {
+        setError(core.WebBLEError.from(err));
+        setIsLoading(false);
+      }
+    }
+  }, [isSupported]);
   return {
-    connectionState,
-    rssi,
-    connect,
-    disconnect,
-    requestConnectionPriority,
-    error: localError ?? deviceError,
-    setAutoReconnect,
-    startRssiMonitoring,
-    stopRssiMonitoring,
-    autoReconnect,
-    reconnectAttempt
+    permissionState,
+    registrations,
+    isLoading,
+    error,
+    isSupported,
+    requestPermission,
+    requestBackgroundConnection,
+    registerCharacteristicNotifications,
+    registerBeaconScanning,
+    list,
+    unregister,
+    update,
+    clearError
   };
 }
 function useProfile(ProfileClass, device) {
@@ -1027,18 +1047,150 @@ function useProfile(ProfileClass, device) {
   }, []);
   return { profile, connect, error };
 }
+function useConnection(options = {}) {
+  const { requestDevice } = useBluetooth();
+  const [selectedDevice, setSelectedDevice] = React3.useState(null);
+  const [isRequesting, setIsRequesting] = React3.useState(false);
+  const connectionOptions = React3.useMemo(() => {
+    if (options.autoReconnect === void 0) return void 0;
+    if (typeof options.autoReconnect === "boolean") {
+      return { autoReconnect: options.autoReconnect };
+    }
+    const reconnect = options.autoReconnect;
+    return {
+      autoReconnect: true,
+      reconnectAttempts: reconnect.maxAttempts,
+      reconnectDelay: reconnect.initialDelay,
+      reconnectBackoffMultiplier: reconnect.backoffMultiplier
+    };
+  }, [options.autoReconnect]);
+  const {
+    connectionState,
+    isConnected,
+    services,
+    error: deviceError,
+    connect: deviceConnect,
+    disconnect: deviceDisconnect
+  } = useDevice(selectedDevice, connectionOptions);
+  const pendingConnectResolveRef = React3.useRef(null);
+  const pendingConnectAfterSelectionRef = React3.useRef(false);
+  const status = React3.useMemo(() => {
+    if (isRequesting) return "requesting";
+    if (!selectedDevice) return "idle";
+    switch (connectionState) {
+      case "connecting":
+        return "connecting";
+      case "connected":
+        return "connected";
+      case "disconnected":
+        return "disconnected";
+      case "disconnecting":
+        return "disconnected";
+      default:
+        return "idle";
+    }
+  }, [isRequesting, selectedDevice, connectionState]);
+  const [error, setError] = React3.useState(null);
+  const activeError = error ?? deviceError;
+  React3.useEffect(() => {
+    if (!selectedDevice || !pendingConnectAfterSelectionRef.current) {
+      return;
+    }
+    pendingConnectAfterSelectionRef.current = false;
+    let isCancelled = false;
+    const finishPendingConnect = () => {
+      if (isCancelled) {
+        return;
+      }
+      pendingConnectResolveRef.current?.();
+      pendingConnectResolveRef.current = null;
+    };
+    void (async () => {
+      try {
+        await deviceConnect();
+      } finally {
+        finishPendingConnect();
+      }
+    })();
+    return () => {
+      isCancelled = true;
+    };
+  }, [deviceConnect, selectedDevice]);
+  React3.useEffect(() => () => {
+    pendingConnectAfterSelectionRef.current = false;
+    pendingConnectResolveRef.current?.();
+    pendingConnectResolveRef.current = null;
+  }, []);
+  const connect = React3.useCallback(async () => {
+    if (isRequesting) {
+      return;
+    }
+    if (selectedDevice) {
+      setError(null);
+      await deviceConnect();
+      return;
+    }
+    try {
+      setError(null);
+      setIsRequesting(true);
+      const device = await requestDevice({
+        filters: options.filters,
+        optionalServices: options.optionalServices,
+        acceptAllDevices: options.acceptAllDevices ?? !options.filters?.length
+      });
+      if (!device) {
+        return;
+      }
+      await new Promise((resolve) => {
+        pendingConnectResolveRef.current = resolve;
+        pendingConnectAfterSelectionRef.current = true;
+        setSelectedDevice(device);
+      });
+    } catch (err) {
+      const candidate = core.WebBLEError.from(err);
+      if (candidate.code !== "USER_CANCELLED") {
+        setError(candidate);
+      }
+    } finally {
+      setIsRequesting(false);
+    }
+  }, [
+    deviceConnect,
+    isRequesting,
+    options.acceptAllDevices,
+    options.filters,
+    options.optionalServices,
+    requestDevice,
+    selectedDevice
+  ]);
+  const disconnect = React3.useCallback(() => {
+    deviceDisconnect();
+    setSelectedDevice(null);
+    setError(null);
+  }, [deviceDisconnect]);
+  return {
+    device: selectedDevice,
+    status,
+    isConnected,
+    connect,
+    disconnect,
+    services,
+    error: activeError
+  };
+}
 function DeviceItem({ device, onSelect, isConnecting, isConnected }) {
-  return /* @__PURE__ */ React3__default.default.createElement("li", { className: "device-item" }, /* @__PURE__ */ React3__default.default.createElement(
+  return /* @__PURE__ */ React3__default.default.createElement("li", { className: "device-item", "data-webble-device": "", "data-webble-state": isConnected ? "connected" : isConnecting ? "connecting" : "idle" }, /* @__PURE__ */ React3__default.default.createElement(
     "button",
     {
       onClick: () => onSelect(device),
       disabled: isConnecting,
       className: `device-button ${isConnected ? "connected" : ""} ${isConnecting ? "connecting" : ""}`,
-      "aria-label": `Select ${device.name ?? "Unknown Device"}`
+      "aria-label": `Select ${device.name ?? "Unknown Device"}`,
+      "data-webble-device-button": ""
     },
-    /* @__PURE__ */ React3__default.default.createElement("div", { className: "device-info" }, /* @__PURE__ */ React3__default.default.createElement("span", { className: "device-name" }, device.name ?? "Unknown Device"), /* @__PURE__ */ React3__default.default.createElement("span", { className: "device-id" }, device.id)),
-    isConnected && /* @__PURE__ */ React3__default.default.createElement("span", { className: "connection-status" }, "Connected"),
-    isConnecting && /* @__PURE__ */ React3__default.default.createElement("span", { className: "connection-status" }, "Connecting...")
+    /* @__PURE__ */ React3__default.default.createElement("div", { className: "device-info", "data-webble-device-info": "" }, /* @__PURE__ */ React3__default.default.createElement("span", { className: "device-name", "data-webble-device-name": "" }, device.name ?? "Unknown Device"), /* @__PURE__ */ React3__default.default.createElement("span", { className: "device-id", "data-webble-device-id": "" }, device.id)),
+    isConnected && /* @__PURE__ */ React3__default.default.createElement("span", { className: "connection-status", "data-webble-device-status": "" }, "Connected"),
+    isConnecting && /* @__PURE__ */ React3__default.default.createElement("span", { className: "connection-status", "data-webble-device-status": "" }, "Connecting...")
   ));
 }
 function DeviceScanner(props) {
@@ -1053,7 +1205,7 @@ function DeviceScanner(props) {
   const { scanState, devices, start, stop, error, clear } = useScan();
   const [selectedDevice, setSelectedDevice] = React3.useState(null);
   const [pendingAutoConnect, setPendingAutoConnect] = React3.useState(false);
-  const { connectionState, connect } = useConnection(selectedDevice);
+  const { connectionState, connect } = useDevice(selectedDevice);
   const handleStartScan = React3.useCallback(async () => {
     clear();
     await start({ filters });
@@ -1077,7 +1229,7 @@ function DeviceScanner(props) {
     }
   }, [pendingAutoConnect, connectionState, connect]);
   const visibleDevices = devices.slice(0, maxDevices);
-  return /* @__PURE__ */ React3__default.default.createElement("div", { className: `device-scanner ${className || ""}` }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-header" }, /* @__PURE__ */ React3__default.default.createElement("h2", null, "Bluetooth Device Scanner"), /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-status" }, scanState === "scanning" && /* @__PURE__ */ React3__default.default.createElement("span", { className: "status-indicator scanning" }, "\u25CF Scanning"), scanState === "idle" && devices.length > 0 && /* @__PURE__ */ React3__default.default.createElement("span", { className: "status-indicator idle" }, "Found ", devices.length, " device(s)"))), /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-controls" }, scanState === "idle" && /* @__PURE__ */ React3__default.default.createElement(
+  return /* @__PURE__ */ React3__default.default.createElement("div", { className: `device-scanner ${className || ""}`, "data-webble-scanner": "", "data-webble-state": scanState }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-header", "data-webble-scanner-header": "" }, /* @__PURE__ */ React3__default.default.createElement("h2", null, "Bluetooth Device Scanner"), /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-status", "data-webble-scanner-status": "" }, scanState === "scanning" && /* @__PURE__ */ React3__default.default.createElement("span", { className: "status-indicator scanning" }, "\u25CF Scanning"), scanState === "idle" && devices.length > 0 && /* @__PURE__ */ React3__default.default.createElement("span", { className: "status-indicator idle" }, "Found ", devices.length, " device(s)"))), /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-controls", "data-webble-scanner-controls": "" }, scanState === "idle" && /* @__PURE__ */ React3__default.default.createElement(
     "button",
     {
       onClick: handleStartScan,
@@ -1101,7 +1253,7 @@ function DeviceScanner(props) {
       "aria-label": "Clear discovered devices"
     },
     "Clear"
-  )), error && /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-error", role: "alert" }, /* @__PURE__ */ React3__default.default.createElement("span", { className: "error-icon" }, "\u26A0"), /* @__PURE__ */ React3__default.default.createElement("span", { className: "error-message" }, error.message)), visibleDevices.length > 0 && /* @__PURE__ */ React3__default.default.createElement("ul", { className: "device-list", role: "list" }, visibleDevices.map((device) => /* @__PURE__ */ React3__default.default.createElement(
+  )), error && /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-error", role: "alert", "data-webble-scanner-error": "" }, /* @__PURE__ */ React3__default.default.createElement("span", { className: "error-icon" }, "\u26A0"), /* @__PURE__ */ React3__default.default.createElement("span", { className: "error-message" }, error.message)), visibleDevices.length > 0 && /* @__PURE__ */ React3__default.default.createElement("ul", { className: "device-list", role: "list", "data-webble-device-list": "" }, visibleDevices.map((device) => /* @__PURE__ */ React3__default.default.createElement(
     DeviceItem,
     {
       key: device.id,
@@ -1110,7 +1262,7 @@ function DeviceScanner(props) {
       isConnecting: selectedDevice?.id === device.id && connectionState === "connecting",
       isConnected: selectedDevice?.id === device.id && connectionState === "connected"
     }
-  ))), scanState === "scanning" && devices.length === 0 && /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-empty" }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanning-animation" }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "pulse" }), /* @__PURE__ */ React3__default.default.createElement("div", { className: "pulse" }), /* @__PURE__ */ React3__default.default.createElement("div", { className: "pulse" })), /* @__PURE__ */ React3__default.default.createElement("p", null, "Searching for devices...")), scanState === "idle" && devices.length === 0 && !error && /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-empty" }, /* @__PURE__ */ React3__default.default.createElement("p", null, 'No devices found. Click "Start Scan" to search for Bluetooth devices.')));
+  ))), scanState === "scanning" && devices.length === 0 && /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-empty", "data-webble-scanner-empty": "" }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanning-animation", "data-webble-scanner-animation": "" }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "pulse" }), /* @__PURE__ */ React3__default.default.createElement("div", { className: "pulse" }), /* @__PURE__ */ React3__default.default.createElement("div", { className: "pulse" })), /* @__PURE__ */ React3__default.default.createElement("p", null, "Searching for devices...")), scanState === "idle" && devices.length === 0 && !error && /* @__PURE__ */ React3__default.default.createElement("div", { className: "scanner-empty", "data-webble-scanner-empty": "" }, /* @__PURE__ */ React3__default.default.createElement("p", null, 'No devices found. Click "Start Scan" to search for Bluetooth devices.')));
 }
 
 // src/utils/bluetooth-utils.ts
@@ -1277,15 +1429,16 @@ function CharacteristicItem({ characteristic, device, onSelect }) {
   }, []);
   const characteristicName = getCharacteristicName(characteristic.uuid);
   const properties = characteristic.properties;
-  return /* @__PURE__ */ React3__default.default.createElement("li", { className: "characteristic-item" }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "characteristic-header" }, /* @__PURE__ */ React3__default.default.createElement(
+  return /* @__PURE__ */ React3__default.default.createElement("li", { className: "characteristic-item", "data-webble-characteristic": "" }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "characteristic-header", "data-webble-characteristic-header": "" }, /* @__PURE__ */ React3__default.default.createElement(
     "button",
     {
       className: "characteristic-name",
       onClick: () => onSelect?.(characteristic.uuid),
-      "aria-label": `Select characteristic ${characteristicName}`
+      "aria-label": `Select characteristic ${characteristicName}`,
+      "data-webble-characteristic-name": ""
     },
     characteristicName
-  ), /* @__PURE__ */ React3__default.default.createElement("div", { className: "characteristic-properties" }, properties?.read && /* @__PURE__ */ React3__default.default.createElement("span", { className: "property read" }, "R"), properties?.write && /* @__PURE__ */ React3__default.default.createElement("span", { className: "property write" }, "W"), properties?.writeWithoutResponse && /* @__PURE__ */ React3__default.default.createElement("span", { className: "property write-no-response" }, "WNR"), properties?.notify && /* @__PURE__ */ React3__default.default.createElement("span", { className: "property notify" }, "N"), properties?.indicate && /* @__PURE__ */ React3__default.default.createElement("span", { className: "property indicate" }, "I"))), /* @__PURE__ */ React3__default.default.createElement("div", { className: "characteristic-controls" }, properties?.read && /* @__PURE__ */ React3__default.default.createElement("button", { onClick: handleRead, className: "control-button read" }, "Read"), properties?.write && /* @__PURE__ */ React3__default.default.createElement("div", { className: "write-control" }, /* @__PURE__ */ React3__default.default.createElement(
+  ), /* @__PURE__ */ React3__default.default.createElement("div", { className: "characteristic-properties", "data-webble-characteristic-props": "" }, properties?.read && /* @__PURE__ */ React3__default.default.createElement("span", { className: "property read" }, "R"), properties?.write && /* @__PURE__ */ React3__default.default.createElement("span", { className: "property write" }, "W"), properties?.writeWithoutResponse && /* @__PURE__ */ React3__default.default.createElement("span", { className: "property write-no-response" }, "WNR"), properties?.notify && /* @__PURE__ */ React3__default.default.createElement("span", { className: "property notify" }, "N"), properties?.indicate && /* @__PURE__ */ React3__default.default.createElement("span", { className: "property indicate" }, "I"))), /* @__PURE__ */ React3__default.default.createElement("div", { className: "characteristic-controls" }, properties?.read && /* @__PURE__ */ React3__default.default.createElement("button", { onClick: handleRead, className: "control-button read" }, "Read"), properties?.write && /* @__PURE__ */ React3__default.default.createElement("div", { className: "write-control" }, /* @__PURE__ */ React3__default.default.createElement(
     "input",
     {
       type: "text",
@@ -1318,17 +1471,18 @@ function ServiceItem({ service, isExpanded, onToggle, onCharacteristicSelect }) 
       });
     }
   }, [isExpanded, service, characteristics.length, loadingChars]);
-  return /* @__PURE__ */ React3__default.default.createElement("li", { className: "service-item" }, /* @__PURE__ */ React3__default.default.createElement(
+  return /* @__PURE__ */ React3__default.default.createElement("li", { className: "service-item", "data-webble-service": "", "data-webble-state": isExpanded ? "expanded" : "collapsed" }, /* @__PURE__ */ React3__default.default.createElement(
     "button",
     {
       className: "service-header",
       onClick: onToggle,
       "aria-expanded": isExpanded,
-      "aria-label": `${isExpanded ? "Collapse" : "Expand"} ${serviceName}`
+      "aria-label": `${isExpanded ? "Collapse" : "Expand"} ${serviceName}`,
+      "data-webble-service-header": ""
     },
     /* @__PURE__ */ React3__default.default.createElement("span", { className: "expand-icon" }, isExpanded ? "\u25BC" : "\u25B6"),
-    /* @__PURE__ */ React3__default.default.createElement("span", { className: "service-name" }, serviceName),
-    /* @__PURE__ */ React3__default.default.createElement("span", { className: "service-type" }, service.isPrimary ? "Primary" : "Secondary")
+    /* @__PURE__ */ React3__default.default.createElement("span", { className: "service-name", "data-webble-service-name": "" }, serviceName),
+    /* @__PURE__ */ React3__default.default.createElement("span", { className: "service-type", "data-webble-service-type": "" }, service.isPrimary ? "Primary" : "Secondary")
   ), isExpanded && loadingChars && /* @__PURE__ */ React3__default.default.createElement("div", { className: "loading-chars" }, "Loading characteristics..."), isExpanded && !loadingChars && characteristics.length > 0 && /* @__PURE__ */ React3__default.default.createElement("ul", { className: "characteristics-list" }, characteristics.map((char) => /* @__PURE__ */ React3__default.default.createElement(
     CharacteristicItem,
     {
@@ -1371,11 +1525,11 @@ function ServiceExplorer({
   }, []);
   const connectionState = isConnected ? "connected" : isConnecting ? "connecting" : "disconnected";
   if (!device) {
-    return /* @__PURE__ */ React3__default.default.createElement("div", { className: `service-explorer ${className || ""}` }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "explorer-empty" }, "No device selected"));
+    return /* @__PURE__ */ React3__default.default.createElement("div", { className: `service-explorer ${className || ""}`, "data-webble-explorer": "", "data-webble-state": "idle" }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "explorer-empty", "data-webble-explorer-empty": "" }, "No device selected"));
   }
-  return /* @__PURE__ */ React3__default.default.createElement("div", { className: `service-explorer ${className || ""}` }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "explorer-header" }, /* @__PURE__ */ React3__default.default.createElement("h2", null, "Service Explorer"), device && /* @__PURE__ */ React3__default.default.createElement("div", { className: "device-info" }, /* @__PURE__ */ React3__default.default.createElement("span", { className: "device-name" }, device.name || "Unknown Device"), /* @__PURE__ */ React3__default.default.createElement("span", { className: `connection-status ${connectionState}` }, connectionState))), /* @__PURE__ */ React3__default.default.createElement("div", { className: "explorer-controls" }, !isConnected && !isConnecting && /* @__PURE__ */ React3__default.default.createElement("button", { onClick: () => {
+  return /* @__PURE__ */ React3__default.default.createElement("div", { className: `service-explorer ${className || ""}`, "data-webble-explorer": "", "data-webble-state": connectionState }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "explorer-header", "data-webble-explorer-header": "" }, /* @__PURE__ */ React3__default.default.createElement("h2", null, "Service Explorer"), device && /* @__PURE__ */ React3__default.default.createElement("div", { className: "device-info", "data-webble-device-info": "" }, /* @__PURE__ */ React3__default.default.createElement("span", { className: "device-name", "data-webble-device-name": "" }, device.name || "Unknown Device"), /* @__PURE__ */ React3__default.default.createElement("span", { className: `connection-status ${connectionState}`, "data-webble-device-status": "" }, connectionState))), /* @__PURE__ */ React3__default.default.createElement("div", { className: "explorer-controls", "data-webble-explorer-controls": "" }, !isConnected && !isConnecting && /* @__PURE__ */ React3__default.default.createElement("button", { onClick: () => {
     void connect();
-  }, className: "connection-button connect" }, "Connect to Device"), isConnected && /* @__PURE__ */ React3__default.default.createElement("button", { onClick: disconnect, className: "connection-button disconnect" }, "Disconnect"), isConnecting && /* @__PURE__ */ React3__default.default.createElement("button", { disabled: true, className: "connection-button connecting" }, "Connecting...")), error && /* @__PURE__ */ React3__default.default.createElement("div", { className: "explorer-error", role: "alert" }, /* @__PURE__ */ React3__default.default.createElement("span", { className: "error-icon" }, "\u26A0"), /* @__PURE__ */ React3__default.default.createElement("span", { className: "error-message" }, error.message)), isConnected && services.length === 0 && /* @__PURE__ */ React3__default.default.createElement("div", { className: "explorer-empty" }, /* @__PURE__ */ React3__default.default.createElement("p", null, "Discovering services...")), isConnected && services.length > 0 && /* @__PURE__ */ React3__default.default.createElement("div", { className: "services-container" }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "services-summary" }, "Found ", services.length, " service(s)"), /* @__PURE__ */ React3__default.default.createElement("ul", { className: "services-list", role: "tree" }, services.map((service) => /* @__PURE__ */ React3__default.default.createElement(
+  }, className: "connection-button connect" }, "Connect to Device"), isConnected && /* @__PURE__ */ React3__default.default.createElement("button", { onClick: disconnect, className: "connection-button disconnect" }, "Disconnect"), isConnecting && /* @__PURE__ */ React3__default.default.createElement("button", { disabled: true, className: "connection-button connecting" }, "Connecting...")), error && /* @__PURE__ */ React3__default.default.createElement("div", { className: "explorer-error", role: "alert", "data-webble-explorer-error": "" }, /* @__PURE__ */ React3__default.default.createElement("span", { className: "error-icon" }, "\u26A0"), /* @__PURE__ */ React3__default.default.createElement("span", { className: "error-message" }, error.message)), isConnected && services.length === 0 && /* @__PURE__ */ React3__default.default.createElement("div", { className: "explorer-empty" }, /* @__PURE__ */ React3__default.default.createElement("p", null, "Discovering services...")), isConnected && services.length > 0 && /* @__PURE__ */ React3__default.default.createElement("div", { className: "services-container", "data-webble-services-container": "" }, /* @__PURE__ */ React3__default.default.createElement("div", { className: "services-summary", "data-webble-services-summary": "" }, "Found ", services.length, " service(s)"), /* @__PURE__ */ React3__default.default.createElement("ul", { className: "services-list", role: "tree", "data-webble-service-list": "" }, services.map((service) => /* @__PURE__ */ React3__default.default.createElement(
     ServiceItem,
     {
       key: service.uuid,
@@ -1386,9 +1540,8 @@ function ServiceExplorer({
     }
   )))), !isConnected && !isConnecting && !autoConnect && /* @__PURE__ */ React3__default.default.createElement("div", { className: "explorer-empty" }, /* @__PURE__ */ React3__default.default.createElement("p", null, "Connect to the device to explore its services and characteristics.")));
 }
-function ConnectionStatus({ device = null, deviceId, className }) {
-  const target = device ?? deviceId;
-  const { connectionState, rssi } = useConnection(target);
+function ConnectionStatus({ device = null, className }) {
+  const { connectionState } = useDevice(device);
   const getStatusColor = () => {
     switch (connectionState) {
       case "connected":
@@ -1403,19 +1556,30 @@ function ConnectionStatus({ device = null, deviceId, className }) {
         return "gray";
     }
   };
-  return /* @__PURE__ */ React3__default.default.createElement("div", { className, style: { display: "flex", alignItems: "center", gap: "8px" } }, /* @__PURE__ */ React3__default.default.createElement(
-    "span",
+  return /* @__PURE__ */ React3__default.default.createElement(
+    "div",
     {
-      style: {
-        width: "10px",
-        height: "10px",
-        borderRadius: "50%",
-        backgroundColor: getStatusColor()
+      className,
+      "data-webble-status": "",
+      "data-webble-state": connectionState,
+      style: { display: "flex", alignItems: "center", gap: "8px" }
+    },
+    /* @__PURE__ */ React3__default.default.createElement(
+      "span",
+      {
+        "data-webble-status-indicator": "",
+        style: {
+          width: "10px",
+          height: "10px",
+          borderRadius: "50%",
+          backgroundColor: getStatusColor()
+        }
       }
-    }
-  ), /* @__PURE__ */ React3__default.default.createElement("span", null, connectionState), rssi !== null && rssi !== void 0 && /* @__PURE__ */ React3__default.default.createElement("span", null, "(", rssi, " dBm)"));
+    ),
+    /* @__PURE__ */ React3__default.default.createElement("span", { "data-webble-status-label": "" }, connectionState)
+  );
 }
-var DEFAULT_APP_STORE_URL = "https://apps.apple.com/app/ioswebble/id0000000000";
+var DEFAULT_SETUP_URL2 = "https://ioswebble.com/setup.html";
 var navigationController = {
   navigateToUrl(url) {
     window.location.href = url;
@@ -1423,31 +1587,38 @@ var navigationController = {
 };
 function InstallationWizard({
   onComplete,
-  appStoreUrl = DEFAULT_APP_STORE_URL,
+  onInstalledInactive,
+  startOnboardingUrl,
+  appStoreUrl,
   operatorName,
   className
 }) {
-  const [isInstalled, setIsInstalled] = React3.useState(false);
+  const [installState, setInstallState] = React3.useState("not-installed");
   const [isChecking, setIsChecking] = React3.useState(true);
   const [dismissed, setDismissed] = React3.useState(false);
-  const detector = new ExtensionDetector();
+  const detectorRef = React3__default.default.useRef(new ExtensionDetector());
+  const detector = detectorRef.current;
   const displayName = operatorName || (typeof document !== "undefined" ? document.title : "") || "this website";
   React3.useEffect(() => {
     const checkInstallation = async () => {
       setIsChecking(true);
       try {
-        const installed = await detector.detect();
-        setIsInstalled(installed);
-        if (installed) onComplete?.();
+        const state = await detector.detectInstallState();
+        setInstallState(state);
+        if (state === "active") {
+          onComplete?.();
+        } else if (state === "installed-inactive") {
+          onInstalledInactive?.();
+        }
       } catch {
-        setIsInstalled(false);
+        setInstallState("not-installed");
       } finally {
         setIsChecking(false);
       }
     };
     checkInstallation();
     const handleReady = () => {
-      setIsInstalled(true);
+      setInstallState("active");
       onComplete?.();
     };
     window.addEventListener("webble:extension:ready", handleReady);
@@ -1464,8 +1635,8 @@ function InstallationWizard({
       );
     } catch {
     }
-    navigationController.navigateToUrl(appStoreUrl);
-  }, [appStoreUrl]);
+    navigationController.navigateToUrl(startOnboardingUrl || appStoreUrl || DEFAULT_SETUP_URL2);
+  }, [appStoreUrl, startOnboardingUrl]);
   const handleDismiss = React3.useCallback(() => {
     setDismissed(true);
     try {
@@ -1477,8 +1648,8 @@ function InstallationWizard({
     }
   }, []);
   if (isChecking) return null;
-  if (isInstalled || dismissed) return null;
-  return /* @__PURE__ */ React3__default.default.createElement("div", { className, style: overlayStyle }, /* @__PURE__ */ React3__default.default.createElement("div", { style: sheetStyle, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React3__default.default.createElement("div", { style: handleBarStyle }), /* @__PURE__ */ React3__default.default.createElement("div", { style: headerStyle }, /* @__PURE__ */ React3__default.default.createElement("div", { style: iconStyle }, /* @__PURE__ */ React3__default.default.createElement("svg", { viewBox: "0 0 24 24", width: "22", height: "22", fill: "white" }, /* @__PURE__ */ React3__default.default.createElement("path", { d: "M14.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-5 0c.83 0 1.5-.67 1.5-1.5S10.33 8.5 9.5 8.5 8 9.17 8 10s.67 1.5 1.5 1.5zm2.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" }))), /* @__PURE__ */ React3__default.default.createElement("div", { style: titleStyle }, "Bluetooth Required")), /* @__PURE__ */ React3__default.default.createElement("div", { style: bodyStyle }, "To connect to your device, ", esc(displayName), " needs the WebBLE Safari extension."), /* @__PURE__ */ React3__default.default.createElement("div", { style: metaStyle }, /* @__PURE__ */ React3__default.default.createElement("span", { style: starsStyle }, "\u2605\u2605\u2605\u2605\u2605"), /* @__PURE__ */ React3__default.default.createElement("span", null, "4.8"), /* @__PURE__ */ React3__default.default.createElement("span", null, "\xB7"), /* @__PURE__ */ React3__default.default.createElement("span", null, "Free"), /* @__PURE__ */ React3__default.default.createElement("span", null, "\xB7"), /* @__PURE__ */ React3__default.default.createElement("span", null, "Takes 1 minute")), /* @__PURE__ */ React3__default.default.createElement("button", { style: buttonStyle, onClick: handleInstall }, "Get WebBLE (Free)"), /* @__PURE__ */ React3__default.default.createElement("details", { style: detailsStyle }, /* @__PURE__ */ React3__default.default.createElement("summary", { style: summaryStyle }, "How does this work?"), /* @__PURE__ */ React3__default.default.createElement("p", { style: detailsTextStyle }, "WebBLE is a free Safari extension that enables Bluetooth communication between this website and your device. After a quick one-time setup, Bluetooth will work seamlessly in Safari.")), /* @__PURE__ */ React3__default.default.createElement("details", { style: detailsStyle }, /* @__PURE__ */ React3__default.default.createElement("summary", { style: summaryStyle }, "Privacy: No data collected"), /* @__PURE__ */ React3__default.default.createElement("p", { style: detailsTextStyle }, "WebBLE processes all Bluetooth data locally on your device. No browsing data, device data, or personal information is ever collected or transmitted.")), /* @__PURE__ */ React3__default.default.createElement("button", { style: dismissStyle, onClick: handleDismiss }, "Not now")));
+  if (installState === "active" || dismissed) return null;
+  return /* @__PURE__ */ React3__default.default.createElement("div", { className, style: overlayStyle, "data-webble-wizard": "", "data-webble-state": installState }, /* @__PURE__ */ React3__default.default.createElement("div", { style: sheetStyle, onClick: (e) => e.stopPropagation(), "data-webble-wizard-sheet": "" }, /* @__PURE__ */ React3__default.default.createElement("div", { style: handleBarStyle, "data-webble-wizard-handle": "" }), /* @__PURE__ */ React3__default.default.createElement("div", { style: headerStyle, "data-webble-wizard-header": "" }, /* @__PURE__ */ React3__default.default.createElement("div", { style: iconStyle, "data-webble-wizard-icon": "" }, /* @__PURE__ */ React3__default.default.createElement("svg", { viewBox: "0 0 24 24", width: "22", height: "22", fill: "white" }, /* @__PURE__ */ React3__default.default.createElement("path", { d: "M14.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-5 0c.83 0 1.5-.67 1.5-1.5S10.33 8.5 9.5 8.5 8 9.17 8 10s.67 1.5 1.5 1.5zm2.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" }))), /* @__PURE__ */ React3__default.default.createElement("div", { style: titleStyle, "data-webble-wizard-title": "" }, "Bluetooth Required")), /* @__PURE__ */ React3__default.default.createElement("div", { style: bodyStyle, "data-webble-wizard-body": "" }, "To connect to your device, ", esc(displayName), " needs the WebBLE Safari extension."), /* @__PURE__ */ React3__default.default.createElement("div", { style: metaStyle, "data-webble-wizard-meta": "" }, /* @__PURE__ */ React3__default.default.createElement("span", { style: starsStyle }, "\u2605\u2605\u2605\u2605\u2605"), /* @__PURE__ */ React3__default.default.createElement("span", null, "4.8"), /* @__PURE__ */ React3__default.default.createElement("span", null, "\xB7"), /* @__PURE__ */ React3__default.default.createElement("span", null, "Free"), /* @__PURE__ */ React3__default.default.createElement("span", null, "\xB7"), /* @__PURE__ */ React3__default.default.createElement("span", null, "Takes 1 minute")), /* @__PURE__ */ React3__default.default.createElement("button", { style: buttonStyle, onClick: handleInstall, "data-webble-wizard-action": "" }, installState === "installed-inactive" ? "Finish Safari Setup" : "Start Setup"), /* @__PURE__ */ React3__default.default.createElement("details", { style: detailsStyle, "data-webble-wizard-details": "" }, /* @__PURE__ */ React3__default.default.createElement("summary", { style: summaryStyle }, "How does this work?"), /* @__PURE__ */ React3__default.default.createElement("p", { style: detailsTextStyle }, "WebBLE is a free Safari extension that enables Bluetooth communication between this website and your device. After a quick one-time setup, Bluetooth will work seamlessly in Safari.")), /* @__PURE__ */ React3__default.default.createElement("details", { style: detailsStyle, "data-webble-wizard-details": "" }, /* @__PURE__ */ React3__default.default.createElement("summary", { style: summaryStyle }, "Privacy: No data collected"), /* @__PURE__ */ React3__default.default.createElement("p", { style: detailsTextStyle }, "WebBLE processes all Bluetooth data locally on your device. No browsing data, device data, or personal information is ever collected or transmitted.")), /* @__PURE__ */ React3__default.default.createElement("button", { style: dismissStyle, onClick: handleDismiss, "data-webble-wizard-dismiss": "" }, "Not now")));
 }
 function esc(s) {
   const d = document.createElement("div");
@@ -1600,6 +1771,7 @@ exports.formatValue = formatValue;
 exports.getCharacteristicName = getCharacteristicName;
 exports.getServiceName = getServiceName;
 exports.parseValue = parseValue;
+exports.useBackgroundSync = useBackgroundSync;
 exports.useBluetooth = useBluetooth;
 exports.useCharacteristic = useCharacteristic;
 exports.useConnection = useConnection;

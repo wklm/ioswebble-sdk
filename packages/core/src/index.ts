@@ -1,3 +1,6 @@
+import { applyPolyfill } from './mount-polyfill';
+applyPolyfill();
+
 export { WebBLE } from './webble';
 export { WebBLEDevice } from './device';
 export { WebBLEError, withRetry } from './errors';

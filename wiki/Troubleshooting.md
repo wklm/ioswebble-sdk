@@ -53,4 +53,4 @@ If a background registration includes `template.url`, it must:
 
 - GitHub Issues: <https://github.com/wklm/ioswebble-sdk/issues>
 - Email: <mailto:support@ioswebble.com>
-- Product page: <https://ioswebble.com/product>
+- Product page: <https://ioswebble.com/for-hardware-companies>
