@@ -24,6 +24,18 @@ import { resolve } from 'node:path';
 
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
 
+// AIDEV-NOTE: This helper reads the raw source text of each producer/sink
+// file and extracts the attribution regex *literal* as a string —
+// deliberately avoiding `require`/`import` so we compare what is actually
+// written on disk, not a value reconstructed (and potentially re-escaped)
+// by the module system at runtime. That byte-identical comparison is the
+// whole point of this contract test: the 6+ attribution call sites must
+// all spell the regex exactly the same way, character for character. If
+// you change the regex in one place, every call site must change too, and
+// this helper is what catches drift at test time. Do not replace with
+// runtime introspection (e.g. `regex.source`) — that would defeat the
+// on-disk-literal guarantee.
+//
 // AIDEV-NOTE: Extractor grammar — matches a single-line `const FOO = /…/;`
 // declaration even when the `=` is followed by a line break and leading
 // whitespace. Body of the regex is everything between the first and last
