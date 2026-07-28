@@ -1,6 +1,6 @@
-import { readUint8, readUint16LE, clampPercent, type Percentage, type NativeOverflowEvent } from '../index';
-import { BaseProfile } from './base';
-import { deriveOptionalServices } from './services';
+import { readUint8, readUint16LE, clampPercent, type Percentage, type NativeOverflowEvent } from '../../index';
+import { BaseProfile } from '../../profiles/base';
+import { deriveOptionalServices } from '../../profiles/services';
 
 /**
  * Storz & Bickel Crafty / Crafty+ / Mighty / Mighty+ vaporizer profile.
@@ -85,7 +85,7 @@ import { deriveOptionalServices } from './services';
  *
  * @example
  * ```ts
- * import { StorzBickelProfile } from '@beacio/core/profiles/storz-bickel';
+ * import { StorzBickelProfile } from '@beacio/core/experimental/profiles/storz-bickel';
  *
  * // requestDevice({ filters: [{ namePrefix: 'S&B' }], optionalServices: [
  * //   '00000001-4c45-4b43-4942-265a524f5453',

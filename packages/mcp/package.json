@@ -2,7 +2,7 @@
   "name": "@beacio/mcp",
   "version": "2.0.0",
   "mcpName": "com.beacio/mcp",
-  "description": "MCP server for beacio — unified tools for SDK consumers and extension developers shipping iOS Safari Web Bluetooth.",
+  "description": "MCP server for beacio \u2014 unified tools for SDK consumers and extension developers shipping iOS Safari Web Bluetooth.",
   "type": "module",
   "bin": {
     "beacio-mcp": "./dist/cli.js",
@@ -52,13 +52,13 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
-    "@beacio/core": "^1.0.0",
+    "@beacio/core": "^1.2.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
-    "tsx": "^4.23.0",
+    "tsx": "^4.23.1",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-native": "npm:typescript@^7.0.2",
     "vitest": "^4.1.10"

@@ -13,8 +13,8 @@
     "build:packages": "npm run build -w packages/core && npm run build -w packages/react-sdk && npm run build -w packages/mcp",
     "test:packages": "npm test -w packages/core -w packages/react-sdk -w packages/mcp -w packages/skill --if-present",
     "typecheck:packages": "npm run typecheck --workspaces --if-present",
-    "publish:packages": "npm run build:packages && npm publish --provenance --tag beta -w packages/core && npm publish --provenance --tag beta -w packages/react-sdk && npm publish --provenance -w packages/mcp && npm publish --provenance -w packages/skill",
-    "publish:dry": "npm run build:packages && npm publish --provenance --dry-run --tag beta -w packages/core && npm publish --provenance --dry-run --tag beta -w packages/react-sdk && npm publish --provenance --dry-run -w packages/mcp && npm publish --provenance --dry-run -w packages/skill"
+    "publish:packages": "npm run build:packages && npm publish --provenance -w packages/core && npm publish --provenance -w packages/react-sdk && npm publish --provenance -w packages/mcp && npm publish --provenance -w packages/skill",
+    "publish:dry": "npm run build:packages && npm publish --provenance --dry-run -w packages/core && npm publish --provenance --dry-run -w packages/react-sdk && npm publish --provenance --dry-run -w packages/mcp && npm publish --provenance --dry-run -w packages/skill"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
@@ -23,9 +23,9 @@
     "@types/chrome": "^0.2.2",
     "@types/jest": "^30",
     "@types/web-bluetooth": "^0.0.21",
-    "@typescript-eslint/eslint-plugin": "^8.63.0",
-    "@typescript-eslint/parser": "^8.63.0",
-    "eslint": "^10.6.0",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
+    "eslint": "^10.7.0",
     "globals": "^17.7.0",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",

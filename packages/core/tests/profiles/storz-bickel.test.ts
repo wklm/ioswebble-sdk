@@ -9,15 +9,13 @@ import {
   STORZ_BICKEL_SERVICES,
   STORZ_BICKEL_FAMILY_SERVICES,
   StorzBickel,
-} from '../../src/profiles/storz-bickel';
+} from '../../src/experimental/profiles/storz-bickel';
 import {
   deriveOptionalServices,
   NUS_SERVICES,
   HEART_RATE_SERVICES,
   NordicUARTProfile,
   HeartRateProfile,
-  StorzBickel as StorzBickelFromIndex,
-  STORZ_BICKEL_SERVICES as STORZ_BICKEL_SERVICES_FROM_INDEX,
 } from '../../src/profiles/index';
 import { BeacioError, type BeacioDevice } from '../../src/index';
 
@@ -627,9 +625,13 @@ describe('SB-SDK-08 — per-profile SERVICES exports', () => {
     }
   });
 
-  it('re-exports the SERVICES arrays + StorzBickel from the package index', () => {
-    expect(STORZ_BICKEL_SERVICES_FROM_INDEX).toEqual(STORZ_BICKEL_SERVICES);
-    expect(StorzBickelFromIndex).toBe(StorzBickel);
+  it('is NOT re-exported from the stable profiles barrel (experimental barrier)', async () => {
+    // Namespace import so missing named bindings do not throw at load time —
+    // the stable @beacio/core/profiles barrel must not carry Storz exports.
+    const profiles = await import('../../src/profiles/index');
+    expect('StorzBickel' in profiles).toBe(false);
+    expect('STORZ_BICKEL_SERVICES' in profiles).toBe(false);
+    expect('StorzBickelProfile' in profiles).toBe(false);
   });
 });
 

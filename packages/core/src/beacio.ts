@@ -294,7 +294,7 @@ export class Beacio {
    * @example
    * ```typescript
    * import { Beacio } from '@beacio/core'
-   * import { StorzBickel } from '@beacio/core/profiles'
+   * import { StorzBickel } from '@beacio/core/experimental/profiles/storz-bickel'
    *
    * const ble = new Beacio()
    * ble.registerServices(StorzBickel.allServices()) // declare every S&B family once

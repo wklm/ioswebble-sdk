@@ -28,7 +28,7 @@ import { docsUrl, ToolInputError, type ToolDefinition } from './_common.js';
 
 /** The ONE canonical classic bootstrap artifact (webble quickstart §2 / onboarding-manifest cdn). */
 export const CANONICAL_BOOTSTRAP_URL =
-  'https://cdn.beacio.com/@beacio/core@1.0.0/dist/browser-auto.global.js';
+  'https://cdn.beacio.com/@beacio/core@1.2.0/dist/browser-auto.global.js';
 
 type FileEditOp = 'insert' | 'create' | 'replace';
 

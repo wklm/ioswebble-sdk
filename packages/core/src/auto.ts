@@ -144,7 +144,7 @@ function buildW3CFacade(api: object): object {
     }
     if (member === 'referringDevice') {
       Object.defineProperty(facade, member, {
-        get: () => (source[member] as EventListener) ?? null,
+        get: () => (source[member] as BluetoothDevice | null) ?? null,
         enumerable: true,
         configurable: true,
       });

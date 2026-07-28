@@ -1,7 +1,7 @@
 {
   "name": "@beacio/core",
-  "version": "1.0.0",
-  "description": "The only Web Bluetooth polyfill for Safari iOS — make navigator.bluetooth work on iPhone. Scan, connect, read/write BLE devices from any browser",
+  "version": "1.2.0",
+  "description": "The only Web Bluetooth polyfill for Safari iOS \u2014 make navigator.bluetooth work on iPhone. Scan, connect, read/write BLE devices from any browser",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "unpkg": "dist/browser-auto.global.js",
@@ -61,10 +61,10 @@
       "import": "./dist/profiles/serial-ffe0.mjs",
       "require": "./dist/profiles/serial-ffe0.js"
     },
-    "./profiles/storz-bickel": {
-      "types": "./dist/profiles/storz-bickel.d.ts",
-      "import": "./dist/profiles/storz-bickel.mjs",
-      "require": "./dist/profiles/storz-bickel.js"
+    "./experimental/profiles/storz-bickel": {
+      "types": "./dist/experimental/profiles/storz-bickel.d.ts",
+      "import": "./dist/experimental/profiles/storz-bickel.mjs",
+      "require": "./dist/experimental/profiles/storz-bickel.js"
     },
     "./testing": {
       "types": "./dist/testing/index.d.ts",
@@ -132,6 +132,7 @@
   },
   "devDependencies": {
     "@types/jest": "^30",
+    "@types/node": "^26.1.1",
     "@types/web-bluetooth": "^0.0.21",
     "jest": "^30",
     "jest-environment-jsdom": "^30",

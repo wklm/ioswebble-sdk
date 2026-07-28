@@ -22,7 +22,7 @@ export interface MockDeviceOptions {
   rssi?: number;
   /** Fail the first N connect() attempts with a NetworkError. */
   failConnectAttempts?: number;
-/** Optional platform-reported write limits for MTU-aware write tests. */
+  /** Optional platform-reported write limits for MTU-aware write tests. */
   writeLimits?: {
     withResponse?: number | null;
     withoutResponse?: number | null;

@@ -1,14 +1,14 @@
 {
-  "version": "1.0.0",
-  "generatedAt": "2026-07-20T14:36:49.929Z",
+  "version": "1.2.0",
+  "generatedAt": "2026-07-28T08:46:56.879Z",
   "entries": {
     "auto.mjs": {
-      "sha384": "AmGCB7YpC0sXj5vO/FTlUcOnJkdp0hSBFxGkjZTU5WDFSMSocMNqpB7whhMm3B2S",
+      "sha384": "aYL/UPDpKVEWxjTCu8WBs0SUHLu2nopC0ba1P3c8KsnYQSZgqpTUHbOTcWqITIbY",
       "size": 6492
     },
     "browser-auto.global.js": {
-      "sha384": "dgwGfH7888vkd9xuLusOa6LIPXf38soevhedbtQdru7wc+8kgNIrljxmdN/y7LQa",
-      "size": 53323
+      "sha384": "I3KOFx/h+X1L+S6nylKMt+s3jcn/9nSlLnYENbavFPYZYqhd3L/E75pZC9WO7zPp",
+      "size": 53486
     }
   }
 }

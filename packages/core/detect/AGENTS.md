@@ -70,7 +70,7 @@ export default function App({ Component, pageProps }) {
 ### Plain HTML
 ```html
 <meta name="beacio-key" content="wbl_xxxxx">
-<script type="module">import 'https://cdn.beacio.com/@beacio/core@1.0.0/dist/auto.mjs';</script>
+<script type="module">import 'https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs';</script>
 ```
 > The polyfill auto-installs from the branded CDN (matches `beacio_install_plan`
 > html+cdn path — see `packages/mcp/src/tools/install-plan.ts`). Module scripts

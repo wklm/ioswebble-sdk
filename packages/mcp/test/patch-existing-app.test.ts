@@ -28,7 +28,7 @@ const CANONICAL_QUICKSTART = join(
   REPO_ROOT,
   '.claude',
   'skills',
-  'webble',
+  'beacio',
   'references',
   'quickstart.md',
 );

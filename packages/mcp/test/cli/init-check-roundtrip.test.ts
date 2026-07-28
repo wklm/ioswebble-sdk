@@ -9,7 +9,7 @@ import { check } from '../../src/cli/commands/check.js';
  * Producer/consumer parity guard for PR-REVIEW.md M4 + CDN-01 (W4).
  *
  * `beacio init` (html path) writes the canonical M7-pinned
- * `cdn.beacio.com/@beacio/core@1.0.0/dist/auto.mjs` ESM import tag (the same URL
+ * `cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs` ESM import tag (the same URL
  * `beacio_install_plan` emits on the html+cdn path). `beacio check` must be able
  * to detect exactly what `init` writes — otherwise a project scaffolded with
  * `init` fails `check` with a false negative. This is the durable regression
@@ -58,7 +58,7 @@ describe('init -> check round-trip (html)', () => {
     // Sanity: init actually injected the canonical CDN one-liner (CDN-01).
     const html = fs.readFileSync(path.join(fixtureDir, 'index.html'), 'utf-8');
     expect(html).toContain(
-      'https://cdn.beacio.com/@beacio/core@1.0.0/dist/auto.mjs'
+      'https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs'
     );
     expect(html).not.toContain('https://beacio.com/beacio.js');
 
@@ -80,7 +80,7 @@ describe('init -> check round-trip (html)', () => {
 
   it('init(html) emits the canonical M7-pinned cdn.beacio.com bootstrap (NOT the stale apex shortener)', async () => {
     // CDN-01 regression guard: the docs / MCP install-plan / @beacio/skill all
-    // reference `https://cdn.beacio.com/@beacio/core@1.0.0/dist/auto.mjs` (full
+    // reference `https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs` (full
     // semver, cdn Worker 302s). `beacio init` (html) must emit the SAME canonical
     // URL — emitting the legacy `https://beacio.com/beacio.js` apex shortener
     // here would desync init from install-plan + leave the marquee copy-paste
@@ -88,7 +88,7 @@ describe('init -> check round-trip (html)', () => {
     await init([]);
     const html = fs.readFileSync(path.join(fixtureDir, 'index.html'), 'utf-8');
     expect(html).toContain(
-      "https://cdn.beacio.com/@beacio/core@1.0.0/dist/auto.mjs"
+      "https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs"
     );
     expect(html).not.toContain('https://beacio.com/beacio.js');
   });

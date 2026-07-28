@@ -2,6 +2,11 @@
 
 All notable changes to `@beacio/react` will be documented in this file.
 
+## 1.2.0 — 2026-07-28
+
+- First stable release aligned with `@beacio/core@1.2.0` (`peerDependencies` now `^1.2.0`).
+- No breaking changes to the hook/component API relative to 1.0.0; internal maintenance and packaging alignment only.
+
 ## 2.0.0-beta.2 — 2026-06-03
 
 - Pre-release docs and packaging polish for the `2.0.0-beta` line.

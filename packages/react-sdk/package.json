@@ -1,7 +1,7 @@
 {
   "name": "@beacio/react",
-  "version": "1.0.0",
-  "description": "React hooks for Bluetooth Low Energy — useDevice, useScan, useProfile. Real-time BLE data in React",
+  "version": "1.2.0",
+  "description": "React hooks for Bluetooth Low Energy \u2014 useDevice, useScan, useProfile. Real-time BLE data in React",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -32,13 +32,13 @@
     "prepublishOnly": "npm run build && npm run typecheck"
   },
   "peerDependencies": {
-    "@beacio/core": "^1.0.0",
+    "@beacio/core": "^1.2.0",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^30.0.0",
     "@types/react": "^19.2.17",

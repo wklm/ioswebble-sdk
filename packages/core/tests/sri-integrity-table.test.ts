@@ -5,7 +5,7 @@
  * The cdn worker serves `cdn.beacio.com/self-host/...` (SRI-pinnable beacio-owned
  * bytes), and operators who pin Subresource Integrity on a `<script>` load need a
  * repo-tracked content-hash (`sha384`) table for the exact bytes they pin —
- * `@beacio/core@1.0.0/dist/auto.mjs` and `dist/browser-auto.global.js`. Until W15
+ * `@beacio/core@1.2.0/dist/auto.mjs` and `dist/browser-auto.global.js`. Until W15
  * no such table shipped: an operator had to compute the digest out-of-band, and
  * the PR's "SRI was regenerated consistently" claim had no committed evidence.
  *

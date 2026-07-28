@@ -2,6 +2,12 @@
 
 All notable changes to `@beacio/core` will be documented in this file.
 
+## 1.2.0 — 2026-07-27
+
+- Version aligned with App Store / Safari extension **1.2.0**.
+- Stability freeze surfaces (internal slots, error matrix, batch GATT wire protocol, experimental Storz path).
+- CDN / install pins move to `@beacio/core@1.2.0` (see `onboarding-manifest.json`). Fielded `@beacio/core@1.0.0` CDN pins remain supported via the extension skew cell (U-SKEW-01).
+
 ## 1.0.0 — 2026-06-21
 
 - First externally-consumed stable release (Storz & Bickel is the first real consumer). The
@@ -11,7 +17,7 @@ All notable changes to `@beacio/core` will be documented in this file.
   major release. See the backward-compatibility + pinned-version contract in
   [`outreach/storz-bickel/07-support-scope.md`](../../outreach/storz-bickel/07-support-scope.md)
   (§7), which also defines the pre-publish change-notification path. Consumers pin the exact
-  immutable `@beacio/core@1.0.0/dist/auto.mjs` rather than a floating tag.
+  immutable `@beacio/core@1.2.0/dist/auto.mjs` rather than a floating tag.
 
 ## 2.0.0-beta.2 — 2026-06-03
 

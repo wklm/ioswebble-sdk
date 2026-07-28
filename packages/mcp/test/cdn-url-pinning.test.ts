@@ -84,9 +84,9 @@ describe('CDN URL pinning (PR #178 B1 regression guard)', () => {
     ).toEqual([]);
   });
 
-  it('the documented core bootstrap resolves to @beacio/core@1.0.0 (the published, proxy-accepted release)', () => {
+  it('the documented core bootstrap resolves to @beacio/core@1.2.0 (the published, proxy-accepted release)', () => {
     // At least one emitted bootstrap must be the exact canonical one-liner URL.
-    const canonical = 'https://cdn.beacio.com/@beacio/core@1.0.0/dist/auto.mjs';
+    const canonical = 'https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs';
     expect(urls.some(({ url }) => url === canonical)).toBe(true);
   });
 });

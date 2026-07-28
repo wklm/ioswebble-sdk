@@ -1,6 +1,6 @@
 {
   "name": "@beacio/skill",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Agent skill for beacio SDK integration — works with Claude Code, Cursor, Copilot",
   "main": "SKILL.md",
   "files": ["SKILL.md", "README.md", "AGENTS.md"],

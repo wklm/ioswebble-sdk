@@ -8,7 +8,7 @@ import { check } from '../../src/cli/commands/check.js';
  * CDN-02 regression guard for PR #178 Phase-2 W4.
  *
  * `beacio check` greps the project for a beacio bootstrap. Its regex must
- * recognize the canonical M7-pinned CDN URL (`cdn.beacio.com/@beacio/core@1.0.0/dist/auto.mjs`)
+ * recognize the canonical M7-pinned CDN URL (`cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs`)
  * that `beacio_install_plan` emits on the html+cdn path — otherwise a project
  * set up via the MCP tool reports BOTH "No Beacio initialization found in
  * source files" AND "No @beacio/core package or CDN script found", a false-
@@ -35,7 +35,7 @@ describe('check() recognizes the canonical cdn.beacio.com bootstrap', () => {
     fs.writeFileSync(
       path.join(fixtureDir, 'index.html'),
       '<!doctype html>\n<html>\n<head>\n' +
-        "<script type=\"module\">import 'https://cdn.beacio.com/@beacio/core@1.0.0/dist/auto.mjs';</script>\n" +
+        "<script type=\"module\">import 'https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs';</script>\n" +
         '</head>\n<body>\n  <h1>hi</h1>\n</body>\n</html>\n'
     );
 

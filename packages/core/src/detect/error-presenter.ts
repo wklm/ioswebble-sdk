@@ -230,7 +230,7 @@ interface Resolved {
  * errors always use the per-code copy table so no native jargon/stack leaks.
  */
 function resolve(
-  input: Error | string | Record<string, string | number | boolean | null>,
+  input: unknown,
   pack: LocaleStrings['error'],
   strings: PresentErrorStrings | undefined
 ): Resolved {
@@ -286,7 +286,7 @@ function resolve(
  * @returns The card element, or null when the error is coalesced (a card for an
  *          identical error is already on screen) so callers can no-op safely.
  */
-export function presentError(errorOrMessage: Error | string | Record<string, string | number | boolean | null>, options: PresentErrorOptions = {}): HTMLElement | null {
+export function presentError(errorOrMessage: unknown, options: PresentErrorOptions = {}): HTMLElement | null {
   // SSR / non-DOM guard (mirrors banner.ts dispatch guards).
   if (typeof document === 'undefined') return null;
 

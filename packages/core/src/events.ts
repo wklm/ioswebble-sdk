@@ -39,6 +39,8 @@ export const BEACIO_EVENTS = {
   EXTENSION_ACTIVATE_RESULT: 'beacio:extension:activate-result',
   /** Extension announces it is installed (present, not yet active). */
   EXTENSION_INSTALLED: 'beacio:extension:installed',
+  /** Extension → page: the injected script's __beacio status transitioned. */
+  EXTENSION_STATUS_CHANGE: 'beacio:extension:statuschange',
 } as const;
 
 /**

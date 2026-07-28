@@ -501,7 +501,7 @@ export interface BeacioPeripheral {
   onconnectionstatechange: ((this: BeacioPeripheral, ev: Event) => void) | null;
   /** Called when advertising state changes. */
   onadvertisingstatechange: ((this: BeacioPeripheral, ev: Event) => void) | null;
-  /** Called when a notification is ready to be sent. */
+  /** Called when a queued notification has been delivered and the characteristic is ready for more. */
   onnotificationready: ((this: BeacioPeripheral, ev: Event) => void) | null;
 }
 
