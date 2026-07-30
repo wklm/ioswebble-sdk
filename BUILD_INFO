@@ -1,5 +1,5 @@
-source_commit=b7157e1e
-generated_at=2026-07-28T16:19:22Z
+source_commit=4373f366
+generated_at=2026-07-30T16:55:21Z
 source_repo=github.com/wklm/beacio-sdk
 generator=mirror-skills.sh
 version=1.2.0
