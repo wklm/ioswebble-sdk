@@ -132,7 +132,7 @@
   },
   "devDependencies": {
     "@types/jest": "^30",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "@types/web-bluetooth": "^0.0.21",
     "jest": "^30",
     "jest-environment-jsdom": "^30",
