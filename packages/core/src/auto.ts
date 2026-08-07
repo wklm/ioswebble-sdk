@@ -591,7 +591,30 @@ export function applyPolyfill(): void {
   const platform = detectPlatform();
 
   if (platform === 'native') {
-    // Chrome, Edge, etc. — native Web Bluetooth already works
+    // Chrome, Edge, etc. — native Web Bluetooth already works.
+    //
+    // A DORMANT beacio origin also detects as 'native': the extension's page
+    // bootstrap already occupies navigator.bluetooth while navigator.beacio
+    // (and its __beacio sentinel) is only mounted once the origin is
+    // activated. Without this retry an SDK imported before activation — the
+    // common case, a <script> in <head> — would never get the §4.1 permissions
+    // shim. Re-derive the platform when the extension announces itself; on
+    // genuine Chrome/Edge the event never fires and this listener is inert.
+    //
+    // navigator.bluetooth is deliberately NOT touched here: the bootstrap
+    // facade owns it ([SameObject]), which is also why the safari-extension
+    // branch's own `!bluetoothNavigator.bluetooth` guard below stands down.
+    // window.beacioIOS needs no mirror either — the injected script mounts it
+    // itself post-activation.
+    if (typeof window !== 'undefined') {
+      window.addEventListener(BEACIO_EVENTS.EXTENSION_READY, () => {
+        if (detectPlatform() !== 'safari-extension') return;
+        const api = getBluetoothAPI();
+        if (api) {
+          patchPermissionsAPI(api as { getDevices?: () => Promise<BluetoothDevice[]> });
+        }
+      }, { once: true });
+    }
     return;
   }
 
@@ -643,34 +666,44 @@ export function applyPolyfill(): void {
   // navigator.permissions is intentionally NOT patched here: with no working
   // bluetooth API behind it, a synthetic PermissionStatus would be a lie —
   // the browser's native TypeError on the name matches Chrome's behavior.
-  if (!bluetoothNavigator.bluetooth) {
-    // [SameObject]: one stub for the page's lifetime.
-    const stub = createUnsupportedBluetoothStub();
+  // [SameObject]: one stub for the page's lifetime — and ONLY when the slot is
+  // free. A truthy navigator.bluetooth on an 'unsupported' page is always a
+  // CDN_STUB_MARKER-stamped stub someone else installed (a real implementation
+  // would have detected as 'native'), so the SDK owns nothing there.
+  const ownStub: object | null = bluetoothNavigator.bluetooth ? null : createUnsupportedBluetoothStub();
+  if (ownStub !== null) {
     Object.defineProperty(navigator, 'bluetooth', {
-      get: () => stub,
+      get: () => ownStub,
       configurable: true,
     });
+  }
 
-    // §10 (api-unavailable-at-document-start): this one-shot probe can lose
-    // the race against the extension's injected script — the throwing
-    // "unsupported" stub must not stay installed forever on a page where the
-    // extension comes up moments later. Re-bind deterministically on the
-    // extension's ready signal.
-    if (typeof window !== 'undefined') {
-      window.addEventListener(BEACIO_EVENTS.EXTENSION_READY, () => {
-        const api = getBluetoothAPI();
-        if (!api || (api as object) === stub) return;
-        const current = (navigator as { bluetooth?: object }).bluetooth;
-        if (current !== undefined && current !== stub) return; // page/native owns it now
+  // §10 (api-unavailable-at-document-start): this one-shot probe can lose
+  // the race against the extension's injected script — the throwing
+  // "unsupported" stub must not stay installed forever on a page where the
+  // extension comes up moments later. Re-bind deterministically on the
+  // extension's ready signal. Registered even when the slot was already taken:
+  // the §4.1 shim is slot-owner-independent, so a page whose navigator.bluetooth
+  // belongs to the CDN script still gets the honest permissions shim.
+  if (typeof window !== 'undefined') {
+    window.addEventListener(BEACIO_EVENTS.EXTENSION_READY, () => {
+      if (detectPlatform() !== 'safari-extension') return;
+      const api = getBluetoothAPI();
+      if (!api) return;
+      // Ownership: only ever swap the stub THIS module created — compared by
+      // IDENTITY, never by CDN_STUB_MARKER (the CDN stamps the same marker).
+      // A CDN stub, a bootstrap facade or a native impl keeps the slot.
+      const current = (navigator as { bluetooth?: object }).bluetooth;
+      if (ownStub !== null && (current === undefined || current === ownStub)) {
         const upgraded = buildW3CFacade(withAutoReconnect(api));
         Object.defineProperty(navigator, 'bluetooth', {
           get: () => upgraded,
           configurable: true,
         });
-        // Extension active — the honest §4.1 permissions shim now applies.
-        patchPermissionsAPI(api as { getDevices?: () => Promise<BluetoothDevice[]> });
-      }, { once: true });
-    }
+      }
+      // Extension active — the honest §4.1 permissions shim now applies.
+      patchPermissionsAPI(api as { getDevices?: () => Promise<BluetoothDevice[]> });
+    }, { once: true });
   }
 }
 

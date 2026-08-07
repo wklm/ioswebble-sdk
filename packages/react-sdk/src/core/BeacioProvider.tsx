@@ -157,9 +157,13 @@ export function BeacioProvider({ children, config, ble }: BeacioProviderProps) {
       return device;
     } catch (err) {
       const beacioError = BeacioError.from(err);
-      const isUserCancellation = beacioError.code === 'USER_CANCELLED'
-        || (err instanceof Error && err.name === 'NotFoundError');
-      if (!isUserCancellation) {
+      // Dismissing the chooser is not a failure, so it must not raise an error
+      // banner. `USER_CANCELLED` is the ONLY correct test: Web Bluetooth reports
+      // both a dismissed chooser and a genuine "nothing to connect to" as
+      // NotFoundError, so keying off the DOM name would also swallow real
+      // failures (empty adapter, vanished device) and leave the UI silent.
+      // Core owns that message-level disambiguation (BeacioError.from).
+      if (beacioError.code !== 'USER_CANCELLED') {
         setError(beacioError);
       }
       return null;

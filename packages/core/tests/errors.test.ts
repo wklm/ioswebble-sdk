@@ -39,6 +39,39 @@ describe('BeacioError.from', () => {
     expect(err.code).toBe('USER_CANCELLED');
   });
 
+  // ---------------------------------------------------------------------------
+  // NotFoundError is OVERLOADED in Web Bluetooth. Chromium maps CHOOSER_CANCELLED
+  // (the user dismissed the picker) AND a pile of genuine failures onto the same
+  // DOMException name — see third_party/blink/renderer/modules/bluetooth/
+  // bluetooth_error.cc lines 148-178. The message is the ONLY discriminator, and
+  // the beacio polyfill reproduces Chromium's cancellation string verbatim
+  // (src/extension/page-bootstrap.ts:384, src/beacio/api/bluetooth.ts:563).
+  // Callers that suppress cancellation MUST therefore be able to tell them apart
+  // from `code` alone — a caller must never have to re-sniff the raw message.
+  // ---------------------------------------------------------------------------
+  it('maps a cancelled chooser (NotFoundError + cancellation message) to USER_CANCELLED', () => {
+    // The exact DOMException Chromium and the beacio polyfill throw.
+    const err = BeacioError.from(
+      new DOMException('User cancelled the requestDevice() chooser.', 'NotFoundError'),
+      // requestDevice() passes this default — it must not override the classification.
+      'DEVICE_NOT_FOUND',
+    );
+    expect(err.code).toBe('USER_CANCELLED');
+  });
+
+  it.each([
+    'Web Bluetooth is not supported on this platform. For a list of supported platforms see: https://goo.gl/J6ASzs',
+    'Bluetooth adapter not available.',
+    "User selected a device that doesn't exist anymore.",
+    'Web Bluetooth API globally disabled.',
+    'User or their enterprise policy has disabled Web Bluetooth.',
+    'User denied the browser permission to scan for Bluetooth devices.',
+    'Bluetooth Low Energy not available.',
+  ])('keeps a genuine NotFoundError failure as DEVICE_NOT_FOUND: %s', (message) => {
+    const err = BeacioError.from(new DOMException(message, 'NotFoundError'), 'DEVICE_NOT_FOUND');
+    expect(err.code).toBe('DEVICE_NOT_FOUND');
+  });
+
   it('classifies real TypeErrors from the polyfill as INVALID_PARAMETER (convention 5)', () => {
     const err = BeacioError.from(new TypeError("Invalid UUID: 'bogus'"));
     expect(err.code).toBe('INVALID_PARAMETER');

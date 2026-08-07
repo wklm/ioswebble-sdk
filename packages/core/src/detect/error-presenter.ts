@@ -33,8 +33,10 @@
 
 // SB-SDK-07: the shared localized-string seam (same module the install banner
 // consumes). i18n.ts imports NOTHING from @beacio/core — it re-declares the
-// BeacioErrorCode union locally — so this stays within the optional-peer rule
-// (no-toplevel-core-import.test.ts) just like this file's own local tables.
+// BeacioErrorCode union locally — so this stays within the optional-peer rule,
+// just like this file's own local tables. (W13-RECONCILE 2026-08-05: this line
+// used to cite `no-toplevel-core-import.test.ts` as that rule's enforcer. No
+// such test exists, or ever has — citation removed rather than left dangling.)
 import { EN_STRINGS, type LocaleStrings, resolveStrings } from './i18n';
 
 /**
@@ -188,12 +190,25 @@ function isCodedError<T>(error: T): error is T & { code: BeacioErrorCode; messag
   );
 }
 
+/**
+ * The detect bundle ships standalone and deliberately has NO runtime import of
+ * core, so this is a local copy of core's `isUserCancellationMessage`
+ * (`../errors.ts`). Keep the two in lockstep — a raw DOMException must not be
+ * presented as "device not found" here while core codes it USER_CANCELLED.
+ */
+function isUserCancellationMessage(lowerMessage: string): boolean {
+  return lowerMessage.includes('user cancelled') || lowerMessage.includes('user canceled');
+}
+
 /** Map a raw DOMException name (no BeacioError) to a BeacioErrorCode. */
 function codeFromDomName(name: string, message: string): BeacioErrorCode {
   const lower = message.toLowerCase();
   switch (name) {
+    // Overloaded in Web Bluetooth: a dismissed chooser and a genuine failure both
+    // arrive as NotFoundError (Chromium bluetooth_error.cc lines 148-178), so the
+    // message is the only discriminator. Mirrors core's BeacioError.from.
     case 'NotFoundError':
-      return 'DEVICE_NOT_FOUND';
+      return isUserCancellationMessage(lower) ? 'USER_CANCELLED' : 'DEVICE_NOT_FOUND';
     case 'NotAllowedError':
     case 'SecurityError':
       return 'PERMISSION_DENIED';
@@ -206,7 +221,7 @@ function codeFromDomName(name: string, message: string): BeacioErrorCode {
     default:
       break;
   }
-  if (lower.includes('user cancelled') || lower.includes('user canceled')) return 'USER_CANCELLED';
+  if (isUserCancellationMessage(lower)) return 'USER_CANCELLED';
   if (lower.includes('disconnect')) return 'DEVICE_DISCONNECTED';
   if (lower.includes('timeout')) return 'TIMEOUT';
   return 'GATT_OPERATION_FAILED';

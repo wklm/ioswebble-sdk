@@ -122,6 +122,30 @@ const SUGGESTIONS: Record<BeacioErrorCode, string> = {
 const COMPETITOR_TOKENS = /\b(bluefy|web ble browser|webble browser)\b/gi;
 
 /**
+ * The single definition of "this native message means the USER dismissed the
+ * picker", used by every classification path so they can never disagree.
+ *
+ * Web Bluetooth OVERLOADS `NotFoundError`: Chromium maps CHOOSER_CANCELLED —
+ * the user dismissing the chooser — onto the SAME DOMException name as a pile of
+ * genuine failures (NO_BLUETOOTH_ADAPTER, CHOSEN_DEVICE_VANISHED,
+ * WEB_BLUETOOTH_NOT_SUPPORTED, NO_SERVICES_FOUND, …). See
+ * `third_party/blink/renderer/modules/bluetooth/bluetooth_error.cc` lines
+ * 148-178. The message is therefore the ONLY signal that separates the two, and
+ * "User cancelled the requestDevice() chooser." is unique to the cancel branch —
+ * no other NotFoundError message in that table contains "user cancel(l)ed".
+ * The beacio polyfill emits Chromium's string verbatim (`src/extension/
+ * page-bootstrap.ts`, `src/beacio/api/bluetooth.ts`), so this predicate is exact
+ * for the platforms this SDK actually runs on.
+ *
+ * Matched case-insensitively against the RAW text so a stack-suffixed or
+ * differently-cased native message still classifies.
+ */
+function isUserCancellationMessage(rawMsg: string): boolean {
+  const lower = rawMsg.toLowerCase();
+  return lower.includes('user cancelled') || lower.includes('user canceled');
+}
+
+/**
  * SB-SDK-05 AC6: reduce a raw native error message to a single, complete-sentence
  * line that is safe to show via a bare `alert(error.toString())` — no stack frames,
  * no native `webkit://`/`http(s)://` URLs, and no competitor names. A clean,
@@ -194,8 +218,16 @@ export class BeacioError extends Error {
       // REAL TypeErrors (invalid UUIDs, malformed filters — Web Bluetooth §7).
       case 'TypeError':
         return new BeacioError('INVALID_PARAMETER', msg);
+      // NotFoundError is overloaded (see isUserCancellationMessage): the user
+      // dismissing the chooser and a genuine "nothing to connect to" arrive under
+      // the same DOM name. Disambiguate HERE, by message — if this returned a flat
+      // DEVICE_NOT_FOUND, `USER_CANCELLED` would be unreachable for every real
+      // cancellation and callers would be forced to re-sniff the raw message
+      // (or, worse, suppress every NotFoundError and hide real failures).
       case 'NotFoundError':
-        return new BeacioError('DEVICE_NOT_FOUND', msg);
+        return isUserCancellationMessage(rawMsg)
+          ? new BeacioError('USER_CANCELLED')
+          : new BeacioError('DEVICE_NOT_FOUND', msg);
       case 'NotAllowedError':
       case 'SecurityError':
         return new BeacioError('PERMISSION_DENIED', msg);
@@ -215,7 +247,7 @@ export class BeacioError extends Error {
     // Classification inspects the RAW text (rawMsg) so a stack-suffixed native
     // message still matches; the message carried onto the BeacioError stays the
     // sanitised `msg` (AC6).
-    if (rawMsg.includes('User cancelled') || rawMsg.includes('User canceled')) {
+    if (isUserCancellationMessage(rawMsg)) {
       return new BeacioError('USER_CANCELLED');
     }
     if (lowerMsg.includes('no devices found') || rawMsg.includes('No Devices')) {

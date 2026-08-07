@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, jest } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { BluetoothUUID } from '../src/uuid';
 // §4.1 Permission API Integration — the navigator.permissions.query shim must
 // be HONEST (permissions-query-bluetooth-unsupported):
@@ -494,5 +494,276 @@ describe('auto polyfill native no-op (Chrome/Edge/Android)', () => {
     expect(installed).toBeDefined();
     expect(typeof installed.canonicalUUID).toBe('function');
     expect(installed.canonicalUUID(0x180d)).toBe(BluetoothUUID.canonicalUUID(0x180d));
+  });
+});
+// Dormant beacio origin: on a page whose origin is NOT yet activated the
+// extension's page bootstrap already occupies navigator.bluetooth while
+// navigator.beacio (and its __beacio sentinel) is still absent — so
+// detectPlatform() answers 'native' and applyPolyfill takes the native
+// early-return above. An SDK imported BEFORE activation (the common case: a
+// <script> in <head>, activation happening later on a user gesture) must still
+// receive the §4.1 permissions shim once the extension announces itself with
+// `beacio:extension:ready`. navigator.bluetooth itself stays untouched on this
+// path — the bootstrap facade owns it ([SameObject], CONTRACT-FREEZE U-SKEW-01).
+describe('auto polyfill dormant-origin permissions shim', () => {
+  // Declared as a bare function type, NOT jest.Mock: once the shim installs, the
+  // slot holds a plain async function and the identity assertions below must
+  // still typecheck.
+  type TestQuery = (descriptor: { name?: string; deviceId?: string }) => Promise<TestBluetoothPermissionResult>;
+  interface TestBootstrapFacade {
+    requestDevice: jest.Mock;
+    getAvailability: jest.Mock;
+    getDevices: jest.Mock;
+  }
+  type TestDormantNav = {
+    bluetooth: TestBootstrapFacade;
+    beacio?: TestBeacioSurface;
+    permissions: { query: TestQuery };
+  };
+  // navigator.bluetooth is the extension's page-bootstrap facade, carrying
+  // NEITHER __beacio NOR __beacioCDNStub — the exact shape pinned by
+  // src/extension/pinned-cdn-skew-cell.test.ts, and what makes the detector
+  // answer 'native' on a dormant origin.
+  function makeDormantNavigator() {
+    const requestDevice = jest.fn();
+    const getAvailability = jest.fn(async () => false);
+    const getDevices = jest.fn(async () => []);
+    const facade: TestBootstrapFacade = { requestDevice, getAvailability, getDevices };
+    const originalQuery = jest.fn(async (descriptor: { name?: string }) => {
+      if (descriptor?.name === 'bluetooth') {
+        throw new TypeError("'bluetooth' is not a valid PermissionName");
+      }
+      return { state: 'granted', name: descriptor?.name };
+    });
+    const nav = { bluetooth: facade, permissions: { query: originalQuery } } as unknown as TestDormantNav;
+    return { nav, facade, requestDevice, originalQuery };
+  }
+  // The extension finishes its handshake in injected-full.ts order: mount
+  // navigator.beacio, stamp __beacio, THEN dispatch the ready event.
+  function activate(nav: TestDormantNav, grantedDevices: TestGrantedDevice[]): void {
+    nav.beacio = {
+      __beacio: true,
+      requestDevice: jest.fn(),
+      getAvailability: jest.fn(async () => true),
+      getDevices: jest.fn(async () => grantedDevices),
+    };
+    window.dispatchEvent(new Event('beacio:extension:ready'));
+  }
+  it('installs the §4.1 shim when the extension activates after the SDK loaded', async () => {
+    const { nav, originalQuery } = makeDormantNavigator();
+    mockNavigator(nav);
+    await importAuto();
+    // Dormant: nothing patched yet — the page still holds the browser's query.
+    expect(nav.permissions.query).toBe(originalQuery);
+    activate(nav, [{ id: 'alias-a', name: 'HRM' }]);
+    const status = await nav.permissions.query({ name: 'bluetooth' });
+    // Honest shim: 'prompt', never a synthetic 'granted'.
+    expect(status.state).toBe('prompt');
+    expect(status.name).toBe('bluetooth');
+    expect(status.devices.map((device: TestGrantedDevice) => device.id)).toEqual(['alias-a']);
+    expect(Object.isFrozen(status.devices)).toBe(true);
+    // Every other permission name still reaches the browser's own query.
+    const geolocation = await nav.permissions.query({ name: 'geolocation' });
+    expect(geolocation.state).toBe('granted');
+    expect(originalQuery).toHaveBeenCalledWith({ name: 'geolocation' });
+  });
+  it('leaves navigator.bluetooth strictly untouched across the ready signal', async () => {
+    const { nav, facade, requestDevice } = makeDormantNavigator();
+    mockNavigator(nav);
+    await importAuto();
+    activate(nav, []);
+    // The bootstrap facade is retained — no proxy mounted over it, no method
+    // identity rebound. Only navigator.permissions may change on this path.
+    expect(nav.bluetooth).toBe(facade);
+    expect(nav.bluetooth.requestDevice).toBe(requestDevice);
+  });
+  it('patches once — a second ready signal does not chain a second wrapper', async () => {
+    const { nav, originalQuery } = makeDormantNavigator();
+    mockNavigator(nav);
+    await importAuto();
+    activate(nav, []);
+    // Captured AFTER the first dispatch: patchPermissionsAPI is NOT internally
+    // idempotent (it binds the live query and overwrites the slot), so the
+    // {once:true} listener is the single-wrap guarantee under test.
+    const patched = nav.permissions.query;
+    expect(patched).not.toBe(originalQuery);
+    window.dispatchEvent(new Event('beacio:extension:ready'));
+    expect(nav.permissions.query).toBe(patched);
+  });
+  it('stays inert while no ready signal fires (genuine native no-op)', async () => {
+    const { nav, facade, originalQuery } = makeDormantNavigator();
+    mockNavigator(nav);
+    await importAuto();
+    // Same shape as genuine Chrome/Edge, where the event never fires: the
+    // {once:true} listener is inert and native behavior is preserved verbatim.
+    expect(nav.permissions.query).toBe(originalQuery);
+    expect(nav.bluetooth).toBe(facade);
+    await expect(nav.permissions.query({ name: 'bluetooth' })).rejects.toBeInstanceOf(TypeError);
+  });
+});
+// ZC-05 — CDN-stub-occupied slot. On a page that loads the CDN script AND
+// imports @beacio/core/auto, navigator.bluetooth is already occupied by a
+// CDN_STUB_MARKER-stamped stub while navigator.beacio is still absent, so
+// detectPlatform() answers 'unsupported' and applyPolyfill takes the last
+// branch. The SDK owns nothing in that slot (the CDN script does), but the
+// §4.1 permissions shim is slot-owner-independent and MUST still install when
+// the extension announces itself — the CDN's own self-upgrade only covers the
+// installed-inactive path (src/cdn/beacio.ts hookActivatePrompt), never the
+// hookRequestDevice or cross-origin-iframe stubs.
+describe('auto polyfill CDN-stub-occupied slot', () => {
+  // Bare function type, NOT jest.Mock: once the shim installs, the slot holds a
+  // plain async function and the identity assertions below must still typecheck.
+  type TestQuery = (descriptor: { name?: string; deviceId?: string }) => Promise<TestBluetoothPermissionResult>;
+  /** The CDN script's faux navigator.bluetooth — carries the real marker. */
+  interface TestCDNStub {
+    __beacioCDNStub: boolean;
+    requestDevice: jest.Mock;
+    getAvailability: jest.Mock;
+    getDevices: jest.Mock;
+  }
+  type TestOccupiedNav = {
+    bluetooth: TestCDNStub;
+    beacio?: TestBeacioSurface;
+    permissions: { query: TestQuery };
+  };
+  type TestFreeSlotNav = {
+    bluetooth?: { getAvailability: () => Promise<boolean> };
+    beacio?: TestBeacioSurface;
+    permissions: { query: TestQuery };
+  };
+  function makeBrowserQuery() {
+    return jest.fn(async (descriptor: { name?: string }) => {
+      if (descriptor?.name === 'bluetooth') {
+        throw new TypeError("'bluetooth' is not a valid PermissionName");
+      }
+      return { state: 'granted', name: descriptor?.name };
+    });
+  }
+  // navigator.bluetooth occupied by a CDN stub: __beacioCDNStub own property,
+  // no navigator.beacio ⇒ detectPlatform() === 'unsupported' with a TRUTHY
+  // slot, which is exactly the branch under test.
+  function makeCDNStubNavigator() {
+    const requestDevice = jest.fn();
+    const stub: TestCDNStub = {
+      __beacioCDNStub: true,
+      requestDevice,
+      getAvailability: jest.fn(async () => false),
+      getDevices: jest.fn(async () => []),
+    };
+    const originalQuery = makeBrowserQuery();
+    const nav = { bluetooth: stub, permissions: { query: originalQuery } } as unknown as TestOccupiedNav;
+    return { nav, stub, requestDevice, originalQuery };
+  }
+  // The extension finishes its handshake in injected-full.ts order: mount
+  // navigator.beacio, stamp __beacio, THEN dispatch the ready event.
+  function activate(nav: { beacio?: TestBeacioSurface }, grantedDevices: TestGrantedDevice[]): void {
+    nav.beacio = {
+      __beacio: true,
+      requestDevice: jest.fn(),
+      getAvailability: jest.fn(async () => true),
+      getDevices: jest.fn(async () => grantedDevices),
+    };
+    window.dispatchEvent(new Event('beacio:extension:ready'));
+  }
+  // Anti-vacuity drain. importAuto() calls jest.resetModules(), so every fresh
+  // module instance registers ANOTHER {once:true} beacio:extension:ready
+  // listener on the shared jsdom window. Listeners left behind by tests that
+  // never dispatched would fire on THIS arm's dispatch and read the
+  // then-current global navigator — a false GREEN pre-fix, and a spurious extra
+  // permissions wrapper in the arbitration arm. Dispatching against an empty
+  // navigator is a proven no-op under both pre- and post-fix code
+  // (getBluetoothAPI() === null / detectPlatform() !== 'safari-extension') and,
+  // being {once:true}, detaches them. gate-js runs `jest --randomize`, so arm
+  // ordering can never be assumed.
+  function drainPendingReadyListeners(): void {
+    mockNavigator({});
+    window.dispatchEvent(new Event('beacio:extension:ready'));
+  }
+  beforeEach(drainPendingReadyListeners);
+  afterEach(drainPendingReadyListeners);
+  it('installs the §4.1 shim on a page whose navigator.bluetooth is a CDN stub', async () => {
+    const { nav, originalQuery } = makeCDNStubNavigator();
+    mockNavigator(nav);
+    await importAuto();
+    // Import time: nothing patched yet — no working API is behind the slot.
+    expect(nav.permissions.query).toBe(originalQuery);
+    activate(nav, [{ id: 'alias-a', name: 'HRM' }]);
+    const status = await nav.permissions.query({ name: 'bluetooth' });
+    // Honest shim: 'prompt', never a synthetic 'granted'.
+    expect(status.state).toBe('prompt');
+    expect(status.name).toBe('bluetooth');
+    expect(status.devices.map((device: TestGrantedDevice) => device.id)).toEqual(['alias-a']);
+    expect(Object.isFrozen(status.devices)).toBe(true);
+    // Every other permission name still reaches the browser's own query.
+    const geolocation = await nav.permissions.query({ name: 'geolocation' });
+    expect(geolocation.state).toBe('granted');
+    expect(originalQuery).toHaveBeenCalledWith({ name: 'geolocation' });
+  });
+  it('never swaps a CDN-owned navigator.bluetooth', async () => {
+    const { nav, stub, requestDevice } = makeCDNStubNavigator();
+    mockNavigator(nav);
+    await importAuto();
+    activate(nav, []);
+    // Ownership is absolute: the SDK may only ever replace an object IT built.
+    // The CDN's stub is retained verbatim — same object, same method identity.
+    expect(nav.bluetooth).toBe(stub);
+    expect(nav.bluetooth.requestDevice).toBe(requestDevice);
+  });
+  it('still upgrades the stub it owns itself', async () => {
+    const originalQuery = makeBrowserQuery();
+    const nav = { permissions: { query: originalQuery } } as unknown as TestFreeSlotNav;
+    mockNavigator(nav);
+    await importAuto();
+    // Free slot ⇒ the SDK installed (and therefore owns) the unsupported stub.
+    await expect(nav.bluetooth?.getAvailability()).resolves.toBe(false);
+    activate(nav, []);
+    await expect(nav.bluetooth?.getAvailability()).resolves.toBe(true);
+    expect(nav.beacio?.getAvailability).toHaveBeenCalled();
+    // [SameObject]: the upgraded proxy is stable across accesses.
+    expect(nav.bluetooth).toBe(nav.bluetooth);
+    const status = await nav.permissions.query({ name: 'bluetooth' });
+    expect(status.state).toBe('prompt');
+  });
+  it('stays inert on a CDN-stub page while no ready signal fires', async () => {
+    const { nav, stub, originalQuery } = makeCDNStubNavigator();
+    mockNavigator(nav);
+    await importAuto();
+    // No extension ⇒ no working API ⇒ the browser's native TypeError stands
+    // (a synthetic PermissionStatus here would be a lie).
+    expect(nav.permissions.query).toBe(originalQuery);
+    await expect(nav.permissions.query({ name: 'bluetooth' })).rejects.toBeInstanceOf(TypeError);
+    expect(nav.bluetooth).toBe(stub);
+  });
+  it('CDN+SDK arbitration: bounded at one SDK wrapper, no stacking', async () => {
+    const { nav, originalQuery } = makeCDNStubNavigator();
+    mockNavigator(nav);
+    await importAuto();
+    // The CDN script patches navigator.permissions itself (src/cdn/beacio.ts
+    // patchPermissionsQuery): bluetooth short-circuits, every other name is
+    // delegated to the query captured BEFORE the overwrite (no recursion).
+    const inner = nav.permissions.query.bind(nav.permissions);
+    const cdnSpy = jest.fn(async (descriptor: { name?: string }) => {
+      if (descriptor?.name !== 'bluetooth') return inner(descriptor);
+      return { state: 'prompt', name: 'bluetooth', devices: Object.freeze([{ id: 'cdn-device' }]) };
+    });
+    nav.permissions.query = cdnSpy as unknown as TestQuery;
+    activate(nav, [{ id: 'alias-a', name: 'HRM' }]);
+    // Last patcher wins: the SDK's wrapper is outermost and answers bluetooth
+    // from the extension's grant query, without reaching the CDN layer.
+    const status = await nav.permissions.query({ name: 'bluetooth' });
+    expect(status.state).toBe('prompt');
+    expect(status.devices.map((device: TestGrantedDevice) => device.id)).toEqual(['alias-a']);
+    expect(cdnSpy).not.toHaveBeenCalled();
+    const patched = nav.permissions.query;
+    expect(patched).not.toBe(cdnSpy as unknown as TestQuery);
+    // {once:true} is the single-wrap guarantee (patchPermissionsAPI is NOT
+    // internally idempotent) — a second ready signal adds no second wrapper.
+    window.dispatchEvent(new Event('beacio:extension:ready'));
+    expect(nav.permissions.query).toBe(patched);
+    // Exactly 2 layers deep: SDK → CDN → browser, each traversed once.
+    const geolocation = await nav.permissions.query({ name: 'geolocation' });
+    expect(geolocation.state).toBe('granted');
+    expect(cdnSpy).toHaveBeenCalledTimes(1);
+    expect(originalQuery).toHaveBeenCalledTimes(1);
   });
 });

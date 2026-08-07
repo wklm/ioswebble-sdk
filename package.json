@@ -12,6 +12,7 @@
   "scripts": {
     "build:packages": "npm run build -w packages/core && npm run build -w packages/react-sdk && npm run build -w packages/mcp",
     "test:packages": "npm test -w packages/core -w packages/react-sdk -w packages/mcp -w packages/skill --if-present",
+    "test:packages:randomized": "npm test -w packages/core -w packages/react-sdk -- --randomize --seed=${BEACIO_JEST_SEED:?BEACIO_JEST_SEED must be set - it is derived and exported by scripts/ci/local/gate-js.sh (_jest_seed); to run this leg by hand pick a seed, e.g. BEACIO_JEST_SEED=5150 npm run test:packages:randomized} --coverage=false && npm test -w packages/mcp -- --sequence.shuffle --sequence.seed=${BEACIO_JEST_SEED:?BEACIO_JEST_SEED must be set - it is derived and exported by scripts/ci/local/gate-js.sh (_jest_seed); to run this leg by hand pick a seed, e.g. BEACIO_JEST_SEED=5150 npm run test:packages:randomized}",
     "typecheck:packages": "npm run typecheck --workspaces --if-present",
     "publish:packages": "npm run build:packages && npm publish --provenance -w packages/core && npm publish --provenance -w packages/react-sdk && npm publish --provenance -w packages/mcp && npm publish --provenance -w packages/skill",
     "publish:dry": "npm run build:packages && npm publish --provenance --dry-run -w packages/core && npm publish --provenance --dry-run -w packages/react-sdk && npm publish --provenance --dry-run -w packages/mcp && npm publish --provenance --dry-run -w packages/skill"

@@ -157,19 +157,27 @@ describe('BeacioProvider', () => {
     expect(capturedResult).toBeNull();
   });
 
-  it('does not set error on user cancellation (NotFoundError)', async () => {
-    const notFoundError = new Error('User cancelled');
-    notFoundError.name = 'NotFoundError';
-    mockBluetooth.requestDevice = jest.fn().mockRejectedValue(notFoundError);
+  /**
+   * Render a provider whose child fires one requestDevice() and reports the
+   * provider's `error` as text. Resolves only once the requestDevice promise
+   * has SETTLED, so an assertion can never pass by out-racing the setError
+   * commit (the initial render also shows "No error").
+   */
+  const renderRequestDeviceOnce = async () => {
+    let settled = false;
+    let capturedResult: BeacioDevice | null | undefined;
 
     const TestComponent = () => {
       const { requestDevice, error } = useBeacio();
 
       React.useEffect(() => {
-        void requestDevice({ acceptAllDevices: true });
+        void requestDevice({ acceptAllDevices: true }).then((result) => {
+          capturedResult = result;
+          settled = true;
+        });
       }, [requestDevice]);
 
-      return <div>{error ? `Error: ${error.message}` : 'No error'}</div>;
+      return <div>{error ? `Error(${error.code}): ${error.message}` : 'No error'}</div>;
     };
 
     render(
@@ -178,10 +186,39 @@ describe('BeacioProvider', () => {
       </BeacioProvider>,
     );
 
-    // Give time for the request to resolve and re-render
-    await waitFor(() => expect(mockBluetooth.requestDevice).toHaveBeenCalled());
-    // Should not display an error for user cancellation
-    await waitFor(() => expect(screen.getByText('No error')).toBeInTheDocument());
+    await waitFor(() => expect(settled).toBe(true));
+    return { getResult: () => capturedResult };
+  };
+
+  // Web Bluetooth OVERLOADS NotFoundError: Chromium maps CHOOSER_CANCELLED,
+  // NO_BLUETOOTH_ADAPTER, CHOSEN_DEVICE_VANISHED and friends all onto
+  // NotFoundError (third_party/blink/renderer/modules/bluetooth/bluetooth_error.cc
+  // lines 148-178). The ONLY discriminator between "user dismissed the chooser"
+  // and a genuine failure is the message, and the beacio polyfill reproduces
+  // Chromium's cancellation string verbatim (src/extension/page-bootstrap.ts:384,
+  // src/beacio/api/bluetooth.ts:563). These two tests pin BOTH sides of that
+  // fork, so a suppression fix can never degrade into "swallow every error".
+  it('does not set error on user cancellation (NotFoundError)', async () => {
+    mockBluetooth.requestDevice = jest.fn().mockRejectedValue(
+      new DOMException('User cancelled the requestDevice() chooser.', 'NotFoundError'),
+    );
+
+    const { getResult } = await renderRequestDeviceOnce();
+
+    expect(mockBluetooth.requestDevice).toHaveBeenCalled();
+    expect(getResult()).toBeNull();
+    expect(screen.getByText('No error')).toBeInTheDocument();
+  });
+
+  it('DOES set error when a NotFoundError is a genuine failure, not a cancellation', async () => {
+    mockBluetooth.requestDevice = jest.fn().mockRejectedValue(
+      new DOMException("User selected a device that doesn't exist anymore.", 'NotFoundError'),
+    );
+
+    const { getResult } = await renderRequestDeviceOnce();
+
+    expect(getResult()).toBeNull();
+    expect(screen.getByText(/^Error\(DEVICE_NOT_FOUND\):/)).toBeInTheDocument();
   });
 
   it('tracks multiple devices from successive requestDevice calls', async () => {

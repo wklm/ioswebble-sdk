@@ -21,8 +21,14 @@
  * SB-SDK-02 (Part B) constraint: this module is reachable from the package-root
  * barrel, and `@beacio/core` is an OPTIONAL peer (it may be absent on a standalone
  * `npm i @beacio/detect`). So it must NOT hard-import core at module top level —
- * that throws at load (guarded by optional-core.test.ts + no-toplevel-core-import
- * .test.ts). The one core value it needs — the EXTENSION_READY event name — is
+ * that throws at load. NOTE (W13-RECONCILE 2026-08-05): this used to cite
+ * "optional-core.test.ts + no-toplevel-core-import.test.ts" as the guards.
+ * NEITHER FILE HAS EVER EXISTED anywhere in the repo — the rule is enforced only
+ * by the tsup build shape plus the gzip tripwire in
+ * `packages/core/tests/bundle-size-budget.test.ts` (a top-level core import would
+ * blow the budget), which is indirect. Do not add a citation back until a test
+ * with that name is actually written. The one core value it needs — the
+ * EXTENSION_READY event name — is
  * inlined here and pinned to core's BeacioEventName union via a fully-erased
  * `import type` + `satisfies`, exactly like index.ts's BEACIO_EVENTS map: a name
  * that diverges from core's source of truth becomes a COMPILE error while no
