@@ -148,6 +148,9 @@ try {
       case 'EXTENSION_NOT_INSTALLED':
         // iOS Safari: beacio extension not active
         break;
+      case 'EXTENSION_NOT_ENABLED':
+        // iOS Safari: installed, but this site is not allowed yet
+        break;
     }
     console.log(err.suggestion); // Human-readable recovery hint
   }
@@ -394,10 +397,11 @@ try {
 
 | Code | When |
 |------|------|
+| `INVALID_PARAMETER` | Invalid argument passed to an SDK method (e.g. negative timeout, malformed UUID) |
 | `BLUETOOTH_UNAVAILABLE` | Bluetooth is off or not supported |
 | `EXTENSION_NOT_INSTALLED` | iOS Safari: extension not active |
+| `EXTENSION_NOT_ENABLED` | iOS Safari: extension installed but not allowed on this site (aA → Manage Extensions → Allow on Every Website) |
 | `PERMISSION_DENIED` | User denied Bluetooth permission |
-| `USER_CANCELLED` | User dismissed the device picker |
 | `DEVICE_NOT_FOUND` | No matching devices in range |
 | `DEVICE_DISCONNECTED` | Device disconnected during operation |
 | `CONNECTION_TIMEOUT` | Connection attempt timed out |
@@ -409,6 +413,7 @@ try {
 | `GATT_OPERATION_FAILED` | Generic GATT operation failure |
 | `SCAN_ALREADY_IN_PROGRESS` | Another scan is already running |
 | `CONNECTION_LIMIT_REACHED` | The current `beacio` instance has already reached `maxConnections` |
+| `USER_CANCELLED` | User dismissed the device picker |
 | `TIMEOUT` | Operation timed out |
 | `WRITE_INCOMPLETE` | A multi-part or interrupted write transferred only part of the payload |
 

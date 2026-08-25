@@ -6,7 +6,7 @@
 
 Detect the beacio Safari Web Extension on iOS and guide users through install — extension state checks, an install banner, and a React provider.
 
-Requires iOS 26.0+ Safari with the [beacio app](https://apps.apple.com/app/id6761301368) for the extension path. On browsers with native Web Bluetooth (Chrome, Edge) detection is a no-op.
+Requires iOS 26.2+ Safari with the [beacio app](https://apps.apple.com/app/id6761301368) for the extension path. On browsers with native Web Bluetooth (Chrome, Edge) detection is a no-op.
 
 ## Install
 
@@ -140,9 +140,9 @@ a distinct recovery banner:
   opt-in), so beacio is inert even when installed. The banner shows a distinct hint —
   *"Private Browsing disables Safari extensions — open this page in a normal tab"* — instead of the
   install sheet.
-- **Per-origin "Deny"** — if "Allow Every Website" was denied on this site, the extension is inert
+- **Per-origin "Deny"** — if "Allow on Every Website" was denied on this site, the extension is inert
   here even though it is installed and enabled. When `navigator.bluetooth` is defined but
-  `getAvailability()` returns `false`, the banner surfaces the *aA → Manage Extensions → Allow Every
+  `getAvailability()` returns `false`, the banner surfaces the *aA → Manage Extensions → Allow on Every
   Website* guidance (the same `denied` copy block as the installed-but-blocked path) instead of the
   install sheet.
 

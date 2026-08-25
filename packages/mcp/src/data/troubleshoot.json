@@ -3,13 +3,13 @@
     "checklist": [
       "Confirm beacio is installed from the App Store on this iPhone.",
       "Settings → Apps → Safari → Extensions → beacio: Allow Extension is ON and Permission → Other Websites is Allow.",
-      "Grant 'Always Allow on Every Website' for beacio via the aA button on the address bar → Manage Extensions → beacio.",
+      "Grant 'Allow on Every Website' for beacio via the aA button on the address bar → Manage Extensions → beacio.",
       "Verify the tab is not in Private Browsing (extensions may be inert).",
       "Page is served over HTTPS (Web Bluetooth requires a secure context).",
       "Reload the page after toggling permissions so the extension re-injects.",
       "Check navigator.bluetooth.getAvailability() — if it returns false, the extension is installed but not reachable on this origin."
     ],
-    "common_fix": "Open Settings → Apps → Safari → Extensions → beacio and toggle Allow Extension ON, then grant 'Always Allow on Every Website'. Reload the page. navigator.bluetooth.getAvailability() should then return true."
+    "common_fix": "Open Settings → Apps → Safari → Extensions → beacio and toggle Allow Extension ON, then grant 'Allow on Every Website'. Reload the page. navigator.bluetooth.getAvailability() should then return true."
   },
   "device-disconnects": {
     "checklist": [

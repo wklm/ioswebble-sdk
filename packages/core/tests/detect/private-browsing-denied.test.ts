@@ -151,7 +151,7 @@ describe('SB-SDK-17 initBeacio routes the Private Browsing + marker-suppressed d
     expect(bannerState()).toBe('denied');
     expect(bannerState()).not.toBe('not-installed');
     // Reuses the SB-SDK-03 per-site-denied copy block verbatim (no new copy).
-    expect(bannerText()).toContain('Allow Every Website');
+    expect(bannerText()).toContain('Allow on Every Website');
     expect(bannerText()).toMatch(/\bAA\b|address bar/);
     // Half-onboarded state → no install CTA back to the store.
     expect(bannerEl()!.querySelector('#bc-install')).toBeNull();

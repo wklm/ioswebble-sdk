@@ -23,7 +23,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@beacio/gatt-registry": ["./packages/core/src/gatt-registry.generated.ts"]
+      "@beacio/gatt-registry": ["./packages/core/src/gatt-registry.generated.ts"],
+      "@beacio/error-conditions": ["./packages/core/src/error-conditions.ts"]
     }
   },
   "include": ["src/**/*"],

@@ -14,50 +14,26 @@
  * normalisation, identical-error debounce, and the i18n copy-override seam.
  *
  * jsdom; mirrors banner.test.ts / events.test.ts import style (`@jest/globals`).
- * Run via
- *   npx jest --config packages/detect/jest.config.js --rootDir packages/detect
  */
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { presentError, type PresentErrorOptions } from '../../src/detect/error-presenter';
+// The REAL union + retriable set (src/error-taxonomy.ts) — this file used to
+// re-declare both "because @beacio/core is an optional peer of @beacio/detect".
+// That package never existed; `./detect` is a subpath of core. A local copy could
+// only drift, so the test now asserts against the shipped tables themselves.
+import { RETRIABLE_CODES, type BeacioErrorCode } from '../../src/error-taxonomy';
+// The shipped copy packs are typed `Record<BeacioErrorCode, string>` over that one
+// union, so their keys ARE the union at runtime — the same derivation the sibling
+// parity test uses (`error-presenter-core-parity.test.ts`). Restating the code list
+// here would re-introduce exactly the hand-copied twin this file's header says was
+// collapsed.
+import { EN_STRINGS } from '../../src/detect/i18n';
 
-// SB-SDK-02 (Part B) optional-peer rule: @beacio/core must NOT be a hard
-// dependency of @beacio/detect (a standalone `npm i @beacio/detect` has no core),
-// so the presenter consumes errors STRUCTURALLY (anything with a `.code` /
-// `.message` / `.suggestion` / `.isRetriable`), not via the BeacioError class.
-// This test therefore builds BeacioError-SHAPED objects locally — matching core's
-// errors.ts public surface — instead of importing the class, mirroring how
-// banner.ts/index.ts avoid a runtime core import. The code list is the stable
-// BeacioErrorCode contract (core/src/errors.ts:20-56).
-type BeacioErrorCode =
-  | 'INVALID_PARAMETER'
-  | 'BLUETOOTH_UNAVAILABLE'
-  | 'EXTENSION_NOT_INSTALLED'
-  | 'PERMISSION_DENIED'
-  | 'DEVICE_NOT_FOUND'
-  | 'DEVICE_DISCONNECTED'
-  | 'CONNECTION_TIMEOUT'
-  | 'SERVICE_NOT_FOUND'
-  | 'CHARACTERISTIC_NOT_FOUND'
-  | 'CHARACTERISTIC_NOT_READABLE'
-  | 'CHARACTERISTIC_NOT_WRITABLE'
-  | 'CHARACTERISTIC_NOT_NOTIFIABLE'
-  | 'GATT_OPERATION_FAILED'
-  | 'SCAN_ALREADY_IN_PROGRESS'
-  | 'CONNECTION_LIMIT_REACHED'
-  | 'USER_CANCELLED'
-  | 'TIMEOUT'
-  | 'WRITE_INCOMPLETE';
-
-const RETRIABLE_CODES = new Set<BeacioErrorCode>([
-  'DEVICE_DISCONNECTED',
-  'CONNECTION_TIMEOUT',
-  'GATT_OPERATION_FAILED',
-  'TIMEOUT',
-  'SCAN_ALREADY_IN_PROGRESS',
-  'WRITE_INCOMPLETE',
-]);
-
-/** A BeacioError-shaped object (errors.ts public surface) without importing core. */
+/**
+ * A BeacioError-SHAPED object. The presenter consumes errors STRUCTURALLY
+ * (anything with `.code` / `.message` / `.suggestion` / `.isRetriable`), so this
+ * builds the shape a host page might hand it rather than importing the class.
+ */
 class BeacioError extends Error {
   readonly code: BeacioErrorCode;
   readonly suggestion: string;
@@ -73,38 +49,22 @@ class BeacioError extends Error {
 
 const CARD_ID = 'beacio-error';
 
-/** Every code presentError must map to non-empty, stack-free human copy. */
-const ALL_CODES: BeacioErrorCode[] = [
-  'INVALID_PARAMETER',
-  'BLUETOOTH_UNAVAILABLE',
-  'EXTENSION_NOT_INSTALLED',
-  'PERMISSION_DENIED',
-  'DEVICE_NOT_FOUND',
-  'DEVICE_DISCONNECTED',
-  'CONNECTION_TIMEOUT',
-  'SERVICE_NOT_FOUND',
-  'CHARACTERISTIC_NOT_FOUND',
-  'CHARACTERISTIC_NOT_READABLE',
-  'CHARACTERISTIC_NOT_WRITABLE',
-  'CHARACTERISTIC_NOT_NOTIFIABLE',
-  'GATT_OPERATION_FAILED',
-  'SCAN_ALREADY_IN_PROGRESS',
-  'CONNECTION_LIMIT_REACHED',
-  'USER_CANCELLED',
-  'TIMEOUT',
-  'WRITE_INCOMPLETE',
-];
+/**
+ * Every code presentError must map to non-empty, stack-free human copy — DERIVED
+ * from the shipped copy pack rather than restated, so a code added to
+ * `BeacioErrorCode` cannot be silently skipped by this file.
+ */
+const ALL_CODES = Object.keys(EN_STRINGS.error.titles) as BeacioErrorCode[];
 
-const RETRIABLE: BeacioErrorCode[] = [
-  'DEVICE_DISCONNECTED',
-  'CONNECTION_TIMEOUT',
-  'GATT_OPERATION_FAILED',
-  'TIMEOUT',
-  'SCAN_ALREADY_IN_PROGRESS',
-  'WRITE_INCOMPLETE',
-];
+/**
+ * The retriable/non-retriable partition comes from the ONE `RETRIABLE_CODES` set
+ * the presenter itself reads, so the two can never disagree. What the assertions
+ * below still buy is behavioural: that a retry affordance is actually RENDERED for
+ * one side and actually ABSENT for the other.
+ */
+const RETRIABLE: BeacioErrorCode[] = ALL_CODES.filter((c) => RETRIABLE_CODES.has(c));
 
-const NON_RETRIABLE: BeacioErrorCode[] = ALL_CODES.filter((c) => !RETRIABLE.includes(c));
+const NON_RETRIABLE: BeacioErrorCode[] = ALL_CODES.filter((c) => !RETRIABLE_CODES.has(c));
 
 /** Tokens that betray a leaked stack trace in the rendered card. */
 const STACK_TOKENS = [
@@ -114,7 +74,10 @@ const STACK_TOKENS = [
   'webkit',
   'WebKit',
   'http://',
-  'https://localhost',
+  // Migrated from error-presenter-core-parity.test.ts when its content loop was
+  // reduced to a per-code round-trip: the bare scheme is the STRONGER guard (the
+  // shipped packs contain no URL at all), so no leaked native URL can pass.
+  'https://',
   'eval (',
 ];
 
@@ -186,44 +149,23 @@ describe('SB-SDK-05 presentError renders a branded, non-blocking error card', ()
     }
   });
 
-  // AC6 (explicit headline codes): the four call-site codes named in the AC must
-  // render a real card with no stack and no competitor name.
-  it('AC6: EXTENSION_NOT_INSTALLED / PERMISSION_DENIED / DEVICE_DISCONNECTED / GATT_OPERATION_FAILED cards have no stack and no Bluefy', () => {
-    for (const code of [
-      'EXTENSION_NOT_INSTALLED',
-      'PERMISSION_DENIED',
-      'DEVICE_DISCONNECTED',
-      'GATT_OPERATION_FAILED',
-    ] as BeacioErrorCode[]) {
-      removeCard();
-      const err = new BeacioError(code);
-      presentError(err);
-      const text = cardText();
-      expect(text.length).toBeGreaterThan(0);
-      expect(text).not.toMatch(/Bluefy/i);
-      // The human body is the suggestion, not the raw .stack.
-      expect(text).not.toContain('at Object.');
-      expect(err.toString()).not.toMatch(/Bluefy/i);
-    }
-  });
-
   // AC1: retriable codes render a retry affordance; non-retriable codes do not.
   it('AC1: retriable codes render a retry affordance; non-retriable codes do not', () => {
-    for (const code of RETRIABLE) {
+    // Non-vacuity: both partitions are derived, so pin that neither collapsed to
+    // empty (which would make the loop below assert nothing).
+    expect(RETRIABLE.length).toBeGreaterThan(0);
+    expect(NON_RETRIABLE.length).toBeGreaterThan(0);
+    expect(RETRIABLE.length + NON_RETRIABLE.length).toBe(ALL_CODES.length);
+
+    // One loop over BOTH partitions. The assertion carries `code` on both sides so
+    // a failure NAMES the offending code instead of reporting "false !== true".
+    for (const code of ALL_CODES) {
       removeCard();
       presentError(new BeacioError(code));
       const el = cardEl()!;
       const controls = Array.from(el.querySelectorAll<HTMLElement>('button, a'));
       const retry = controls.find((c) => /retry|try again|reconnect/i.test(c.textContent || ''));
-      expect(retry).toBeDefined();
-    }
-    for (const code of NON_RETRIABLE) {
-      removeCard();
-      presentError(new BeacioError(code));
-      const el = cardEl()!;
-      const controls = Array.from(el.querySelectorAll<HTMLElement>('button, a'));
-      const retry = controls.find((c) => /retry|try again|reconnect/i.test(c.textContent || ''));
-      expect(retry).toBeUndefined();
+      expect({ code, hasRetry: retry !== undefined }).toEqual({ code, hasRetry: RETRIABLE_CODES.has(code) });
     }
   });
 

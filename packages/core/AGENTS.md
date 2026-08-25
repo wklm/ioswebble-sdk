@@ -35,7 +35,7 @@ const value = await device.read('heart_rate', 'heart_rate_measurement');
 - `device.notifications(service, characteristic)` — async iterable of DataView values
 - `device.on('disconnected', fn)` / `device.off('disconnected', fn)` — disconnect events
 - `resolveUUID(name)` — converts human-readable names to full UUIDs
-- `BeacioError` — typed error with `.code` (`BLUETOOTH_UNAVAILABLE`, `DEVICE_DISCONNECTED`, `DEVICE_NOT_FOUND`, `USER_CANCELLED`, `GATT_OPERATION_FAILED`, `TIMEOUT`) and a human/agent-readable `.suggestion`
+- `BeacioError` — typed error with `.code` (e.g. `BLUETOOTH_UNAVAILABLE`, `DEVICE_DISCONNECTED`, `DEVICE_NOT_FOUND`, `USER_CANCELLED`, `EXTENSION_NOT_ENABLED`, `GATT_OPERATION_FAILED`, `TIMEOUT` — the full table is in `README.md`) and a human/agent-readable `.suggestion`
 
 ## DO
 - Use human-readable service/characteristic names (`'heart_rate'`, `'battery_level'`) — `resolveUUID` handles conversion

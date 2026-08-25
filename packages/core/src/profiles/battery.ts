@@ -1,4 +1,4 @@
-import { readUint8 } from '../index';
+import { readUint8 } from '../dataview-helpers';
 import { BaseProfile } from './base';
 
 /**

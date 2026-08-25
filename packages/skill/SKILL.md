@@ -81,7 +81,7 @@ You already have a working `navigator.bluetooth` app (Chrome/Android) and want i
 
 The classic global `browser-auto.global.js` build polyfills `navigator.bluetooth` on iOS and self-no-ops on Chrome/Android. It MUST load before any code that reads `navigator.bluetooth`:
 ```html
-<script src="https://cdn.beacio.com/@beacio/core@1.2.0/dist/browser-auto.global.js"></script>
+<script src="https://cdn.beacio.com/@beacio/core@2.1.0/dist/browser-auto.global.js"></script>
 ```
 
 ### Step 2: Add `optionalServices` to your existing iOS `requestDevice` call

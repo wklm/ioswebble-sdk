@@ -9,7 +9,7 @@ Guide users to:
 1. tap `aA` in the Safari address bar
 2. tap the `iOSbeacio` extension icon
 3. choose `Always Allow`
-4. choose `Always Allow on Every Website`
+4. choose `Allow on Every Website`
 
 `Allow for One Day` expires silently and often looks like a broken integration later.
 

@@ -1,4 +1,5 @@
-import { readUint8, readUint16LE, resolveUUID } from '../index';
+import { readUint8, readUint16LE } from '../dataview-helpers';
+import { resolveUUID } from '../uuid';
 import { BaseProfile } from './base';
 
 /**

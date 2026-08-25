@@ -3,7 +3,7 @@
   "name": "com.beacio/mcp",
   "description": "MCP server for Web Bluetooth on iOS Safari: scaffolding, UUID lookup, extension detection.",
   "status": "active",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "repository": {
     "url": "https://github.com/wklm/beacio-sdk",
     "source": "github",
@@ -12,7 +12,7 @@
   "packages": [
     {
       "identifier": "@beacio/mcp",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "transport": {
         "type": "stdio"
       },

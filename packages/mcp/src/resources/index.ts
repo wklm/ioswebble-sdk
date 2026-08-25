@@ -6,6 +6,85 @@
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { BeacioError, type BeacioErrorCode } from '@beacio/core';
+import { EN_STRINGS } from '@beacio/core/detect';
+
+// ---------------------------------------------------------------------------
+// The error taxonomy — DERIVED from @beacio/core, never re-typed here.
+//
+// Two resources below publish the taxonomy to agents: the `beacio://errors`
+// markdown table and the `BeacioErrorCode` union inside `beacio://schema`. Both
+// used to be hand-maintained copies of `packages/core`'s taxonomy, and both had
+// already rotted — the schema union was missing three codes an agent would
+// therefore assume could never occur, and the table is what an agent reads to
+// decide which `.code` values it must handle. A doc mirror of a shipped union is
+// a mirror like any other: it drifts silently, because nothing executes it.
+//
+// So the CODES and the SUGGESTIONS now come out of core at runtime:
+//   • the code list is the key set of core's shipped copy pack, which is typed
+//     `Record<BeacioErrorCode, string>` over the one union — adding a code to
+//     core adds it to both resources with no edit here;
+//   • the suggestion text is `new BeacioError(code).suggestion`, i.e. literally
+//     the string the SDK attaches at runtime, so the documented fix and the
+//     delivered fix cannot disagree.
+// Both are read through core's PUBLIC entry points (`@beacio/core` and
+// `@beacio/core/detect`) — no deep import, and nothing new is pulled into core's
+// browser bundle graph.
+// ---------------------------------------------------------------------------
+
+/**
+ * Every `BeacioErrorCode`, in core's declaration order. `EN_STRINGS.error.titles`
+ * is `Record<BeacioErrorCode, string>` over the single union, so its keys ARE the
+ * union at runtime.
+ */
+const BEACIO_ERROR_CODES = Object.keys(EN_STRINGS.error.titles) as BeacioErrorCode[];
+
+/**
+ * The one genuinely MCP-authored column: a short "what provoked this" gloss, which
+ * core has no machine-readable equivalent of (its per-code prose is the SUGGESTION,
+ * i.e. the fix). Typed `Record<BeacioErrorCode, string>` deliberately: a code added
+ * to core fails to COMPILE here until its cause is written, so this table cannot go
+ * quietly out of date the way the old hand-copied one did.
+ */
+const ERROR_CAUSES: Record<BeacioErrorCode, string> = {
+  INVALID_PARAMETER: 'Invalid argument (bad UUID, negative timeout, oversized payload)',
+  BLUETOOTH_UNAVAILABLE: 'Browser/device has no Bluetooth support',
+  EXTENSION_NOT_INSTALLED: 'iOS Safari without Beacio extension',
+  EXTENSION_NOT_ENABLED: 'iOS Safari: extension installed but this origin has no grant',
+  PERMISSION_DENIED: 'User denied Bluetooth permission',
+  DEVICE_NOT_FOUND: 'No device matching scan filters',
+  DEVICE_DISCONNECTED: 'GATT op on disconnected device',
+  CONNECTION_TIMEOUT: "Device didn't respond to connect",
+  SERVICE_NOT_FOUND: 'Service UUID not present on device',
+  CHARACTERISTIC_NOT_FOUND: 'Characteristic UUID not in service',
+  CHARACTERISTIC_NOT_READABLE: 'Read attempted on non-readable char',
+  CHARACTERISTIC_NOT_WRITABLE: 'Write attempted on non-writable char',
+  CHARACTERISTIC_NOT_NOTIFIABLE: 'Subscribe on non-notifiable char',
+  GATT_OPERATION_FAILED: 'Generic GATT error',
+  SCAN_ALREADY_IN_PROGRESS: 'Duplicate requestDevice() call',
+  CONNECTION_LIMIT_REACHED: 'Beacio.maxConnections reached',
+  USER_CANCELLED: 'User dismissed device picker',
+  TIMEOUT: 'Operation timed out',
+  WRITE_INCOMPLETE: 'A chunked write only partially completed',
+};
+
+/**
+ * The `beacio://errors` markdown body rows: `| Code | Cause | Retriable | Suggestion |`.
+ * Retriable is the panel's root-contributor axis (§2 (e)(i)) and is derived from the
+ * SAME `BeacioError.isRetriable` the SDK exposes at runtime — never hand-copied, so a
+ * code's retriability here cannot drift from what `withRetry` actually honours.
+ */
+function errorTableRows(): string {
+  return BEACIO_ERROR_CODES.map((code) => {
+    const err = new BeacioError(code);
+    return `| ${code} | ${ERROR_CAUSES[code]} | ${err.isRetriable ? 'yes' : 'no'} | ${err.suggestion} |`;
+  }).join('\n');
+}
+
+/** The `beacio://schema` `BeacioErrorCode` union members, one per line. */
+function errorCodeUnionMembers(): string {
+  return BEACIO_ERROR_CODES.map((code) => `  | '${code}'`).join('\n');
+}
 
 export function registerResources(server: McpServer): void {
   // Resource 1: Quick Start Guide
@@ -310,25 +389,12 @@ The base Bluetooth SIG UUID is: \`XXXXXXXX-0000-1000-8000-00805f9b34fb\`
           text: `# BeacioError Code Reference
 
 All errors are instances of \`BeacioError\` from \`@beacio/core\`.
-Each has a \`.code\` (string) and \`.suggestion\` (human-readable fix).
+Each has a \`.code\` (string), an \`.isRetriable\` (boolean), and a \`.suggestion\` (human-readable fix).
+\`Retriable: yes\` means \`withRetry\` will re-attempt on that code; \`no\` means retrying is pointless.
 
-| Code | Cause | Suggestion |
-|------|-------|------------|
-| BLUETOOTH_UNAVAILABLE | Browser/device has no Bluetooth support | Check browser supports Web Bluetooth and Bluetooth is enabled |
-| EXTENSION_NOT_INSTALLED | iOS Safari without Beacio extension | Install Beacio app and enable Safari extension. Use @beacio/core/detect for auto-banner |
-| PERMISSION_DENIED | User denied Bluetooth permission | Request from user gesture (button click). If denied, user must re-grant in Settings |
-| DEVICE_NOT_FOUND | No device matching scan filters | Check device is powered on, in range, and filters are correct |
-| DEVICE_DISCONNECTED | GATT op on disconnected device | Call device.connect() first. Use device.on('disconnected', ...) for detection |
-| CONNECTION_TIMEOUT | Device didn't respond to connect | Check range, ensure device is advertising |
-| SERVICE_NOT_FOUND | Service UUID not present on device | Verify UUID. Include in filters or optionalServices |
-| CHARACTERISTIC_NOT_FOUND | Characteristic UUID not in service | Check UUID against device spec |
-| CHARACTERISTIC_NOT_READABLE | Read attempted on non-readable char | Use subscribe() if char supports Notify |
-| CHARACTERISTIC_NOT_WRITABLE | Write attempted on non-writable char | Try writeWithoutResponse() or check char properties |
-| CHARACTERISTIC_NOT_NOTIFIABLE | Subscribe on non-notifiable char | Use read() for polling instead |
-| GATT_OPERATION_FAILED | Generic GATT error | Check connection state, retry after reconnect |
-| SCAN_ALREADY_IN_PROGRESS | Duplicate requestDevice() call | Wait for current scan to complete |
-| USER_CANCELLED | User dismissed device picker | Normal behavior — no action needed |
-| TIMEOUT | Operation timed out | Check connectivity, retry |
+| Code | Cause | Retriable | Suggestion |
+|------|-------|-----------|------------|
+${errorTableRows()}
 
 ## Error handling pattern
 \`\`\`typescript
@@ -400,12 +466,10 @@ export class BeacioError extends Error {
   static from(error: unknown, fallbackCode?: BeacioErrorCode): BeacioError
 }
 
+// Rendered from the SHIPPED union at read time — an agent that reads a truncated
+// union assumes the missing codes cannot occur, so this can never be a hand copy.
 export type BeacioErrorCode =
-  | 'BLUETOOTH_UNAVAILABLE' | 'EXTENSION_NOT_INSTALLED' | 'PERMISSION_DENIED'
-  | 'DEVICE_NOT_FOUND' | 'DEVICE_DISCONNECTED' | 'CONNECTION_TIMEOUT'
-  | 'SERVICE_NOT_FOUND' | 'CHARACTERISTIC_NOT_FOUND'
-  | 'CHARACTERISTIC_NOT_READABLE' | 'CHARACTERISTIC_NOT_WRITABLE' | 'CHARACTERISTIC_NOT_NOTIFIABLE'
-  | 'GATT_OPERATION_FAILED' | 'SCAN_ALREADY_IN_PROGRESS' | 'USER_CANCELLED' | 'TIMEOUT'
+${errorCodeUnionMembers()}
 
 export function resolveUUID(nameOrUUID: string): string
 export function getServiceName(uuid: string): string | undefined
@@ -484,6 +548,43 @@ export function BeacioProvider(props: { apiKey: string; children: React.ReactNod
           uri: 'beacio://changelog',
           mimeType: 'text/markdown',
           text: `# Beacio Changelog
+
+## 2.1.0 (August 2026)
+
+Every \`@beacio/*\` package now versions in **lockstep** with the App Store / Safari extension
+release. The previous "packages version independently" policy is retired — pick the version that
+matches the app.
+
+### @beacio/core
+- 1.2.0 → 2.1.0. The jump **skips 2.0.0 deliberately**: \`@beacio/mcp\` was already published at
+  2.0.0, so the shared lockstep version had to clear it. There is no \`@beacio/core@2.0.0\`.
+- No breaking API change relative to 1.2.0 — the major bump is the alignment, not a source change.
+
+### @beacio/mcp
+- 2.0.0 → 2.1.0; \`@beacio/core\` dependency range moves to \`^2.1.0\`.
+- No MCP tool or resource surface change.
+
+### @beacio/react
+- 1.2.0 → 2.1.0; \`peerDependencies["@beacio/core"]\` moves to \`^2.1.0\`.
+
+### @beacio/skill
+- 1.0.1 → 2.1.0 to join the lockstep set.
+
+### Safari extension / app
+- The multi-step setup wizard is replaced by a single setup card with one-tap deep links.
+- Sites you have allowed now activate automatically.
+- Minimum iOS raised to **26.2**.
+
+## 1.2.0 (July 2026)
+
+### @beacio/core
+- Version aligned with App Store / Safari extension 1.2.0.
+- Stability freeze surfaces (internal slots, error matrix, batch GATT wire protocol, experimental
+  Storz path). CDN / install pins move to \`@beacio/core@1.2.0\`.
+
+### @beacio/react
+- First stable release aligned with \`@beacio/core@1.2.0\` (\`peerDependencies\` \`^1.2.0\`).
+- No breaking changes to the hook/component API relative to 1.0.0.
 
 ## 2.0.0 (June 2026)
 

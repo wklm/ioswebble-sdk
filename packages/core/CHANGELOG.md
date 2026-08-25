@@ -2,6 +2,13 @@
 
 All notable changes to `@beacio/core` will be documented in this file.
 
+## 2.1.0 — 2026-08-25
+
+- Version aligned with App Store / Safari extension **2.1.0**. Every published `@beacio/*` package now moves in **lockstep** with the app release; the previous "packages version independently" policy is retired.
+- The jump **1.2.0 → 2.1.0 skips 2.0.0 deliberately**: `@beacio/mcp` was already published at 2.0.0, so the shared lockstep version had to clear it. There is no `@beacio/core@2.0.0` and there never will be.
+- No breaking API change relative to 1.2.0 — the major bump is the lockstep alignment, not a source change. Fielded `@beacio/core@1.x` CDN pins remain supported via the extension skew cell (U-SKEW-01).
+- CDN / install pins move to `@beacio/core@2.1.0` (see `onboarding-manifest.json`).
+
 ## 1.2.0 — 2026-07-27
 
 - Version aligned with App Store / Safari extension **1.2.0**.

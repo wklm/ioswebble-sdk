@@ -14,6 +14,10 @@ import type {
   MockCharacteristicConfig,
   MockServiceConfig,
 } from './characteristics';
+// S5-D: @beacio/testing is a PUBLISHED package — its messages land in a real consumer's
+// catch exactly like the polyfill's, so its NotFoundErrors are conditions too (both are
+// genuine absences, deliberately sharing DEVICE_NOT_FOUND). RELATIVE import: tsup.
+import { MOCK_NO_ADAPTER, MOCK_NO_DEVICE_MATCH, beacioDomException } from '../../error-conditions';
 
 export interface MockBluetoothOptions {
   /** Whether Bluetooth is available (default: true) */
@@ -85,18 +89,13 @@ export class MockBluetooth {
     options?: RequestDeviceOptions
   ): Promise<BluetoothDevice> {
     if (!this._available) {
-      throw new DOMException(
-        'Bluetooth adapter not available',
-        'NotFoundError'
-      );
+      // Period-less on purpose (≠ Chromium's "…available.") — see the row's doc.
+      throw beacioDomException(MOCK_NO_ADAPTER);
     }
 
     const matching = this._findMatchingDevices(options as Record<string, unknown>);
     if (matching.length === 0) {
-      throw new DOMException(
-        'No devices found matching the filter criteria',
-        'NotFoundError'
-      );
+      throw beacioDomException(MOCK_NO_DEVICE_MATCH);
     }
 
     // Return the first matching device (simulates user picking)

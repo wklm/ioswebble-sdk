@@ -4,12 +4,25 @@ import * as os from 'os';
 import * as path from 'path';
 import { init } from '../../src/cli/commands/init.js';
 import { check } from '../../src/cli/commands/check.js';
+import { fileURLToPath } from 'node:url';
+
+// DERIVED, never frozen: the npm SDK version is locked to the App Store
+// MARKETING_VERSION (U-VER-02), so a hardcoded pin here would need hand-editing
+// every release — the very drift the lockstep removes. Reading @beacio/core's own
+// version keeps this asserting "init emits the version we are shipping" forever.
+const CANONICAL_BOOTSTRAP = (() => {
+  const packagesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+  const version = JSON.parse(
+    fs.readFileSync(path.join(packagesDir, 'core', 'package.json'), 'utf-8'),
+  ).version as string;
+  return `https://cdn.beacio.com/@beacio/core@${version}/dist/auto.mjs`;
+})();
 
 /**
  * Producer/consumer parity guard for PR-REVIEW.md M4 + CDN-01 (W4).
  *
  * `beacio init` (html path) writes the canonical M7-pinned
- * `cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs` ESM import tag (the same URL
+ * `cdn.beacio.com/@beacio/core@<version>/dist/auto.mjs` ESM import tag (the same URL
  * `beacio_install_plan` emits on the html+cdn path). `beacio check` must be able
  * to detect exactly what `init` writes — otherwise a project scaffolded with
  * `init` fails `check` with a false negative. This is the durable regression
@@ -57,9 +70,7 @@ describe('init -> check round-trip (html)', () => {
 
     // Sanity: init actually injected the canonical CDN one-liner (CDN-01).
     const html = fs.readFileSync(path.join(fixtureDir, 'index.html'), 'utf-8');
-    expect(html).toContain(
-      'https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs'
-    );
+    expect(html).toContain(CANONICAL_BOOTSTRAP);
     expect(html).not.toContain('https://beacio.com/beacio.js');
 
     // check() must NOT exit(1); if it does, the exit mock throws and fails here.
@@ -80,16 +91,14 @@ describe('init -> check round-trip (html)', () => {
 
   it('init(html) emits the canonical M7-pinned cdn.beacio.com bootstrap (NOT the stale apex shortener)', async () => {
     // CDN-01 regression guard: the docs / MCP install-plan / @beacio/skill all
-    // reference `https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs` (full
+    // reference `https://cdn.beacio.com/@beacio/core@<version>/dist/auto.mjs` (full
     // semver, cdn Worker 302s). `beacio init` (html) must emit the SAME canonical
     // URL — emitting the legacy `https://beacio.com/beacio.js` apex shortener
     // here would desync init from install-plan + leave the marquee copy-paste
     // one-liner loading nothing.
     await init([]);
     const html = fs.readFileSync(path.join(fixtureDir, 'index.html'), 'utf-8');
-    expect(html).toContain(
-      "https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs"
-    );
+    expect(html).toContain(CANONICAL_BOOTSTRAP);
     expect(html).not.toContain('https://beacio.com/beacio.js');
   });
 });

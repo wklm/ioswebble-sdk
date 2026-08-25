@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { runInstallPlan, FRAMEWORKS, PACKAGE_MANAGERS } from '../src/tools/install-plan.js';
 import { runExample, PROFILES } from '../src/tools/example.js';
 
@@ -84,9 +87,20 @@ describe('CDN URL pinning (PR #178 B1 regression guard)', () => {
     ).toEqual([]);
   });
 
-  it('the documented core bootstrap resolves to @beacio/core@1.2.0 (the published, proxy-accepted release)', () => {
+  it('the documented core bootstrap resolves to the CURRENT @beacio/core release', () => {
     // At least one emitted bootstrap must be the exact canonical one-liner URL.
-    const canonical = 'https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs';
+    //
+    // The version is DERIVED from @beacio/core's own package.json rather than frozen
+    // as a literal: the npm SDK version is locked to the App Store MARKETING_VERSION
+    // (U-VER-02), so a frozen pin here would have to be hand-edited every release —
+    // exactly the drift the lockstep exists to remove. Deriving it means this test
+    // keeps asserting "the emitted bootstrap names the version we are shipping",
+    // which is the property that actually matters, at every version.
+    const packagesDir = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+    const coreVersion = JSON.parse(
+      readFileSync(join(packagesDir, 'core', 'package.json'), 'utf8'),
+    ).version as string;
+    const canonical = `https://cdn.beacio.com/@beacio/core@${coreVersion}/dist/auto.mjs`;
     expect(urls.some(({ url }) => url === canonical)).toBe(true);
   });
 });

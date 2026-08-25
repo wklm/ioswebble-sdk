@@ -27,6 +27,8 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { computeCoreSourceFingerprint } from './source-fingerprint.mjs';
+
 const __dirname_self = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname_self, '..');
 const DIST = path.join(ROOT, 'dist');
@@ -39,6 +41,15 @@ const pkg = JSON.parse(readFileSync(PKG_JSON, 'utf8'));
 const table = {
   version: pkg.version,
   generatedAt: new Date().toISOString(),
+  // B1 recurrence pin: the sha384 of the BUILD INPUTS (src/** + tsup configs) these
+  // dist bundles were compiled from. check-error-conditions.mjs recomputes this as a
+  // staleness pre-flight so no guard adjudicates a dist/vendored artifact whose source
+  // has moved past the recorded build. See scripts/source-fingerprint.mjs.
+  sourceFingerprint: {
+    algo: 'sha384',
+    inputs: 'src/** + tsup.config.ts + tsup.browser.config.ts + tsup.browser-auto.config.ts',
+    digest: computeCoreSourceFingerprint(ROOT),
+  },
   entries: {},
 };
 

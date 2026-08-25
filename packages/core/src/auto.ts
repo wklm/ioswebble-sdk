@@ -13,6 +13,10 @@ import { detectPlatform, getBluetoothAPI, CDN_STUB_MARKER } from './platform';
 import { BluetoothUUID } from './uuid';
 import { BEACIO_EVENTS } from './events';
 import type { RawAutoReconnectConfig } from './types';
+// S5-D: the unsupported-platform-install CONDITION row + factory. RELATIVE import on
+// purpose — tsup knows nothing of the repo's BEACIO_ALIASES and must not need to.
+// auto.mjs budget note: tree-shaking carries exactly this one row (MAX_AUTO_GZIP pin).
+import { UNSUPPORTED_PLATFORM_INSTALL, beacioDomException } from './error-conditions';
 
 /**
  * Patch navigator.permissions.query to support { name: 'bluetooth' } (§4.1
@@ -494,13 +498,10 @@ function createUnsupportedBluetoothStub(): object {
         // Defensive — the banner import must never break the rejection path.
       }
       // §4 requestDevice: when no device/chooser can ever match, the spec
-      // rejection class is NotFoundError — never a plain Error.
-      throw new DOMException(
-        'Web Bluetooth is not supported on this platform. ' +
-        'On iOS Safari, install the Beacio extension. ' +
-        'See: https://beacio.com',
-        'NotFoundError'
-      );
+      // rejection class is NotFoundError — never a plain Error. The sentence's
+      // LEADING clause is Chromium's WEB_BLUETOOTH_NOT_SUPPORTED verbatim; only
+      // the full beacio sentence may ever classify EXTENSION_NOT_INSTALLED.
+      throw beacioDomException(UNSUPPORTED_PLATFORM_INSTALL);
     },
     writable: true,
     enumerable: true,

@@ -11,12 +11,17 @@
  *   catch (error) { beacioDetect.presentError(error); }
  *
  * Design constraints (mirroring banner.ts):
- *  - @beacio/core is an OPTIONAL peer (a standalone `npm i @beacio/detect` has no
- *    core), so this file MUST NOT import @beacio/core — not even the BeacioError
- *    class. Errors are consumed STRUCTURALLY: anything carrying a `.code` /
- *    `.message` / `.suggestion` / `.isRetriable` is understood, and the
- *    BeacioErrorCode → copy map + retriable set are kept LOCAL (pinned to core's
- *    public contract by the unit test, not by a runtime import).
+ *  - Errors are consumed STRUCTURALLY — anything carrying a `.code` / `.message`
+ *    / `.suggestion` / `.isRetriable` is understood — so a host page can hand us
+ *    a BeacioError-shaped object without owning the class. The CLASSIFICATION of
+ *    a raw DOMException, the code union and the retriable set come from
+ *    `../error-taxonomy`, the leaf module the SDK's own `BeacioError.from` uses:
+ *    one classifier, so the card and the caller's `switch` can never disagree.
+ *    (Until 2026-08-12 they were hand-copied twins, justified by an
+ *    "@beacio/core is an OPTIONAL peer of @beacio/detect" rule that no longer
+ *    exists — there is no `packages/detect`, `./detect` is a subpath export of
+ *    core, and these modules already import `../events` / `../urls`. The twins
+ *    had diverged on eleven inputs by the time they were collapsed.)
  *  - The card NEVER leaks a stack trace, internal codes, WebKit jargon, or a
  *    competitor name. The friendly body comes from the per-code copy table, NOT
  *    the raw error string.
@@ -31,108 +36,32 @@
  *    localized banner never drift.
  */
 
+// The ONE error taxonomy: the code union, the retriable set (a retriable card
+// shows a retry affordance), the classifier for raw DOMExceptions, and the
+// native-message sanitiser. A leaf module by design — it pulls in neither
+// BeacioError nor the SUGGESTIONS table nor withRetry, so the zero-config
+// browser-auto drop-in stays inside its gzip budget.
+import { classifyThrown, RETRIABLE_CODES, sanitizeNativeMessage, type BeacioErrorCode } from '../error-taxonomy';
 // SB-SDK-07: the shared localized-string seam (same module the install banner
-// consumes). i18n.ts imports NOTHING from @beacio/core — it re-declares the
-// BeacioErrorCode union locally — so this stays within the optional-peer rule,
-// just like this file's own local tables. (W13-RECONCILE 2026-08-05: this line
-// used to cite `no-toplevel-core-import.test.ts` as that rule's enforcer. No
-// such test exists, or ever has — citation removed rather than left dangling.)
-import { EN_STRINGS, type LocaleStrings, resolveStrings } from './i18n';
+// consumes).
+import { type DeepPartial, EN_STRINGS, type ErrorStrings, type LocaleStrings, resolveStrings } from './i18n';
 
-/**
- * The stable BeacioErrorCode contract (core/src/errors.ts). Kept local — not
- * imported — so detect has no runtime @beacio/core dependency. The presenter unit
- * test is the seam-crossing control that this list still matches core's source.
- */
-export type BeacioErrorCode =
-  | 'INVALID_PARAMETER'
-  | 'BLUETOOTH_UNAVAILABLE'
-  | 'EXTENSION_NOT_INSTALLED'
-  | 'PERMISSION_DENIED'
-  | 'DEVICE_NOT_FOUND'
-  | 'DEVICE_DISCONNECTED'
-  | 'CONNECTION_TIMEOUT'
-  | 'SERVICE_NOT_FOUND'
-  | 'CHARACTERISTIC_NOT_FOUND'
-  | 'CHARACTERISTIC_NOT_READABLE'
-  | 'CHARACTERISTIC_NOT_WRITABLE'
-  | 'CHARACTERISTIC_NOT_NOTIFIABLE'
-  | 'GATT_OPERATION_FAILED'
-  | 'SCAN_ALREADY_IN_PROGRESS'
-  | 'CONNECTION_LIMIT_REACHED'
-  | 'USER_CANCELLED'
-  | 'TIMEOUT'
-  | 'WRITE_INCOMPLETE';
-
-/**
- * Codes that are safe to retry — mirrors RETRIABLE_CODES in core/src/errors.ts.
- * A retriable card shows a retry affordance; a non-retriable one does not.
- */
-const RETRIABLE_CODES: ReadonlySet<BeacioErrorCode> = new Set<BeacioErrorCode>([
-  'DEVICE_DISCONNECTED',
-  'CONNECTION_TIMEOUT',
-  'GATT_OPERATION_FAILED',
-  'TIMEOUT',
-  'SCAN_ALREADY_IN_PROGRESS',
-  'WRITE_INCOMPLETE',
-]);
+// Part of `@beacio/core/detect`'s published type surface (detect/index.ts).
+export type { BeacioErrorCode };
 
 /**
  * Per-code friendly headline + body. Plain-English, recovery-oriented, no internal
  * codes, no jargon, no competitor names. This is the body shown to the user — the
  * raw error string (which may carry a stack or a competitor name) is NEVER shown.
  *
- * SB-SDK-07: this is now a VIEW over the English pack (EN_STRINGS.error) so the
- * presenter's English source-of-truth and the shared i18n pack are a SINGLE
- * table — they cannot drift. Localized rendering reads the resolved pack (which
- * may be German); COPY is retained as the membership anchor isCodedError() uses
- * (`code in COPY`) and the English-completeness table error-presenter-core-parity
- * pins to core's BeacioErrorCode set.
+ * SB-SDK-07: there is no local copy table. The presenter's English
+ * source-of-truth and the shared i18n pack are ONE table (EN_STRINGS.error), so
+ * they cannot drift; localized rendering reads the RESOLVED pack (which may be
+ * German). `isCodedError` therefore anchors code membership on
+ * `EN_STRINGS.error.titles` directly. Completeness needs no test: the packs are
+ * typed `Record<BeacioErrorCode, string>` against the ONE union, so a new code
+ * fails i18n.ts's compile before any test runs.
  */
-const COPY: Record<BeacioErrorCode, { title: string; body: string }> = Object.fromEntries(
-  (Object.keys(EN_STRINGS.error.titles) as BeacioErrorCode[]).map((code) => [
-    code,
-    { title: EN_STRINGS.error.titles[code], body: EN_STRINGS.error.messages[code] },
-  ])
-) as Record<BeacioErrorCode, { title: string; body: string }>;
-
-/** Competitor/product names that must never surface (mirrors errors.ts COMPETITOR_TOKENS). */
-const COMPETITOR_TOKENS = /\b(bluefy|web ble browser|webble browser)\b/gi;
-
-/**
- * AC1/AC6: the bare-string path (the S&B generateErrorMsg(errMsg) chokepoint) is
- * the ONE input whose body comes from the caller rather than the branded copy
- * table — and S&B builds those strings from the native error (appending
- * `error.stack`, referencing the competitor). Reduce such a string to a single,
- * complete-sentence line that is safe to render: drop everything from the first
- * newline (where stack frames begin), strip native/internal URLs and any residual
- * "at file:line:col" fragment, and redact competitor names. Mirrors core's
- * sanitizeNativeMessage (kept local — detect must not import @beacio/core). Returns
- * '' when nothing meaningful remains so the caller falls back to branded copy.
- */
-function sanitizeMessage(raw: string): string {
-  let line = raw.split('\n', 1)[0] ?? '';
-  line = line.replace(/\b(?:webkit|https?|chrome|moz-extension|safari-web-extension):\/\/\S+/gi, '');
-  line = line.replace(/\bat\s+\S+:\d+:\d+\)?/gi, '');
-  line = line.replace(COMPETITOR_TOKENS, '');
-  line = line.replace(/\s{2,}/g, ' ').replace(/\s+([.,;:])/g, '$1').trim();
-  line = line.replace(/[\s.,;:]+$/g, '').trim();
-  return line;
-}
-
-/**
- * Caller-supplied copy/locale overrides — the i18n seam (SB-SDK-07). Every field
- * is optional; an omitted field falls back to the English default, so an existing
- * caller that passes nothing is byte-identical to today.
- */
-export interface PresentErrorStrings {
-  /** Dismiss button label (English default: "Dismiss"). */
-  dismiss?: string;
-  /** Retry affordance label for retriable errors (English default: "Try again"). */
-  retry?: string;
-  /** Per-code body override. A code present here replaces the English body. */
-  messages?: Partial<Record<BeacioErrorCode, string>>;
-}
 
 /**
  * Options for {@link presentError}. Parity with BannerOptions where it overlaps
@@ -160,8 +89,15 @@ export interface PresentErrorOptions {
   onRetry?: () => void;
   /** Extra inline styles merged onto the card container. */
   style?: Record<string, string>;
-  /** Copy/locale overrides for every user-visible string (SB-SDK-07 seam). */
-  strings?: PresentErrorStrings;
+  /**
+   * Copy/locale overrides for every user-visible string (SB-SDK-07 seam),
+   * deep-merged over the selected language pack by the SAME `resolveStrings`
+   * the install banner uses — so the seam also covers the per-code `titles` and
+   * the `generic` fallback, not just `messages`/`dismiss`/`retry`. Every field is
+   * optional; an omitted field keeps the pack's value, so a caller that passes
+   * nothing is byte-identical to today.
+   */
+  strings?: DeepPartial<ErrorStrings>;
 }
 
 const CARD_ID = 'beacio-error';
@@ -186,45 +122,8 @@ function isCodedError<T>(error: T): error is T & { code: BeacioErrorCode; messag
     error !== null &&
     'code' in error &&
     typeof (error as { code: string }).code === 'string' &&
-    (error as { code: string }).code in COPY
+    (error as { code: string }).code in EN_STRINGS.error.titles
   );
-}
-
-/**
- * The detect bundle ships standalone and deliberately has NO runtime import of
- * core, so this is a local copy of core's `isUserCancellationMessage`
- * (`../errors.ts`). Keep the two in lockstep — a raw DOMException must not be
- * presented as "device not found" here while core codes it USER_CANCELLED.
- */
-function isUserCancellationMessage(lowerMessage: string): boolean {
-  return lowerMessage.includes('user cancelled') || lowerMessage.includes('user canceled');
-}
-
-/** Map a raw DOMException name (no BeacioError) to a BeacioErrorCode. */
-function codeFromDomName(name: string, message: string): BeacioErrorCode {
-  const lower = message.toLowerCase();
-  switch (name) {
-    // Overloaded in Web Bluetooth: a dismissed chooser and a genuine failure both
-    // arrive as NotFoundError (Chromium bluetooth_error.cc lines 148-178), so the
-    // message is the only discriminator. Mirrors core's BeacioError.from.
-    case 'NotFoundError':
-      return isUserCancellationMessage(lower) ? 'USER_CANCELLED' : 'DEVICE_NOT_FOUND';
-    case 'NotAllowedError':
-    case 'SecurityError':
-      return 'PERMISSION_DENIED';
-    case 'NetworkError':
-      return 'DEVICE_DISCONNECTED';
-    case 'TimeoutError':
-      return 'TIMEOUT';
-    case 'InvalidStateError':
-      return lower.includes('disconnect') ? 'DEVICE_DISCONNECTED' : 'GATT_OPERATION_FAILED';
-    default:
-      break;
-  }
-  if (isUserCancellationMessage(lower)) return 'USER_CANCELLED';
-  if (lower.includes('disconnect')) return 'DEVICE_DISCONNECTED';
-  if (lower.includes('timeout')) return 'TIMEOUT';
-  return 'GATT_OPERATION_FAILED';
 }
 
 interface Resolved {
@@ -244,25 +143,18 @@ interface Resolved {
  * path, where the caller passes its own already-friendly message); structured
  * errors always use the per-code copy table so no native jargon/stack leaks.
  */
-function resolve(
-  input: unknown,
-  pack: LocaleStrings['error'],
-  strings: PresentErrorStrings | undefined
-): Resolved {
-  // SB-SDK-07: per-code title/body come from the RESOLVED language pack; a
-  // per-call `strings.messages[code]` override still wins (byte-identical
-  // back-compat for callers that pass their own copy). The local COPY table
-  // stays as the English source (it IS EN_STRINGS.error), pinned to core's code
-  // set by error-presenter-core-parity.test.ts.
+function resolve(input: unknown, pack: LocaleStrings['error']): Resolved {
+  // SB-SDK-07: per-code title/body come from the RESOLVED pack — which the caller's
+  // `strings` has already been deep-merged into, so a per-call override still wins.
   const titleFor = (code: BeacioErrorCode): string => pack.titles[code];
-  const bodyFor = (code: BeacioErrorCode): string => strings?.messages?.[code] ?? pack.messages[code];
+  const bodyFor = (code: BeacioErrorCode): string => pack.messages[code];
 
   // Bare string: the caller's own message IS the body (generateErrorMsg path) —
   // but sanitise it first (AC1/AC6) so a string carrying a stack, a native URL, or
   // a competitor name never renders verbatim. When nothing meaningful survives,
   // fall back to the branded generic body so the card is never blank.
   if (typeof input === 'string') {
-    const clean = sanitizeMessage(input);
+    const clean = sanitizeNativeMessage(input);
     const body = clean || pack.generic.body;
     return { code: null, title: pack.generic.title, body, isRetriable: false, signature: `str:${body}` };
   }
@@ -279,13 +171,15 @@ function resolve(
     };
   }
 
-  // Raw DOMException / Error: classify by name+message, then use branded copy —
-  // NEVER the raw .message (it may carry a stack or a competitor name).
+  // Raw DOMException / Error: classify through the SHARED taxonomy seam —
+  // `classifyThrown` takes the thrown value directly (the DOM-name dance, the
+  // message extraction and the GH #354 carried code all live in the taxonomy
+  // now), reaching the SAME decision the SDK's BeacioError.from reaches — then
+  // use branded copy, NEVER the raw .message (it may carry a stack or a
+  // competitor name). 'GATT_OPERATION_FAILED' is the presenter's required
+  // fallback for an error the taxonomy cannot place.
   if (typeof input === 'object' && input !== null) {
-    const name =
-      'name' in input && typeof (input as { name: string }).name === 'string' ? (input as { name: string }).name : '';
-    const message = input instanceof Error ? input.message : String((input as { message?: string }).message ?? '');
-    const code = codeFromDomName(name, message);
+    const { code } = classifyThrown(input, 'GATT_OPERATION_FAILED');
     return { code, title: titleFor(code), body: bodyFor(code), isRetriable: RETRIABLE_CODES.has(code), signature: `dom:${code}` };
   }
 
@@ -305,12 +199,12 @@ export function presentError(errorOrMessage: unknown, options: PresentErrorOptio
   // SSR / non-DOM guard (mirrors banner.ts dispatch guards).
   if (typeof document === 'undefined') return null;
 
-  const { strings } = options;
   // SB-SDK-07: resolve the localized pack ONCE (explicit lang > navigator.language
-  // > English); per-code copy + dismiss/retry derive from it, with `strings` and
-  // the explicit dismissText/retryText overriding on top.
-  const pack = resolveStrings({ lang: options.lang }).error;
-  const resolved = resolve(errorOrMessage, pack, strings);
+  // > English) with the caller's `strings` deep-merged on top; per-code copy +
+  // dismiss/retry derive from it, with the explicit dismissText/retryText last.
+  // deepMerge skips undefined override keys, so an absent `strings` is a no-op.
+  const pack = resolveStrings({ lang: options.lang, strings: { error: options.strings } }).error;
+  const resolved = resolve(errorOrMessage, pack);
 
   // AC2: coalesce identical errors fired within a short window into ONE card —
   // suppress the duplicate (and never fall back to alert). An identical card still
@@ -326,10 +220,10 @@ export function presentError(errorOrMessage: unknown, options: PresentErrorOptio
   lastShownAt = now;
 
   const operatorName = options.operatorName;
-  // Precedence: explicit dismissText/retryText > per-call `strings` > the
-  // resolved language pack (English when no lang/navigator.language match).
-  const dismissLabel = options.dismissText ?? strings?.dismiss ?? pack.dismiss;
-  const retryLabel = options.retryText ?? strings?.retry ?? pack.retry;
+  // Precedence: explicit dismissText/retryText > the resolved pack (which already
+  // has the per-call `strings` merged over the language pack).
+  const dismissLabel = options.dismissText ?? pack.dismiss;
+  const retryLabel = options.retryText ?? pack.retry;
   const showRetry = resolved.isRetriable;
 
   const customStyle = Object.entries(options.style ?? {})

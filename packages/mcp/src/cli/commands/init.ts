@@ -64,7 +64,7 @@ function getSnippet(framework: Framework, apiKey: string): { code: string; locat
       // pre-rebrand `https://beacio.com/beacio.js` apex shortener is kept as a
       // LEGACY alternative in check.ts (not emitted here anymore).
       return {
-        code: `<meta name="beacio-key" content="${apiKey}">\n<script type="module">import 'https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs';</script>`,
+        code: `<meta name="beacio-key" content="${apiKey}">\n<script type="module">import 'https://cdn.beacio.com/@beacio/core@2.1.0/dist/auto.mjs';</script>`,
         location: 'Add before </body> (meta tag first, then the module script — module scripts are deferred so navigator.bluetooth mounts after the document parses)',
       };
     default:

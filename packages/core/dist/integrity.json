@@ -1,14 +1,19 @@
 {
-  "version": "1.2.0",
-  "generatedAt": "2026-08-05T16:17:24.408Z",
+  "version": "2.1.0",
+  "generatedAt": "2026-08-25T11:57:03.330Z",
+  "sourceFingerprint": {
+    "algo": "sha384",
+    "inputs": "src/** + tsup.config.ts + tsup.browser.config.ts + tsup.browser-auto.config.ts",
+    "digest": "lqlooSwrU04NppKr/rZsnK/PBcVwN3oGpOOVZUow3vrRrYkIrFfyx5Ura0iSEzNS"
+  },
   "entries": {
     "auto.mjs": {
-      "sha384": "VKeNx16jomFka5OAiZWw+kUteFJjFvhFEeRgdifhJwCZefrkvYZY0QxBF6aZ3jK5",
-      "size": 6669
+      "sha384": "DmtRxLg7A/BTgyZ+2aMzCY+kTJCPykU0aVfi/1vXko+vjMKblKwzKIRj2Qq1dm3Z",
+      "size": 6558
     },
     "browser-auto.global.js": {
-      "sha384": "8OgluAFeXOtPzHexOBW03d1uw9/fEGeW4kGhRwIESFSRGaaDumjuEj7K/ZhyYfgx",
-      "size": 53723
+      "sha384": "qvlZPwK1ntm6QKkc+vvJJ61sbEK6OthjQgj4WP7PP4O1zEvuiuNV+5FvRGQTMClh",
+      "size": 57103
     }
   }
 }

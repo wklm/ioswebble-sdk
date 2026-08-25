@@ -22,10 +22,13 @@
  * restating the whole pack, in any language.
  *
  * Design constraints (mirroring banner.ts / error-presenter.ts):
- *  - @beacio/core is an OPTIONAL peer, so this module imports NOTHING from core.
- *    The BeacioErrorCode union is re-declared LOCALLY (kept in lock-step with
- *    core's source by error-presenter-core-parity.test.ts, which pins the SAME
- *    local table this pack's `error.messages` must cover).
+ *  - The per-code packs are typed against the ONE `BeacioErrorCode` union in
+ *    `../error-taxonomy` (a TYPE-only import — erased at build time). The ONE
+ *    runtime import from that leaf is `IOS_GRANT_WORDING_CANONICAL` (R-52),
+ *    already bundled into detect via `error-presenter.ts` — zero new weight.
+ *    A code added to the taxonomy
+ *    fails THIS file's compile until both packs cover it; that is stronger than
+ *    the hand-maintained test Record it replaced, and it fails in src.
  *  - All copy uses neutral install-path framing only — no "App Store approved /
  *    cleared / reviewed" language (feedback_no_app_store_status_claims).
  *  - `{operator}` is the ONLY interpolation token; banner.ts substitutes the
@@ -35,31 +38,11 @@
  * non-breaking change (project_sdk_no_consumers).
  */
 
-/**
- * The stable BeacioErrorCode contract (core/src/errors.ts). Re-declared locally
- * — not imported — so detect has no runtime @beacio/core dependency. Kept in
- * lock-step with core by error-presenter-core-parity.test.ts (the COMPILE-TIME
- * EVERY_CODE Record) and by this module's own pack-parity guard in i18n.test.ts.
- */
-export type BeacioErrorCode =
-  | 'INVALID_PARAMETER'
-  | 'BLUETOOTH_UNAVAILABLE'
-  | 'EXTENSION_NOT_INSTALLED'
-  | 'PERMISSION_DENIED'
-  | 'DEVICE_NOT_FOUND'
-  | 'DEVICE_DISCONNECTED'
-  | 'CONNECTION_TIMEOUT'
-  | 'SERVICE_NOT_FOUND'
-  | 'CHARACTERISTIC_NOT_FOUND'
-  | 'CHARACTERISTIC_NOT_READABLE'
-  | 'CHARACTERISTIC_NOT_WRITABLE'
-  | 'CHARACTERISTIC_NOT_NOTIFIABLE'
-  | 'GATT_OPERATION_FAILED'
-  | 'SCAN_ALREADY_IN_PROGRESS'
-  | 'CONNECTION_LIMIT_REACHED'
-  | 'USER_CANCELLED'
-  | 'TIMEOUT'
-  | 'WRITE_INCOMPLETE';
+// The stable code contract, from the single taxonomy. Type-only, so nothing is
+// emitted; re-exported because `@beacio/core/detect` publishes it (index.ts).
+import { IOS_GRANT_WORDING_CANONICAL, type BeacioErrorCode } from '../error-taxonomy';
+
+export type { BeacioErrorCode };
 
 /** Funnel-state lead copy: a title + body shown at the top of the bottom sheet. */
 export interface StateCopy {
@@ -170,7 +153,7 @@ export const EN_STRINGS: LocaleStrings = {
     },
     denied: {
       title: 'Allow beacio on this site',
-      body: 'beacio is enabled but not yet allowed here. Tap the aA button in the address bar → Manage Extensions → beacio → Allow Every Website, then reload this page.',
+      body: `beacio is enabled but not yet allowed here. Tap the aA button in the address bar → Manage Extensions → beacio → ${IOS_GRANT_WORDING_CANONICAL}, then reload this page.`,
     },
     'private-browsing': {
       title: 'Private Browsing blocks extensions',
@@ -186,7 +169,7 @@ export const EN_STRINGS: LocaleStrings = {
     },
     {
       label: 'Allow website access',
-      why: 'On the site, tap the aA button in the address bar → Manage Extensions → beacio → Allow Every Website.',
+      why: `On the site, tap the aA button in the address bar → Manage Extensions → beacio → ${IOS_GRANT_WORDING_CANONICAL}.`,
     },
     {
       label: 'Allow Bluetooth on first scan',
@@ -198,7 +181,7 @@ export const EN_STRINGS: LocaleStrings = {
   clipboardHint: 'Link also copied — paste it into Safari if this button does not reopen {operator}.',
   reload: 'Reload page to re-check',
   howSummary: 'How does setup work?',
-  howBody: 'beacio uses a one-time iPhone app to enable the Safari extension. After enabling it and allowing access on this site (aA button → Manage Extensions → Allow Every Website), Bluetooth works in Safari.',
+  howBody: `beacio uses a one-time iPhone app to enable the Safari extension. After enabling it and allowing access on this site (aA button → Manage Extensions → ${IOS_GRANT_WORDING_CANONICAL}), Bluetooth works in Safari.`,
   howLink: 'See the full setup guide',
   privacySummary: 'Privacy: No data collected',
   privacyBody: 'beacio processes all Bluetooth data locally on your device. No browsing data, device data, or personal information is ever collected or transmitted.',
@@ -213,6 +196,7 @@ export const EN_STRINGS: LocaleStrings = {
       INVALID_PARAMETER: 'Something went wrong',
       BLUETOOTH_UNAVAILABLE: 'Bluetooth is unavailable',
       EXTENSION_NOT_INSTALLED: 'Finish Bluetooth setup',
+      EXTENSION_NOT_ENABLED: 'Allow beacio on this site',
       PERMISSION_DENIED: 'Allow Bluetooth to continue',
       DEVICE_NOT_FOUND: 'No device found',
       DEVICE_DISCONNECTED: 'Device disconnected',
@@ -233,6 +217,7 @@ export const EN_STRINGS: LocaleStrings = {
       INVALID_PARAMETER: 'The request could not be completed. Please reload the page and try again.',
       BLUETOOTH_UNAVAILABLE: 'Turn Bluetooth on, then try again.',
       EXTENSION_NOT_INSTALLED: 'Bluetooth is not enabled for this site yet. Finish setup, then try connecting again.',
+      EXTENSION_NOT_ENABLED: `beacio is not allowed on this site yet. Tap aA in the address bar → Manage Extensions → beacio → ${IOS_GRANT_WORDING_CANONICAL}, then reload.`,
       PERMISSION_DENIED: 'Bluetooth access was not granted. Tap Connect yourself (Bluetooth needs a tap), then allow access when asked.',
       DEVICE_NOT_FOUND: 'No matching device was found. Switch your device on, keep it close, then try again.',
       DEVICE_DISCONNECTED: 'The connection to your device was lost. Reconnect to continue.',
@@ -322,6 +307,7 @@ export const DE_STRINGS: LocaleStrings = {
       INVALID_PARAMETER: 'Etwas ist schiefgelaufen',
       BLUETOOTH_UNAVAILABLE: 'Bluetooth ist nicht verfügbar',
       EXTENSION_NOT_INSTALLED: 'Bluetooth-Einrichtung abschließen',
+      EXTENSION_NOT_ENABLED: 'beacio für diese Seite erlauben',
       PERMISSION_DENIED: 'Bluetooth erlauben, um fortzufahren',
       DEVICE_NOT_FOUND: 'Kein Gerät gefunden',
       DEVICE_DISCONNECTED: 'Gerät getrennt',
@@ -342,6 +328,7 @@ export const DE_STRINGS: LocaleStrings = {
       INVALID_PARAMETER: 'Die Anfrage konnte nicht abgeschlossen werden. Lade die Seite neu und versuche es erneut.',
       BLUETOOTH_UNAVAILABLE: 'Schalte Bluetooth ein und versuche es erneut.',
       EXTENSION_NOT_INSTALLED: 'Bluetooth ist für diese Seite noch nicht aktiviert. Schließe die Einrichtung ab und versuche dann erneut, dich zu verbinden.',
+      EXTENSION_NOT_ENABLED: 'beacio ist für diese Seite noch nicht erlaubt. Tippe auf „aA“ in der Adressleiste → Erweiterungen verwalten → beacio → „Auf allen Websites erlauben“ und lade die Seite neu.',
       PERMISSION_DENIED: 'Der Bluetooth-Zugriff wurde nicht gewährt. Tippe selbst auf „Verbinden“ (Bluetooth erfordert eine Berührung) und erlaube den Zugriff, wenn du gefragt wirst.',
       DEVICE_NOT_FOUND: 'Es wurde kein passendes Gerät gefunden. Schalte dein Gerät ein, halte es in der Nähe und versuche es erneut.',
       DEVICE_DISCONNECTED: 'Die Verbindung zu deinem Gerät wurde unterbrochen. Verbinde dich erneut, um fortzufahren.',

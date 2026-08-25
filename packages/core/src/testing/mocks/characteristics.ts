@@ -8,6 +8,16 @@
  */
 
 import type { MockBleDevice } from './device';
+// S5-D: the three {uuid}-template rows for the mock GATT tree's genuine absences. The
+// factory REQUIRES the uuid for exactly these ids (ConditionParams) and substitutes with a
+// FUNCTION replacement, so a caller-supplied `$&`/`$'` uuid interpolates verbatim —
+// byte-identical to the legacy template literals (R2). RELATIVE import: tsup.
+import {
+  MOCK_CHARACTERISTIC_ABSENT,
+  MOCK_DESCRIPTOR_ABSENT,
+  MOCK_SERVICE_ABSENT,
+  beacioDomException,
+} from '../../error-conditions';
 
 export interface MockCharacteristicConfig {
   /** Characteristic UUID */
@@ -87,10 +97,7 @@ export class MockGATTServer {
     this._assertConnected();
     const service = this._services.get(uuid);
     if (!service) {
-      throw new DOMException(
-        `No Services matching UUID ${uuid} found`,
-        'NotFoundError'
-      );
+      throw beacioDomException(MOCK_SERVICE_ABSENT, uuid);
     }
     return service.asBluetoothRemoteGATTService();
   }
@@ -164,10 +171,7 @@ export class MockService {
   ): Promise<BluetoothRemoteGATTCharacteristic> {
     const char = this._characteristics.get(uuid);
     if (!char) {
-      throw new DOMException(
-        `No Characteristics matching UUID ${uuid} found`,
-        'NotFoundError'
-      );
+      throw beacioDomException(MOCK_CHARACTERISTIC_ABSENT, uuid);
     }
     return char.asBluetoothRemoteGATTCharacteristic(
       this.asBluetoothRemoteGATTService()
@@ -409,10 +413,7 @@ export class MockCharacteristic {
       getDescriptor: async (uuid: string) => {
         const desc = self._descriptors.get(uuid);
         if (!desc) {
-          throw new DOMException(
-            `No Descriptors matching UUID ${uuid} found`,
-            'NotFoundError'
-          );
+          throw beacioDomException(MOCK_DESCRIPTOR_ABSENT, uuid);
         }
         return desc.asBluetoothRemoteGATTDescriptor(
           self.asBluetoothRemoteGATTCharacteristic(service)

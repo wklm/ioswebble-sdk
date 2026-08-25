@@ -43,7 +43,7 @@ export {
 // core/browser-auto) so a classic <script> site can call
 // beacioDetect.presentError(error) with no module setup.
 export { presentError } from './error-presenter';
-export type { PresentErrorOptions, PresentErrorStrings, BeacioErrorCode } from './error-presenter';
+export type { PresentErrorOptions, BeacioErrorCode } from './error-presenter';
 // SB-SDK-07: the shared localized-string seam (built-in en/de packs + the pure
 // resolver) that both showInstallBanner and presentError consume. Exported so a
 // consumer can inspect/extend the packs or pre-resolve copy. The BeacioErrorCode

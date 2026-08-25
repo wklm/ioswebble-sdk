@@ -1,6 +1,6 @@
 {
   "name": "@beacio/core",
-  "version": "1.2.0",
+  "version": "2.1.0",
   "description": "The only Web Bluetooth polyfill for Safari iOS \u2014 make navigator.bluetooth work on iPhone. Scan, connect, read/write BLE devices from any browser",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

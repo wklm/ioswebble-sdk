@@ -2,6 +2,12 @@
 
 All notable changes to `@beacio/react` will be documented in this file.
 
+## 2.1.0 — 2026-08-25
+
+- Version aligned with App Store / Safari extension **2.1.0** — every `@beacio/*` package now versions in lockstep with the app release.
+- `peerDependencies["@beacio/core"]` moves to `^2.1.0`.
+- No breaking change to the hook/component API relative to 1.2.0.
+
 ## 1.2.0 — 2026-07-28
 
 - First stable release aligned with `@beacio/core@1.2.0` (`peerDependencies` now `^1.2.0`).

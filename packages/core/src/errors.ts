@@ -1,59 +1,34 @@
+import {
+  type BeacioErrorCode,
+  classifyThrown,
+  IOS_GRANT_WORDING_CANONICAL,
+  type NativeMessageValue,
+  RETRIABLE_CODES,
+  RETRY_AFTER_MS,
+  sanitizeNativeMessage,
+} from './error-taxonomy';
+
+// The code union, the retriable set, the NotFoundError fragment table and the
+// classifier all live in ./error-taxonomy — the leaf module the branded card
+// (`./detect/error-presenter.ts`) classifies through too, so the SDK and the UI
+// cannot disagree about the same DOMException. Re-exported here because
+// `BeacioErrorCode` is part of this module's published surface (src/index.ts).
+export type { BeacioErrorCode };
+
 /**
- * Machine-readable error codes for all Beacio operations.
- * Use in catch blocks to handle specific failure modes.
- *
- * @example
- * ```typescript
- * try {
- *   await device.read('heart_rate', 'heart_rate_measurement')
- * } catch (e) {
- *   if (e instanceof BeacioError) {
- *     switch (e.code) {
- *       case 'DEVICE_DISCONNECTED': await device.connect(); break;
- *       case 'CHARACTERISTIC_NOT_READABLE': device.subscribe(...); break;
- *       default: console.error(e.suggestion);
- *     }
- *   }
- * }
- * ```
+ * Whether a classification's native sentence survives onto `BeacioError.message`.
+ * A Record over the union rather than a ternary ON PURPOSE: a third
+ * {@link NativeMessageValue} member fails to compile HERE instead of being
+ * silently treated as "drop the native text", which would make a device's own
+ * message vanish from `.message` with no test to catch it.
  */
-export type BeacioErrorCode =
-  /** Invalid argument passed to an SDK method (e.g. negative timeout, malformed UUID). Not retriable. */
-  | 'INVALID_PARAMETER'
-  /** Browser or platform does not support Web Bluetooth at all. Not retriable. */
-  | 'BLUETOOTH_UNAVAILABLE'
-  /** The Beacio Safari extension is not installed. Show an install banner via `@beacio/core/detect`. Not retriable. */
-  | 'EXTENSION_NOT_INSTALLED'
-  /** User denied Bluetooth permission, or the call was not triggered by a user gesture. Not retriable. */
-  | 'PERMISSION_DENIED'
-  /** No BLE device matched the given scan filters, or the device picker returned empty. Not retriable. */
-  | 'DEVICE_NOT_FOUND'
-  /** GATT operation attempted on a disconnected device. Retriable -- call `connect()` first. */
-  | 'DEVICE_DISCONNECTED'
-  /** Device did not respond within the connection timeout window. Retriable -- check range and advertising state. */
-  | 'CONNECTION_TIMEOUT'
-  /** The requested GATT service UUID was not found on the connected device. Not retriable. */
-  | 'SERVICE_NOT_FOUND'
-  /** The requested characteristic UUID was not found in the specified service. Not retriable. */
-  | 'CHARACTERISTIC_NOT_FOUND'
-  /** The characteristic does not support the read property. Use `subscribe()` for notify-only characteristics. Not retriable. */
-  | 'CHARACTERISTIC_NOT_READABLE'
-  /** The characteristic does not support write or writeWithoutResponse. Not retriable. */
-  | 'CHARACTERISTIC_NOT_WRITABLE'
-  /** The characteristic does not support notify or indicate. Use `read()` for polling. Not retriable. */
-  | 'CHARACTERISTIC_NOT_NOTIFIABLE'
-  /** Generic GATT failure (device busy, stack error, disconnected mid-operation). Retriable. */
-  | 'GATT_OPERATION_FAILED'
-  /** A BLE scan is already running. Stop the current scan before starting a new one. Retriable. */
-  | 'SCAN_ALREADY_IN_PROGRESS'
-  /** `Beacio.maxConnections` limit reached. Disconnect another device before connecting. Not retriable. */
-  | 'CONNECTION_LIMIT_REACHED'
-  /** User dismissed the device picker without selecting a device. Not retriable. */
-  | 'USER_CANCELLED'
-  /** A read/write/connect operation did not complete within the specified timeout. Retriable. */
-  | 'TIMEOUT'
-  /** A chunked write was only partially completed. Retry with smaller chunks or reconnect. Retriable. */
-  | 'WRITE_INCOMPLETE';
+const CARRY_NATIVE: Record<NativeMessageValue, boolean> = {
+  'adds-detail': true,
+  // A dismissed chooser and a bare "no devices found" say nothing the per-code
+  // SUGGESTION does not already say — and echoing Chromium's cancellation
+  // wording reads as a failure when none occurred.
+  'restates-the-code': false,
+};
 
 /**
  * Configuration for {@link withRetry}.
@@ -88,19 +63,11 @@ export const DEFAULT_RETRY_OPTIONS: RetryOptions = {
   backoffMultiplier: 0,
 };
 
-const RETRIABLE_CODES: Set<BeacioErrorCode> = new Set([
-  'DEVICE_DISCONNECTED',
-  'CONNECTION_TIMEOUT',
-  'GATT_OPERATION_FAILED',
-  'TIMEOUT',
-  'SCAN_ALREADY_IN_PROGRESS',
-  'WRITE_INCOMPLETE',
-]);
-
 const SUGGESTIONS: Record<BeacioErrorCode, string> = {
   INVALID_PARAMETER: 'One or more input parameters were invalid. Check UUIDs, payload sizes, and option values.',
   BLUETOOTH_UNAVAILABLE: 'Check that the browser supports Web Bluetooth and the device has Bluetooth enabled.',
   EXTENSION_NOT_INSTALLED: 'Install the Beacio iOS app and enable the Safari extension. Use @beacio/core/detect to show an install banner.',
+  EXTENSION_NOT_ENABLED: `Beacio is installed but not enabled on this site. In Safari tap aA in the address bar, then Manage Extensions, then beacio, then ${IOS_GRANT_WORDING_CANONICAL}, and reload this page.`,
   PERMISSION_DENIED: 'The user denied Bluetooth permission or the request was not triggered by a user gesture. Call requestDevice() from a click/tap handler and try again.',
   DEVICE_NOT_FOUND: 'No matching device found. Check your scan filters or ensure the device is advertising.',
   DEVICE_DISCONNECTED: 'Call device.connect() before performing GATT operations.',
@@ -117,58 +84,6 @@ const SUGGESTIONS: Record<BeacioErrorCode, string> = {
   TIMEOUT: 'The operation timed out. Retry or check device connectivity.',
   WRITE_INCOMPLETE: 'Only part of the payload was written. Retry with smaller chunks or reconnect the device.',
 };
-
-/** Known competitor/product names that must never surface to a Beacio user. */
-const COMPETITOR_TOKENS = /\b(bluefy|web ble browser|webble browser)\b/gi;
-
-/**
- * The single definition of "this native message means the USER dismissed the
- * picker", used by every classification path so they can never disagree.
- *
- * Web Bluetooth OVERLOADS `NotFoundError`: Chromium maps CHOOSER_CANCELLED —
- * the user dismissing the chooser — onto the SAME DOMException name as a pile of
- * genuine failures (NO_BLUETOOTH_ADAPTER, CHOSEN_DEVICE_VANISHED,
- * WEB_BLUETOOTH_NOT_SUPPORTED, NO_SERVICES_FOUND, …). See
- * `third_party/blink/renderer/modules/bluetooth/bluetooth_error.cc` lines
- * 148-178. The message is therefore the ONLY signal that separates the two, and
- * "User cancelled the requestDevice() chooser." is unique to the cancel branch —
- * no other NotFoundError message in that table contains "user cancel(l)ed".
- * The beacio polyfill emits Chromium's string verbatim (`src/extension/
- * page-bootstrap.ts`, `src/beacio/api/bluetooth.ts`), so this predicate is exact
- * for the platforms this SDK actually runs on.
- *
- * Matched case-insensitively against the RAW text so a stack-suffixed or
- * differently-cased native message still classifies.
- */
-function isUserCancellationMessage(rawMsg: string): boolean {
-  const lower = rawMsg.toLowerCase();
-  return lower.includes('user cancelled') || lower.includes('user canceled');
-}
-
-/**
- * SB-SDK-05 AC6: reduce a raw native error message to a single, complete-sentence
- * line that is safe to show via a bare `alert(error.toString())` — no stack frames,
- * no native `webkit://`/`http(s)://` URLs, and no competitor names. A clean,
- * single-line native message (e.g. "Invalid UUID: 'bogus'") is preserved verbatim
- * so the message-passthrough contracts in errors.test.ts do not regress; only the
- * unsafe trailing content is stripped. Returns '' when nothing meaningful remains,
- * so the caller can fall back to the per-code SUGGESTION default.
- */
-function sanitizeNativeMessage(raw: string): string {
-  // Keep only the first line — everything from the first newline (where V8/WebKit
-  // append "    at …" stack frames) onward is dropped.
-  let line = raw.split('\n', 1)[0] ?? '';
-  // Strip native/internal URLs (webkit://…, http(s)://…) wherever they appear.
-  line = line.replace(/\b(?:webkit|https?|chrome|moz-extension|safari-web-extension):\/\/\S+/gi, '');
-  // Strip any residual single-line "at file.js:line:col" stack fragment.
-  line = line.replace(/\bat\s+\S+:\d+:\d+\)?/gi, '');
-  // Redact competitor names rather than leak them.
-  line = line.replace(COMPETITOR_TOKENS, '');
-  // Collapse whitespace left by the redactions and tidy dangling punctuation.
-  line = line.replace(/\s{2,}/g, ' ').replace(/\s+([.,;:])/g, '$1').trim();
-  line = line.replace(/[\s.,;:]+$/g, '').trim();
-  return line;
-}
 
 /**
  * Error class for all Beacio operations. Contains a machine-readable `code`
@@ -194,88 +109,30 @@ export class BeacioError extends Error {
     this.retryAfterMs = options?.retryAfterMs;
   }
 
-  /** Convert a native error to a BeacioError with automatic code detection. */
+  /**
+   * Convert a native error (DOMException, Error, string) to a BeacioError with
+   * automatic code detection. The DECISION is delegated to the shared
+   * ./error-taxonomy seam (`classifyThrown` takes the thrown value directly —
+   * the same one the branded card classifies through) so this method holds only
+   * what is genuinely SDK-side: which message survives onto `.message`, and the
+   * per-code backoff hint.
+   */
   static from<T>(error: T, code: BeacioErrorCode = 'GATT_OPERATION_FAILED'): BeacioError {
     if (error instanceof BeacioError) return error;
-    const domName =
-      typeof error === 'object' && error !== null && 'name' in error && typeof (error as { name: string }).name === 'string'
-        ? (error as { name: string }).name
-        : undefined;
     // SB-SDK-05 AC6: a native DOMException/Error message can carry a multi-line
-    // stack, a native URL, and engine/competitor jargon. The CLASSIFICATION below
-    // still inspects the full raw text (so e.g. "GATT Server is disconnected" is
-    // detected even when followed by a stack), but the message that survives onto
-    // the BeacioError — and thus into error.toString() / a raw alert() — is the
+    // stack, a native URL, and engine/competitor jargon. The CLASSIFIER still
+    // inspects the full RAW text (so e.g. "GATT Server is disconnected" is detected
+    // even when followed by a stack), but the message that survives onto the
+    // BeacioError — and thus into error.toString() / a raw alert() — is the
     // sanitised, single-line form so no stack frame or competitor name ever leaks.
     const rawMsg = error instanceof Error ? error.message : String(error);
     // Empty sanitised result → undefined, so the BeacioError constructor falls back
     // to the per-code SUGGESTION default instead of carrying a blank message.
-    const msg = sanitizeNativeMessage(rawMsg) || undefined;
-    const lowerMsg = rawMsg.toLowerCase();
+    const sanitised = sanitizeNativeMessage(rawMsg) || undefined;
 
-    switch (domName) {
-      // Convention 5: the polyfill rehydrates native validation failures as
-      // REAL TypeErrors (invalid UUIDs, malformed filters — Web Bluetooth §7).
-      case 'TypeError':
-        return new BeacioError('INVALID_PARAMETER', msg);
-      // NotFoundError is overloaded (see isUserCancellationMessage): the user
-      // dismissing the chooser and a genuine "nothing to connect to" arrive under
-      // the same DOM name. Disambiguate HERE, by message — if this returned a flat
-      // DEVICE_NOT_FOUND, `USER_CANCELLED` would be unreachable for every real
-      // cancellation and callers would be forced to re-sniff the raw message
-      // (or, worse, suppress every NotFoundError and hide real failures).
-      case 'NotFoundError':
-        return isUserCancellationMessage(rawMsg)
-          ? new BeacioError('USER_CANCELLED')
-          : new BeacioError('DEVICE_NOT_FOUND', msg);
-      case 'NotAllowedError':
-      case 'SecurityError':
-        return new BeacioError('PERMISSION_DENIED', msg);
-      case 'NetworkError':
-        return new BeacioError('DEVICE_DISCONNECTED', msg, { retryAfterMs: 1000 });
-      case 'TimeoutError':
-        return new BeacioError('TIMEOUT', msg, { retryAfterMs: 1000 });
-      case 'InvalidStateError':
-        if (lowerMsg.includes('disconnect')) {
-          return new BeacioError('DEVICE_DISCONNECTED', msg, { retryAfterMs: 1000 });
-        }
-        break;
-      default:
-        break;
-    }
-
-    // Classification inspects the RAW text (rawMsg) so a stack-suffixed native
-    // message still matches; the message carried onto the BeacioError stays the
-    // sanitised `msg` (AC6).
-    if (isUserCancellationMessage(rawMsg)) {
-      return new BeacioError('USER_CANCELLED');
-    }
-    if (lowerMsg.includes('no devices found') || rawMsg.includes('No Devices')) {
-      return new BeacioError('DEVICE_NOT_FOUND');
-    }
-    if (rawMsg.includes('No Services matching') || lowerMsg.includes('service not found')) {
-      return new BeacioError('SERVICE_NOT_FOUND', msg);
-    }
-    if (rawMsg.includes('No Characteristics matching') || lowerMsg.includes('characteristic not found')) {
-      return new BeacioError('CHARACTERISTIC_NOT_FOUND', msg);
-    }
-    if (rawMsg.includes('GATT Server is disconnected') || lowerMsg.includes('disconnected')) {
-      return new BeacioError('DEVICE_DISCONNECTED', msg, { retryAfterMs: 1000 });
-    }
-    if (lowerMsg.includes('not supported') && lowerMsg.includes('read')) {
-      return new BeacioError('CHARACTERISTIC_NOT_READABLE', msg);
-    }
-    if (lowerMsg.includes('not supported') && lowerMsg.includes('write')) {
-      return new BeacioError('CHARACTERISTIC_NOT_WRITABLE', msg);
-    }
-    if (lowerMsg.includes('not supported') && lowerMsg.includes('notif')) {
-      return new BeacioError('CHARACTERISTIC_NOT_NOTIFIABLE', msg);
-    }
-    if (lowerMsg.includes('permission')) {
-      return new BeacioError('PERMISSION_DENIED', msg);
-    }
-
-    return new BeacioError(code, msg);
+    const classification = classifyThrown(error, code);
+    const carried = CARRY_NATIVE[classification.nativeMessage] ? sanitised : undefined;
+    return new BeacioError(classification.code, carried, { retryAfterMs: RETRY_AFTER_MS[classification.code] });
   }
 }
 

@@ -60,7 +60,7 @@ const DATA = installPlanData as Record<Framework, FrameworkEntry>;
 // dual-accept key + README). Keep this literal byte-identical to the JSON so the
 // string-replace overlay finds it.
 const CANONICAL_CDN_BOOTSTRAP_URL =
-  'https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs';
+  'https://cdn.beacio.com/@beacio/core@2.1.0/dist/auto.mjs';
 
 /** The attribution query-param key the cdn Worker honors (dual-accepted with the legacy webble_attr). */
 const CDN_ATTR_PARAM = 'beacio_attr';
@@ -84,7 +84,7 @@ const PM_INSTALL_PREFIX: Record<PackageManager, string> = {
   pnpm: 'pnpm add',
   yarn: 'yarn add',
   bun: 'bun add',
-  cdn: '<script type="module">import \'https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs\';</script>',
+  cdn: '<script type="module">import \'https://cdn.beacio.com/@beacio/core@2.1.0/dist/auto.mjs\';</script>',
 };
 
 function rewriteInstallLine(line: string, pm: PackageManager): string {
@@ -105,7 +105,7 @@ const CDN_SCRIPT_EDIT: FileEdit = {
   op: 'insert',
   path: 'index.html',
   position: 'head',
-  insert: '<script type="module">import \'https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs\';</script>',
+  insert: '<script type="module">import \'https://cdn.beacio.com/@beacio/core@2.1.0/dist/auto.mjs\';</script>',
   note: 'Module scripts are deferred, so navigator.bluetooth mounts after the document parses. For apps that read navigator.bluetooth at parse time (before your bundle runs), prefer the npm path: install @beacio/core and `import \'@beacio/core/auto\'` as the first import.',
 };
 
@@ -207,7 +207,7 @@ export function runInstallPlan(
     steps.splice(
       1,
       0,
-      'CDN path: add <script type="module">import \'https://cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs\';</script> to index.html (auto-installs the polyfill from the branded CDN); skip the npm install step above. Note: module scripts are deferred, so navigator.bluetooth mounts after the document parses — if your bundle reads navigator.bluetooth at parse time, use the npm path instead (npm install @beacio/core, then import \'@beacio/core/auto\' as the first import).',
+      'CDN path: add <script type="module">import \'https://cdn.beacio.com/@beacio/core@2.1.0/dist/auto.mjs\';</script> to index.html (auto-installs the polyfill from the branded CDN); skip the npm install step above. Note: module scripts are deferred, so navigator.bluetooth mounts after the document parses — if your bundle reads navigator.bluetooth at parse time, use the npm path instead (npm install @beacio/core, then import \'@beacio/core/auto\' as the first import).',
     );
   }
   if (input.include_premium) steps.push(PREMIUM_STEP);

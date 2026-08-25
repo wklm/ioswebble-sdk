@@ -1,4 +1,4 @@
-import { resolveUUID } from '../index';
+import { resolveUUID } from '../uuid';
 
 /**
  * A profile class that declares the GATT services it (and its device family) may

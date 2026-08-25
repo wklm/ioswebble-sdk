@@ -23,6 +23,16 @@ characteristic UUIDs, and binary parsing format per the Bluetooth SIG spec.
 ## Safari iOS Support
 Add `import '@beacio/core/auto'` to your app entry point for transparent Safari iOS support.
 
+## Import surface
+Every profile is also a named export of the ROOT barrel, so the first thing a
+developer types works out of the box:
+```typescript
+import { HeartRateProfile, parseHeartRate } from '@beacio/core';
+```
+Prefer the `@beacio/core/profiles` subpath (or the per-profile subpath) when
+bundle size matters — it is the same binding, reachable without pulling the
+barrel in. Pinned by `tests/profiles-root-export.test.ts`.
+
 ## Core pattern
 ```typescript
 import { HeartRateProfile } from '@beacio/core/profiles';

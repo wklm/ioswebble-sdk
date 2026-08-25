@@ -319,7 +319,7 @@ describe('InstallationWizard', () => {
       mockDetector.detectInstallState.mockResolvedValue('not-installed');
     });
 
-    it('AC2: names the per-origin grant GESTURE (aA → Manage Extensions → Allow Every Website)', async () => {
+    it('AC2: names the per-origin grant GESTURE (aA → Manage Extensions → Allow on Every Website)', async () => {
       const { container } = render(<InstallationWizard />);
 
       await waitFor(() => {
@@ -330,7 +330,10 @@ describe('InstallationWizard', () => {
       // The address-bar gesture, not just a menu-item name.
       expect(text).toMatch(/\baA\b|address bar/);
       expect(text).toContain('Manage Extensions');
-      expect(text).toContain('Allow Every Website');
+      // The ONE canonical grant name (U9-DOCS-COHERENCE); "Allow Every Website" is a
+      // banned spelling. Pinned literally, not imported from IOS_GRANT_WORDING_CANONICAL,
+      // so this stays an independent check of the rendered copy rather than a tautology.
+      expect(text).toContain('Allow on Every Website');
       // The first grant path (enable the extension in Settings) is also named.
       expect(text).toMatch(/Allow Extension|Safari Settings|Settings/);
     });

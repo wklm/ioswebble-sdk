@@ -109,3 +109,32 @@ export type {
   WriteLargeResult,
   WriteLimits,
 } from './types';
+
+// Typed device profiles. Also available on the tree-shake-friendly
+// `@beacio/core/profiles` subpath (and per-profile subpaths) — re-exported here
+// so `import { HeartRateProfile } from '@beacio/core'` works out of the box:
+// reading a heart rate is the first thing most consumers try, and a barrel that
+// omits it pushes them into hand-rolling the 0x2A37 flags byte themselves.
+// Runtime-safe: the profile modules import their helpers from the concrete
+// modules (./dataview-helpers, ./uuid), never back through this barrel, so this
+// re-export introduces no import cycle.
+export {
+  BaseProfile,
+  defineProfile,
+  parseRawBytes,
+  deriveOptionalServices,
+  HeartRateProfile,
+  parseHeartRate,
+  HEART_RATE_SERVICES,
+  BatteryProfile,
+  DeviceInfoProfile,
+  NordicUARTProfile,
+  NUS_SERVICES,
+  HM10SerialProfile,
+} from './profiles';
+export type {
+  HeartRateData,
+  DeviceInfo,
+  OptionalServicesSource,
+  ProfileWithServices,
+} from './profiles';

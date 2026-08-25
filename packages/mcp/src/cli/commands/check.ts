@@ -129,7 +129,7 @@ export async function check(args: string[]): Promise<void> {
     }
   } else {
     // Check for CDN usage in HTML files. `beacio init` (html) writes the
-    // canonical M7-pinned `cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs`
+    // canonical M7-pinned `cdn.beacio.com/@beacio/core@2.1.0/dist/auto.mjs`
     // ESM import tag (CDN-01 fix — matches `beacio_install_plan`'s
     // CANONICAL_CDN_BOOTSTRAP_URL + SB-INF-06). The cdn Worker 400s partial
     // versions (`@1`, `@1.0`), so this regex requires a FULL three-part
@@ -149,7 +149,7 @@ export async function check(args: string[]): Promise<void> {
   }
 
   // 2. Search for the initialization call in source files. The html path of
-  // `beacio init` injects the canonical `cdn.beacio.com/@beacio/core@1.2.0/dist/auto.mjs`
+  // `beacio init` injects the canonical `cdn.beacio.com/@beacio/core@2.1.0/dist/auto.mjs`
   // ESM import (no package import / no dep), so that URL has to count as
   // initialization too (CDN-02 fix — the pre-fix regex required `beacio.com/`
   // immediately followed by `beacio` or `detect`; the canonical URL has

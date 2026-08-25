@@ -2,10 +2,10 @@
  * Onboarding-copy + return-affordance guard for @beacio/detect's install banner.
  *
  * SB-PRD-03: the irreducibly-manual iOS-26 step (enable the Safari extension +
- * grant per-origin "Allow Every Website" access + the first-scan Bluetooth
+ * grant per-origin "Allow on Every Website" access + the first-scan Bluetooth
  * prompt) is the weakest funnel point. The decisive, non-obvious GESTURE —
  * tap the `AA` button in the address bar -> Manage Extensions -> beacio ->
- * Allow Every Website — was documented only in troubleshooting.md and surfaced
+ * Allow on Every Website — was documented only in troubleshooting.md and surfaced
  * NOWHERE the user is when stuck. This test pins that copy + the visible,
  * origin-correct return affordance + the once-only "ready" success toast +
  * per-state guidance INTO the bottom sheet so they cannot silently regress.
@@ -71,14 +71,14 @@ describe('SB-PRD-03 install banner authors the iOS-26 enable + grant copy', () =
     clearBeacioStorage();
   });
 
-  it('AC1: names the per-origin grant GESTURE verbatim (aA -> Manage Extensions -> Allow Every Website)', () => {
+  it('AC1: names the per-origin grant GESTURE verbatim (aA -> Manage Extensions -> Allow on Every Website)', () => {
     showInstallBanner({ mode: 'sheet', operatorName: 'Storz & Bickel' });
     const text = bannerText();
 
     // The address-bar gesture, not just a menu-item name.
     expect(text).toMatch(/\bAA\b|address bar/);
     expect(text).toContain('Manage Extensions');
-    expect(text).toContain('Allow Every Website');
+    expect(text).toContain('Allow on Every Website');
     // The first grant path (enable the extension in Settings) is also named.
     expect(text).toMatch(/Allow Extension|Safari Settings|Settings/);
   });
@@ -88,7 +88,7 @@ describe('SB-PRD-03 install banner authors the iOS-26 enable + grant copy', () =
     const text = bannerText();
 
     // Website-access grant step is present (the current 4-pill strip omits it).
-    expect(text).toMatch(/allow website access|website access|Allow Every Website/i);
+    expect(text).toMatch(/allow website access|website access|Allow on Every Website/i);
     // The first-scan Bluetooth permission step is named with its 'why'.
     expect(text).toMatch(/allow Bluetooth|Safari will ask.*Allow|tap Allow/i);
   });
@@ -221,8 +221,8 @@ describe('SB-PRD-03 install banner authors the iOS-26 enable + grant copy', () =
 
     // installed-inactive -> guide to enabling the extension in Settings.
     expect(inactive).toMatch(/Allow Extension|Safari Settings|enable/i);
-    // per-site-denied -> guide to the aA -> Allow Every Website gesture specifically.
-    expect(denied).toContain('Allow Every Website');
+    // per-site-denied -> guide to the aA -> Allow on Every Website gesture specifically.
+    expect(denied).toContain('Allow on Every Website');
     // The two states do not render identical copy.
     expect(inactive).not.toBe(denied);
   });
