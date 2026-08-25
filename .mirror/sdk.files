@@ -1,0 +1,9 @@
+packages
+package.json
+.cursorrules
+.github
+AGENTS.md
+README.md
+llms.txt
+wiki
+tsconfig.json
